@@ -1,20 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 
-	"github.com/mr-ma/db"
+	"github.com/mr-ma/data"
 	"github.com/mr-ma/review"
 	"github.com/rcrowley/go-tigertonic"
 )
 
+//MyRequest standard request
 type MyRequest struct {
 	ID    string      `json:"id"`
 	Stuff interface{} `json:"stuff"`
 }
+
+//MyResponse standard response
 type MyResponse struct {
 	ID       string      `json:"id"`
 	Response interface{} `json:"response"`
@@ -24,7 +26,7 @@ type MyResponse struct {
 // 	return http.StatusOK, nil, &MyResponse{"ID", "STUFF"}, nil
 // }
 func postResearchHandler(u *url.URL, h http.Header, research *review.Research) (int, http.Header, *MyResponse, error) {
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	_, id, err := driver.InsertResearch(*research)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), "Research inserted"}, nil
@@ -39,17 +41,17 @@ func postVoteHandler(u *url.URL, h http.Header, vote *review.Vote) (int, http.He
 	if vote.AssociatedArticleID <= 0 {
 		return http.StatusNotAcceptable, nil, &MyResponse{"0", "Article id is missing"}, nil
 	}
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	_, id, err := driver.InsertVote(*vote)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), "Vote inserted"}, nil
 }
 func getResearchHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	fmt.Println("in getResearchHandler")
-	driver := db.InitMySQLDriver()
+	//	fmt.Println("in getResearchHandler")
+	driver := data.InitMySQLDriver()
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
-		fmt.Println(u.Query().Get("id"))
+		//	fmt.Println(u.Query().Get("id"))
 		research, err := driver.SelectResearchWithArticles(i)
 		checkErr(err)
 		resp.Response = research
@@ -62,10 +64,10 @@ func getResearchHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Head
 	return http.StatusOK, nil, &resp, nil
 }
 func getVoteHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
-		fmt.Println(u.Query().Get("id"))
+		//fmt.Println(u.Query().Get("id"))
 		research, err := driver.SelectVote(i)
 		checkErr(err)
 		resp.Response = research
@@ -78,12 +80,12 @@ func getVoteHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, 
 	return http.StatusOK, nil, &resp, nil
 }
 func getVotesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("researchID"), 10, 64); i > 0 {
-		fmt.Println(u.Query().Get("researchID"))
+		//fmt.Println(u.Query().Get("researchID"))
 		research, err := driver.SelectResearchVotes(i)
-		fmt.Printf("HERE tryping %v\n", i)
+		//fmt.Printf("HERE tryping %v\n", i)
 		checkErr(err)
 		resp.Response = research
 	} else {
@@ -95,7 +97,7 @@ func getVotesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header,
 	return http.StatusOK, nil, &resp, nil
 }
 func getReviewHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 32)
 	if err != nil {
 		return http.StatusNotAcceptable, nil, &MyResponse{"0", "researchID is missing"}, nil
@@ -125,16 +127,16 @@ func getReviewHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header
 }
 
 func postMitarbeiterHandler(u *url.URL, h http.Header, mitarbeiter *review.Mitarbeiter) (int, http.Header, *MyResponse, error) {
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	_, id, err := driver.InsertMitarbeiter(*mitarbeiter)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), "Mitarbeiter inserted"}, nil
 }
 func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
-		fmt.Println(u.Query().Get("id"))
+		//fmt.Println(u.Query().Get("id"))
 		research, err := driver.SelectMitarbeiter(i)
 		checkErr(err)
 		resp.Response = research
@@ -148,12 +150,47 @@ func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.H
 }
 
 func getTagsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := db.InitMySQLDriver()
+	driver := data.InitMySQLDriver()
 	tags, err := driver.SelectAllTags()
 	if err != nil {
 		return http.StatusNotAcceptable, nil, &MyResponse{"0", err.Error()}, nil
 	}
 	return http.StatusOK, nil, &MyResponse{"0", tags}, nil
+}
+
+func getApprovedHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitMySQLDriver()
+	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 64)
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", "researchID is missing"}, nil
+	}
+	threshold, err := strconv.Atoi(u.Query().Get("threshold"))
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", err.Error()}, nil
+	}
+	papers, err := driver.GetApprovedPapers(researchID, threshold)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", papers}, nil
+}
+
+func getReviewStatsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitMySQLDriver()
+	resp := MyResponse{}
+	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 64)
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", "researchID is missing"}, nil
+	}
+	if mitarbeiterID, _ := strconv.ParseInt(u.Query().Get("mitarbeiterID"), 10, 64); mitarbeiterID > 0 {
+		stats, err := driver.GetResearchStatsPerMitarbeiter(researchID, mitarbeiterID)
+		checkErr(err)
+		resp.Response = stats
+	} else {
+		//select all researches
+		all, err := driver.GetResearchStats(researchID)
+		checkErr(err)
+		resp.Response = all
+	}
+	return http.StatusOK, nil, &resp, nil
 }
 
 func checkErr(err error) {
@@ -163,25 +200,31 @@ func checkErr(err error) {
 }
 
 func main() {
-	fmt.Printf("Hello, world.\n")
+	//fmt.Printf("Hello, world.\n")
+	//TODO: Remove cors
+	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins("*")
 	mux := tigertonic.NewTrieServeMux()
-	mux.Handle("POST", "/research", tigertonic.Timed(tigertonic.Marshaled(postResearchHandler), "postResearchHandler", nil))
-	mux.Handle("GET", "/research/{id}", tigertonic.Timed(tigertonic.Marshaled(getResearchHandler), "getResearchHandler", nil))
-	mux.Handle("GET", "/research", tigertonic.Timed(tigertonic.Marshaled(getResearchHandler), "getAllResearchHandler", nil))
+	mux.Handle("POST", "/research", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postResearchHandler), "postResearchHandler", nil)))
+	mux.Handle("GET", "/research/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getResearchHandler), "getResearchHandler", nil)))
+	mux.Handle("GET", "/research", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getResearchHandler), "getAllResearchHandler", nil)))
 
-	mux.Handle("POST", "/vote", tigertonic.Timed(tigertonic.Marshaled(postVoteHandler), "postVoteHandler", nil))
-	mux.Handle("GET", "/vote/{id}", tigertonic.Timed(tigertonic.Marshaled(getVoteHandler), "getVoteHandler", nil))
-	mux.Handle("GET", "/votes/{researchID}", tigertonic.Timed(tigertonic.Marshaled(getVotesHandler), "getResearchVotesHandler", nil))
-	mux.Handle("GET", "/votes", tigertonic.Timed(tigertonic.Marshaled(getVotesHandler), "getAllVotesHandler", nil))
+	mux.Handle("POST", "/vote", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postVoteHandler), "postVoteHandler", nil)))
+	mux.Handle("GET", "/vote/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getVoteHandler), "getVoteHandler", nil)))
+	mux.Handle("GET", "/votes/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getVotesHandler), "getResearchVotesHandler", nil)))
+	mux.Handle("GET", "/votes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getVotesHandler), "getAllVotesHandler", nil)))
 
-	mux.Handle("GET", "/review/{researchID}/{mitarbeiterID}", tigertonic.Timed(tigertonic.Marshaled(getReviewHandler), "getAllReviewsHandler", nil))
-	mux.Handle("GET", "/review/{researchID}/{mitarbeiterID}/{limit}", tigertonic.Timed(tigertonic.Marshaled(getReviewHandler), "getNumReviewsHandler", nil))
+	mux.Handle("GET", "/review/{researchID}/{mitarbeiterID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewHandler), "getAllReviewsHandler", nil)))
+	mux.Handle("GET", "/review/{researchID}/{mitarbeiterID}/{limit}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewHandler), "getNumReviewsHandler", nil)))
+	mux.Handle("GET", "/review/stats/{researchID}/{mitarbeiterID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewStatsHandler), "getReviewStatsPerMitarbeiterHandler", nil)))
+	mux.Handle("GET", "/review/stats/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewStatsHandler), "getReviewStatsHandler", nil)))
 
-	mux.Handle("POST", "/mitarbeiter", tigertonic.Timed(tigertonic.Marshaled(postMitarbeiterHandler), "postMitarbeiterHandler", nil))
-	mux.Handle("GET", "/mitarbeiter/{id}", tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getMitarbeiterHandler", nil))
-	mux.Handle("GET", "/mitarbeiter", tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getAllMitarbeitersHandler", nil))
+	mux.Handle("GET", "/approved/{researchID}/{threshold}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getApprovedHandler), "getApprovedHandler", nil)))
 
-	mux.Handle("GET", "/tag", tigertonic.Timed(tigertonic.Marshaled(getTagsHandler), "getAllTags", nil))
+	mux.Handle("POST", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postMitarbeiterHandler), "postMitarbeiterHandler", nil)))
+	mux.Handle("GET", "/mitarbeiter/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getMitarbeiterHandler", nil)))
+	mux.Handle("GET", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getAllMitarbeitersHandler", nil)))
+
+	mux.Handle("GET", "/tag", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTagsHandler), "getAllTags", nil)))
 
 	//mux.Handle("GET", "/", tigertonic.Timed(tigertonic.Marshaled(myHandler), "myHandler", nil))
 	tigertonic.NewServer(":8000", tigertonic.Logged(mux, nil)).ListenAndServe()

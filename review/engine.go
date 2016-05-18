@@ -3,9 +3,12 @@ package review
 type VoteStatus int
 
 const (
+	//UNSURE in vote
 	UNSURE VoteStatus = -1
-	No     VoteStatus = 0
-	YES    VoteStatus = 1
+	//NO in vote
+	No VoteStatus = 0
+	//YES in vote
+	YES VoteStatus = 1
 )
 
 type Research struct {
@@ -41,4 +44,11 @@ type Vote struct {
 	Tags                []Tag       `json:"tags"`
 	AssociatedArticleID int         `json:"associated_article_id"`
 	Review              string      `json:"review"`
+}
+
+//Stats enholds statistic info about reviews
+type Stats struct {
+	ReviewedArticles  int `json:"reviewed_articles"`
+	RemainingArticles int `json:"remaining_articles"`
+	MitarbeiterID     int `json:"mitarbeiter_id"`
 }

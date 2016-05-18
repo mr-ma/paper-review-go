@@ -1,4 +1,4 @@
-package db
+package data
 
 import (
 	"database/sql"
@@ -14,7 +14,6 @@ type Driver interface {
 	OpenDB() (*sql.DB, error)
 	Query(query string) (*sql.DB, *sql.Stmt, error)
 	Insert(tableName string, columns string, values ...interface{}) (affected int64, id int64, err error)
-	Delete(tableName string, values ...interface{}) (affected int64, err error)
 	InsertArticle(article review.Article, researchID int64) (int64, error)
 	InsertResearch(research review.Research) (int64, int64, error)
 	InsertTag(tag review.Tag) (affected int64, id int64, err error)
@@ -31,6 +30,9 @@ type Driver interface {
 	ReviewPapers(researchID int64, mitarbeiterID int64) (a []review.Article, r review.Research, err error)
 	ReviewNumPapers(researchID int64, mitarbeiterID int64, limit int) (a []review.Article, r review.Research, err error)
 	SelectAllTags() ([]review.Tag, error)
+	GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s review.Stats, err error)
+	GetResearchStats(researchID int64) (s []review.Stats, err error)
+	GetApprovedPapers(researchID int64, threshold int) ([]review.Article, error)
 }
 
 //MySQLDriver mysql startup settings
@@ -119,7 +121,13 @@ func (d MySQLDriver) SelectVote(id int64) (review.Vote, error) {
 	v := review.Vote{}
 	db, err := d.OpenDB()
 	checkErr(err)
-	db, stmt, err := d.Query("select Votes.VoteId, vote_State,Review,a.ArticleID,m.Id MitarbeiterID,m.Nme,t.TagId as TagID,t.text as TagText from Votes inner join articles a on Votes.ArticleId = a.ArticleID inner join Mitarbeiters m on Votes.MitarbeiterId = m.Id left outer join Vote_Tags vt on Votes.VoteId =vt.VoteId left outer join Tags t on vt.Tag_Id = t.TagId where votes.VoteId=?")
+	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
+		m.Id MitarbeiterID,m.Nme,t.TagId as TagID,t.text as TagText
+		from Votes inner join articles a
+		on Votes.ArticleId = a.ArticleID inner join Mitarbeiters m
+		on Votes.MitarbeiterId = m.Id left outer join Vote_Tags vt
+		on Votes.VoteId =vt.VoteId left outer join Tags t
+		on vt.Tag_Id = t.TagId where votes.VoteId=?`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(id)
@@ -224,8 +232,6 @@ where a.ResearchId=?`)
 	}
 	return votearray, err
 }
-
-//SelectAllTags retrieves all tags stored in the system
 func (d MySQLDriver) SelectAllTags() (tags []review.Tag, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
@@ -277,7 +283,6 @@ func (d MySQLDriver) SelectAllMitarbeiters() (marr []review.Mitarbeiter, err err
 	return marr, err
 }
 
-//ReviewPapers get all papers to review
 func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articleArray []review.Article, r review.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
@@ -331,22 +336,6 @@ func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limi
 	return articleArray, r, err
 }
 
-//Delete general insert function
-func (d MySQLDriver) Delete(query string, values ...interface{}) (affected int64, err error) {
-	db, err := d.OpenDB()
-	if err != nil {
-		checkErr(err)
-	}
-	defer db.Close()
-	stmt, err := db.Prepare(query)
-	checkErr(err)
-	res, err := stmt.Exec(values...)
-	checkErr(err)
-	affect, err := res.RowsAffected()
-	checkErr(err)
-	return affect, err
-}
-
 //Insert general insert function
 func (d MySQLDriver) Insert(tableName string, columns string, values ...interface{}) (affected int64, id int64, err error) {
 	db, err := d.OpenDB()
@@ -354,10 +343,13 @@ func (d MySQLDriver) Insert(tableName string, columns string, values ...interfac
 		checkErr(err)
 	}
 	defer db.Close()
+	fmt.Printf("tablename:%+v columns:%+v values:%+v\n", tableName, columns, values)
+
 	stmt, err := db.Prepare("INSERT " + tableName + " SET " + columns)
 	checkErr(err)
 	res, err := stmt.Exec(values...)
 	checkErr(err)
+	fmt.Printf("res:%+v \n", res)
 	id, err = res.LastInsertId()
 	affect, err := res.RowsAffected()
 	checkErr(err)
@@ -387,12 +379,6 @@ func (d MySQLDriver) InsertResearch(research review.Research) (int64, int64, err
 func (d MySQLDriver) InsertTag(tag review.Tag) (affected int64, id int64, err error) {
 	affect, id, err := d.Insert("Tags", "Text=?", tag.Text)
 	return affect, id, err
-}
-
-func (d MySQLDriver) deleteOldVotes(articleID int, mitarbeiterID int) (int64, error) {
-	affect, err := d.Delete(`delete from votes
-where votes.mitarbeiterid =? and votes.articleid =?`, articleID, mitarbeiterID)
-	return affect, err
 }
 
 //InsertVoteTags insert tags corresponding to a vote
@@ -431,9 +417,6 @@ func (d MySQLDriver) InsertVote(vote review.Vote) (affected int64, id int64, err
 	}
 	checkErr(err)
 
-	//remove old vote
-	_, err = d.deleteOldVotes(vote.AssociatedArticleID, vote.Voter.ID)
-	checkErr(err)
 	affect, id, err := d.Insert("Votes", "Vote_State=?,MitarbeiterId=?,ArticleId=?,Review=?",
 		vote.State, vote.Voter.ID, vote.AssociatedArticleID, vote.Review)
 	//Insert Tags
@@ -446,6 +429,83 @@ func (d MySQLDriver) InsertMitarbeiter(mitarbeiter review.Mitarbeiter) (affected
 	affect, id, err := d.Insert("Mitarbeiters", "Pass_Hash=?,Nme=?", mitarbeiter.PassHash, mitarbeiter.Name)
 	return affect, id, err
 }
+
+//GetResearchStatsPerMitarbeiter get statistics on reviewing process
+func (d MySQLDriver) GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s review.Stats, err error) {
+	db, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query(`select LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
+from articles cross join Mitarbeiters
+left outer join votes on articles.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
+inner join (select ResearchId,count(*) CountArticles from articles
+group by ResearchId) ar on articles.ResearchId = ar.ResearchId
+group by articles.ResearchId, Mitarbeiters.Id
+having articles.ResearchId = ? and Mitarbeiters.Id = ?`)
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query(researchID, mitarbeiterID)
+	checkErr(err)
+	allArticles := 0
+	for rows.Next() {
+		rows.Scan(&s.ReviewedArticles, &allArticles)
+	}
+	s.RemainingArticles = allArticles - s.ReviewedArticles
+	s.MitarbeiterID = int(mitarbeiterID)
+	return s, err
+}
+
+//GetResearchStats get statistics on reviewing process
+func (d MySQLDriver) GetResearchStats(researchID int64) (s []review.Stats, err error) {
+	db, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query(`select Mitarbeiters.Id, LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
+from articles cross join Mitarbeiters
+left outer join votes on articles.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
+inner join (select ResearchId,count(*) CountArticles from articles
+group by ResearchId) ar on articles.ResearchId = ar.ResearchId
+group by articles.ResearchId, Mitarbeiters.Id
+having articles.ResearchId = ? `)
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query(researchID)
+	checkErr(err)
+
+	for rows.Next() {
+		allArticles := 0
+		stats := review.Stats{}
+		rows.Scan(&stats.MitarbeiterID, &stats.ReviewedArticles, &allArticles)
+		stats.RemainingArticles = allArticles - stats.ReviewedArticles
+		s = append(s, stats)
+	}
+
+	return s, err
+}
+
+//GetApprovedPapers get approved papers by threshold
+func (d MySQLDriver) GetApprovedPapers(researchID int64, threshold int) (articles []review.Article, err error) {
+	db, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
+a.Keywords,a.Abstract,a.Journal,a.ResearchId,a.Authors
+from articles a
+inner join votes on a.ArticleId = votes.ArticleId
+group by a.ArticleId,a.ResearchId
+having a.ResearchId = ? and count(votes.Vote_State) > ?`)
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query(researchID, threshold)
+	checkErr(err)
+
+	for rows.Next() {
+		a := review.Article{}
+		rows.Scan(&a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords,
+			&a.Abstract, &a.Journal, &a.AssociatedResearchId, &a.Authors)
+		articles = append(articles, a)
+	}
+
+	return articles, err
+}
+
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
