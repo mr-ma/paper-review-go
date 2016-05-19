@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Review Screen</title>
+
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+ <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/scripts.js"></script>
+
+		<script>
+		var r_id ;
+		var authors;
+		var title;
+		var abstract;
+		
+	  function onLoad() {
+	  getReview(); 
+	  PopulateCheckBoxList();
+	  }
+
+function getReview() {
+
+var researchID = urlParam('researchID');
+var mitID =  urlParam('id');
+
+  var mitarbeiterAPI = "http://131.159.48.41:8000/review/"+researchID+"/"+mitID+"/1";
+  $.getJSON( mitarbeiterAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	console.log('response contains: '+data.length);
+
+      $.each( data, function( i, item ) {		
+			 r_id = item.id;			 
+			 authors = item.authors;
+			 authorsSpan.innerText=item.authors ;
+			 title = item.title;
+			 titleHeader.innerText= item.title;
+			  abstract = item.abstract;
+			 abstractHeader.innerText = item.abstract;		 
+	
+			  });
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+}
+
+function Postreview( state) {
+var researchID = urlParam('researchID');
+var mitID =  urlParam('id');
+
+
+	var requestData = {};
+	requestData["state"] = state;
+	var voter={};
+	voter["id"] = mitID;
+	requestData["voter"] = voter;
+	var tags = [];
+	
+$("input:checkbox").each(function(){
+    var $this = $(this);
+
+    if($this.is(":checked")){
+		tags.push({
+			id: $this.attr("id"),
+		});
+	
+    
+    }
+});
+
+var newTag = $("#newTag").val();
+	if( $.trim(newTag).length>0 ) {// new tag
+		  tags.push({
+			Text: newTag,
+		});
+	}
+	
+	requestData["tags"]= tags;
+	requestData["associated_article_id"] = getId();
+	
+	requestData["review"] = $("#comment").val();
+                
+	
+
+
+	var requestJson = JSON.stringify(requestData);
+	console.log(requestJson);
+
+	var voteAPI = "http://131.159.48.41:8000/vote";
+
+	
+$.ajax({
+  type: "POST",
+  url: voteAPI,
+  data: requestJson,
+  dataType: "json",
+  contentType: "application/json; charset=utf-8",
+  success: function(msg){
+      alert("Review Complete!");
+	 location.reload();
+  },
+  error: function(XMLHttpRequest, textStatus, errorThrown) {
+    	alert( "Request Failed: " + errorThrown + textStatus);
+		 location.reload();
+  }
+});
+}
+
+
+function getId(){
+
+	return r_id;
+        }
+function getAuthors(){
+
+	return authors;
+        }
+function getTitle(){
+
+	return title;
+        }
+function getAbstract(){
+
+	return abstract;
+        }
+		
+function urlParam(name){
+
+	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	return results[1] || 0;
+        }
+		
+	
+   function PopulateCheckBoxList() {
+   
+  var tagsAPI = "http://131.159.48.41:8000/tag";
+  $.getJSON( tagsAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	console.log('response contains: '+data.length);
+
+    CreateCheckBoxList(data);
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+   }
+           
+		   
+		  function CreateCheckBoxList(checkboxlistItems) {
+		  $("#frame").html('');
+           var name = "Text";
+			var id = "ID";
+
+			$("#frame").html('<fieldset data-role="controlgroup"  class="list-group checked-list-box" ><legend>Tag this paper :</legend></fieldset>');
+			for (var i = 0; i < checkboxlistItems.length; i++) {
+				 name = checkboxlistItems[i].Text;
+				  id = checkboxlistItems[i].ID;
+				$("fieldset").append('<input type="checkbox" name="' + name + '" id="' + id + '"><label for="id' + id + '">' + name + '</label> <br>');
+				
+				}
+				$("fieldset").append('<input type="text"  class="form-control" id="newTag"><br>');
+					
+   
+		   
+        }  
+
+      
+
+  window.onload = onLoad();
+	</script>
+  </head>
+  
+  <body>
+
+    <div class="container-fluid">
+	<div class="row">
+		<div class="col-md-4">
+			<h3  class="text-center">
+				Name: <script> document.write(urlParam('name')) </script>
+			</h3>
+		</div>
+		<div class="col-md-4">
+			<h3>
+				Remaining Reviews: NA
+			</h3>
+		</div>
+		<div class="col-md-4">
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+		
+			  <span class="label label-default" id="authorsSpan">Authors</span>
+			<div class="page-header">
+				<h1 id="titleHeader">
+					Title 
+					
+				</h1>
+			</div>
+			<h2>
+				Abstract
+			</h2>
+			<p id="abstractHeader">
+				
+			</p>
+			<p>
+				<a class="btn" href="#">View details »</a>
+			</p>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-4">
+
+			<div class="well" style="max-height: 200px;overflow: auto;" id="frame">	</div>
+			
+
+		</div>
+
+		<div class="col-md-8">
+			 		<div class="form-group">
+  <label for="comment">Comment:</label>
+  <textarea class="form-control" rows="5" id="comment"></textarea>
+</div>
+			
+			<button type="button"  id="acceptBotton" class="btn btn-success">
+				Accept
+			</button>
+ 
+			<button type="button" id="rejectBotton" class="btn btn-danger">
+				Reject
+			</button>
+		</div>
+	
+			
+			</div>	
+	</div>
+</div>
+<script>
+$( "#acceptBotton" ).click(function() {
+ Postreview(1);
+});
+
+$( "#rejectBotton" ).click(function() {
+   Postreview(0);
+});
+
+
+</script>
+   
+  </body>
+</html>

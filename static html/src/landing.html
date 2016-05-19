@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Literture Review Tool</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+	
+	 <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/scripts.js"></script>
+	
+
+
+  </head>
+  <body>
+
+    <div class="container-fluid">
+	<div class="row">
+		<div class="col-md-6">
+			<div id="list" class="list-group">
+				 <span href="#" class="list-group-item active">List of Reviewers</span>
+
+			</div>
+		</div>
+		<div class="col-md-6">
+		</div>
+	</div>
+
+
+</div>
+
+	
+	<script>
+(function() {
+  var mitarbeiterAPI = "http://131.159.48.41:8000/mitarbeiter";
+  $.getJSON( mitarbeiterAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	console.log('response contains: '+data.length);
+
+      $.each( data, function( i, item ) {		
+			var r_id = item.id;
+			var name = item.name;
+		   $('#list').append('<div id="'+ r_id +'" class="list-group-item"><a href="./review.html?name='+name +'&id='+r_id +'&researchID=4" class="list-group-item active">'+name +' <span class="badge">14</span> </a></div>')
+	  });
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+	
+
+	
+})();
+</script>
+
+  </body>
+</html>
