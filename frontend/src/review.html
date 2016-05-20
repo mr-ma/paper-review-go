@@ -36,7 +36,7 @@ var mitID =  urlParam('id');
   })
     .done(function( data ) {
 	data = data.response;
-	console.log('response contains: '+data.length);
+	//console.log('response contains: '+data.length);
 
       $.each( data, function( i, item ) {
 			 r_id = item.id;
@@ -75,6 +75,7 @@ $("input:checkbox").each(function(){
     if($this.is(":checked")){
 		tags.push({
 			id: parseInt($this.attr("id")),
+		
 		});
 
 
@@ -82,11 +83,16 @@ $("input:checkbox").each(function(){
 });
 
 var newTag = $("#newTag").val();
+
 	if( $.trim(newTag).length>0 ) {// new tag
-		  tags.push({
-			Text: newTag,
+	var array = newTag.split(",");
+	for (i=0;i<array.length;i++){
+       tags.push({
+			text: array[i],
+			research_id: parseInt(researchID),
 		});
 	}
+		}
 
 	requestData["tags"]= tags;
 	requestData["associated_article_id"] = getId();
@@ -97,7 +103,7 @@ var newTag = $("#newTag").val();
 
 
 	var requestJson = JSON.stringify(requestData);
-	console.log(requestJson);
+	alert(requestJson);
 
 	var voteAPI = APIURL+"vote";
 
@@ -109,12 +115,12 @@ $.ajax({
   dataType: "json",
   contentType: "application/json; charset=utf-8",
   success: function(msg){
-      alert("Review Complete!");
+    //  alert("Review Complete!");
 	 location.reload();
   },
   error: function(XMLHttpRequest, textStatus, errorThrown) {
     	alert( "Request Failed: " + errorThrown + textStatus);
-		 location.reload();
+		// location.reload();
   }
 });
 }
@@ -146,13 +152,13 @@ function urlParam(name){
 
    function PopulateCheckBoxList() {
 
-  var tagsAPI = APIURL+"tag";
+  var tagsAPI = APIURL+"tag/"+urlParam('researchID');
   $.getJSON( tagsAPI, {
     format: "json"
   })
     .done(function( data ) {
 	data = data.response;
-	console.log('response contains: '+data.length);
+	//console.log('response contains: '+data.length);
 
     CreateCheckBoxList(data);
     })
@@ -168,21 +174,23 @@ function urlParam(name){
 		  function CreateCheckBoxList(checkboxlistItems) {
 		  $("#frame").html('');
            var name = "Text";
-			var id = "ID";
+			var id = "id";
 
 			$("#frame").html('<fieldset data-role="controlgroup"  class="list-group checked-list-box" ><legend>Tag this paper :</legend></fieldset>');
-			for (var i = 0; i < checkboxlistItems.length; i++) {
-				 name = checkboxlistItems[i].Text;
-				  id = checkboxlistItems[i].ID;
+			if(checkboxlistItems!= null ){
+				for (var i = 0; i < checkboxlistItems.length; i++) {
+				 name = checkboxlistItems[i].text;
+				  id = checkboxlistItems[i].id;
 				$("fieldset").append('<input type="checkbox" name="' + name + '" id="' + id + '"><label for="id' + id + '">' + name + '</label> <br>');
 
+				}
 				}
 				$("fieldset").append('<input type="text"  class="form-control" id="newTag"><br>');
 
 
 
-        }
-
+        
+}
 
 
   window.onload = onLoad();
@@ -215,16 +223,14 @@ function urlParam(name){
 					Title
 
 				</h1>
-			</div>
+			</div style="overflow-y: scroll;">
 			<h2>
 				Abstract
 			</h2>
 			<p id="abstractHeader">
 
 			</p>
-			<p>
-				<a class="btn" href="#">View details »</a>
-			</p>
+			
 		</div>
 	</div>
 	<div class="row">

@@ -12,17 +12,50 @@
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-
+	
 	 <script src="js/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/scripts.js"></script>
+	
+<script>
+		
+	
+	  function onLoad() {
 
+	  PopulateResearchList();
+	  }
+ function PopulateResearchList() {
+   
+  var tagsAPI = "http://localhost:8000/research";
+  $.getJSON( tagsAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	console.log('response contains: '+data.length);
 
+  var options = $("#options");
+	$.each(data, function() {
+    options.append($("<option />").val(this.id).text(this.id));
+		});
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+   }
+      window.onload = onLoad();       
+</script>
 
   </head>
   <body>
 
     <div class="container-fluid">
+	<div class="selectBox">
+	<select id="options" class="selectboxdiv" data-live-search="true"></select>
+	</div>
 	<div class="row">
 		<div class="col-md-6">
 			<div id="list" class="list-group">
@@ -37,7 +70,7 @@
 
 </div>
 
-
+	
 	<script>
 (function() {
   var mitarbeiterAPI = "http://localhost:8000/mitarbeiter";
@@ -48,13 +81,13 @@
 	data = data.response;
 	console.log('response contains: '+data.length);
 
-      $.each( data, function( i, item ) {
+      $.each( data, function( i, item ) {		
 			var r_id = item.id;
 			var name = item.name;
-		   $('#list').append('<div id="'+ r_id +'" class="list-group-item"><a href="./review.html?name='+name +'&id='+r_id +'&researchID=58" class="list-group-item active">'+name +' <span class="badge">14</span> </a></div>')
+		   $('#list').append('<div id="'+ r_id +'" class="list-group-item"><a href="./review.html?name='+name +'&id='+r_id +'&researchID=62" class="list-group-item active">'+name +' <span class="badge">14</span> </a></div>')
 	  });
     })
-
+	
 	.fail(function( jqxhr, textStatus, error ) {
     var err = textStatus + ", " + error;
    alert( "Request Failed: " + err );
@@ -62,7 +95,7 @@
 	;
 
 
-
+	
 })();
 </script>
 
