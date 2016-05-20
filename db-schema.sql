@@ -41,6 +41,7 @@ CREATE TABLE `Research` (
   `ResearchId` int(11) NOT NULL AUTO_INCREMENT,
   `Questions` varchar(1000) NOT NULL,
   `Review_Template` varchar(2000) DEFAULT NULL,
+  `Title` varchar(100) NOT NULL,
   PRIMARY KEY (`ResearchId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -122,4 +123,4 @@ CREATE TABLE `votes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-05-20 18:35:18
+-- Dump completed on 2016-05-20 18:46:25

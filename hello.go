@@ -57,7 +57,7 @@ func getResearchHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Head
 		resp.Response = research
 	} else {
 		//select all researches
-		all, err := driver.SelectAllResearchWithArticles()
+		all, err := driver.SelectAllResearch()
 		checkErr(err)
 		resp.Response = all
 	}

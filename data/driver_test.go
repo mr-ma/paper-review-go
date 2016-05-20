@@ -35,7 +35,7 @@ func TestInsertArticle(t *testing.T) {
 
 }
 func TestInsertResearch(t *testing.T) {
-	re := review.Research{Questions: "test1", ReviewTemplate: "wrtie whatever"}
+	re := review.Research{Questions: "test1", ReviewTemplate: "wrtie whatever", Title: "ola"}
 	articles := []review.Article{review.Article{Title: "title", Authors: "author"}}
 	re.Articles = articles
 	d := InitMySQLDriver()

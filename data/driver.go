@@ -23,6 +23,7 @@ type Driver interface {
 	SelectMitarbeiter(id int64) (review.Mitarbeiter, error)
 	SelectAllMitarbeiters() ([]review.Mitarbeiter, error)
 	SelectResearchWithArticles(id int64) (r review.Research, err error)
+	SelectAllResearch() (r []review.Research, err error)
 	SelectAllResearchWithArticles() (r []review.Research, err error)
 	SelectVote(id int64) (r review.Vote, err error)
 	SelectAllVotes() (r []review.Vote, err error)
@@ -73,15 +74,21 @@ func (d MySQLDriver) Query(query string) (*sql.DB, *sql.Stmt, error) {
 func (d MySQLDriver) SelectResearchWithArticles(id int64) (r review.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
-	db, stmt, err := d.Query("Select Research.researchid,research.questions,research.Review_template, a.ArticleId, a.Title, a.year, a.cited_by, a.keywords, a.abstract, a.journal, a.authors,a.researchid from research inner join articles a on research.researchid=a.researchid where research.researchid=?")
+	db, stmt, err := d.Query(`Select Research.researchid,research.questions,research.Review_template, research.Title researchTitle,
+		a.ArticleId, a.Title, a.year, a.cited_by, a.keywords, a.abstract, a.journal,
+		a.authors,a.researchid
+		from research left outer join articles a on research.researchid=a.researchid
+		where research.researchid=?`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(id)
 	checkErr(err)
 	for rows.Next() {
 		a := review.Article{}
-		rows.Scan(&r.ID, &r.Questions, &r.ReviewTemplate, &a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords, &a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId)
-		r.Articles = append(r.Articles, a)
+		rows.Scan(&r.ID, &r.Questions, &r.ReviewTemplate, &r.Title, &a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords, &a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId)
+		if a.AssociatedResearchId != 0 {
+			r.Articles = append(r.Articles, a)
+		}
 	}
 	return r, err
 }
@@ -90,7 +97,10 @@ func (d MySQLDriver) SelectResearchWithArticles(id int64) (r review.Research, er
 func (d MySQLDriver) SelectAllResearchWithArticles() (r []review.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
-	db, stmt, err := d.Query("Select Research.researchid,research.questions,research.Review_template, a.ArticleId, a.Title, a.year, a.cited_by, a.keywords, a.abstract, a.journal, a.authors, a.researchid from research inner join articles a on research.researchid=a.researchid")
+	db, stmt, err := d.Query(`Select Research.researchid,research.questions,
+		research.Review_template,research.Title researchTitle, a.ArticleId, a.Title, a.year,
+		a.cited_by, a.keywords, a.abstract, a.journal, a.authors, a.researchid
+		from research inner join articles a on research.researchid=a.researchid`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query()
@@ -100,13 +110,46 @@ func (d MySQLDriver) SelectAllResearchWithArticles() (r []review.Research, err e
 		id := 0
 		questions := ""
 		template := ""
+		title := ""
 		a := review.Article{}
-		rows.Scan(&id, &questions, &template, &a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords, &a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId)
+		rows.Scan(&id, &questions, &template, &title, &a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords, &a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId)
 		research := m[id]
 		research.ID = id
 		research.Questions = questions
 		research.ReviewTemplate = template
+		research.Title = title
 		research.Articles = append(research.Articles, a)
+		m[id] = research
+	}
+	researcharray := []review.Research{}
+	for _, value := range m {
+		researcharray = append(researcharray, value)
+	}
+	return researcharray, err
+}
+
+//SelectAllResearch a research without articles
+func (d MySQLDriver) SelectAllResearch() (r []review.Research, err error) {
+	db, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query(`Select researchid,questions,Review_template,Title
+		from research`)
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	checkErr(err)
+	m := make(map[int]review.Research)
+	for rows.Next() {
+		id := 0
+		title := ""
+		questions := ""
+		template := ""
+		rows.Scan(&id, &questions, &template, &title)
+		research := m[id]
+		research.ID = id
+		research.Title = title
+		research.Questions = questions
+		research.ReviewTemplate = template
 		m[id] = research
 	}
 	researcharray := []review.Research{}
@@ -367,8 +410,8 @@ func (d MySQLDriver) InsertArticle(article review.Article, researchID int64) (in
 
 //InsertResearch insert overall research including articles
 func (d MySQLDriver) InsertResearch(research review.Research) (int64, int64, error) {
-	affect, id, err := d.Insert("Research", "Questions=?,Review_template=?",
-		research.Questions, research.ReviewTemplate)
+	affect, id, err := d.Insert("Research", "Questions=?,Review_template=?,Title=?",
+		research.Questions, research.ReviewTemplate, research.Title)
 	for _, element := range research.Articles {
 		a, _ := d.InsertArticle(element, id)
 		affect += a

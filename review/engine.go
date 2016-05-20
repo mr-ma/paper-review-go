@@ -16,6 +16,7 @@ type Research struct {
 	Questions      string    `json:"questions"`
 	ReviewTemplate string    `json:"review_template"`
 	Articles       []Article `json:"articles"`
+	Title          string    `json:"title"`
 }
 type Article struct {
 	ID                   int    `json:"id"`
