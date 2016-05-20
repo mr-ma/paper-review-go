@@ -202,7 +202,8 @@ func checkErr(err error) {
 func main() {
 	//fmt.Printf("Hello, world.\n")
 	//TODO: Remove cors
-	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins("*")
+	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins("*").AddAllowedHeaders("Origin, X-Requested-With, Content-Type, Accept")
+
 	mux := tigertonic.NewTrieServeMux()
 	mux.Handle("POST", "/research", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postResearchHandler), "postResearchHandler", nil)))
 	mux.Handle("GET", "/research/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getResearchHandler), "getResearchHandler", nil)))

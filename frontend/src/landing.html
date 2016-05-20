@@ -12,11 +12,11 @@
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-	
+
 	 <script src="js/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/scripts.js"></script>
-	
+
 
 
   </head>
@@ -37,10 +37,10 @@
 
 </div>
 
-	
+
 	<script>
 (function() {
-  var mitarbeiterAPI = "http://131.159.48.41:8000/mitarbeiter";
+  var mitarbeiterAPI = "http://localhost:8000/mitarbeiter";
   $.getJSON( mitarbeiterAPI, {
     format: "json"
   })
@@ -48,21 +48,21 @@
 	data = data.response;
 	console.log('response contains: '+data.length);
 
-      $.each( data, function( i, item ) {		
+      $.each( data, function( i, item ) {
 			var r_id = item.id;
 			var name = item.name;
-		   $('#list').append('<div id="'+ r_id +'" class="list-group-item"><a href="./review.html?name='+name +'&id='+r_id +'&researchID=4" class="list-group-item active">'+name +' <span class="badge">14</span> </a></div>')
+		   $('#list').append('<div id="'+ r_id +'" class="list-group-item"><a href="./review.html?name='+name +'&id='+r_id +'&researchID=58" class="list-group-item active">'+name +' <span class="badge">14</span> </a></div>')
 	  });
     })
-	
+
 	.fail(function( jqxhr, textStatus, error ) {
     var err = textStatus + ", " + error;
    alert( "Request Failed: " + err );
 })
 	;
-	
 
-	
+
+
 })();
 </script>
 
