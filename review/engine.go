@@ -34,8 +34,9 @@ type Mitarbeiter struct {
 	PassHash string `json:"pass_hash"`
 }
 type Tag struct {
-	ID   int64
-	Text string
+	ID         int64  `json:"id"`
+	Text       string `json:"text"`
+	ResearchID int    `json:"research_id"`
 }
 type Vote struct {
 	ID                  int         `json:"id"`

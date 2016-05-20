@@ -151,11 +151,15 @@ func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.H
 
 func getTagsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitMySQLDriver()
-	tags, err := driver.SelectAllTags()
-	if err != nil {
-		return http.StatusNotAcceptable, nil, &MyResponse{"0", err.Error()}, nil
+	if i, _ := strconv.ParseInt(u.Query().Get("researchID"), 10, 64); i > 0 {
+		tags, err := driver.SelectAllTags(i)
+		if err != nil {
+
+		}
+		return http.StatusOK, nil, &MyResponse{"0", tags}, nil
 	}
-	return http.StatusOK, nil, &MyResponse{"0", tags}, nil
+	return http.StatusNotAcceptable, nil, &MyResponse{"0", "researchID is missing/malformed"}, nil
+
 }
 
 func getApprovedHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
@@ -225,7 +229,7 @@ func main() {
 	mux.Handle("GET", "/mitarbeiter/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getMitarbeiterHandler", nil)))
 	mux.Handle("GET", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getAllMitarbeitersHandler", nil)))
 
-	mux.Handle("GET", "/tag", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTagsHandler), "getAllTags", nil)))
+	mux.Handle("GET", "/tag/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTagsHandler), "getResearchTags", nil)))
 
 	//mux.Handle("GET", "/", tigertonic.Timed(tigertonic.Marshaled(myHandler), "myHandler", nil))
 	tigertonic.NewServer(":8000", tigertonic.Logged(mux, nil)).ListenAndServe()

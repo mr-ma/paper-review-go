@@ -46,7 +46,7 @@ func TestInsertResearch(t *testing.T) {
 func TestInsertVote(t *testing.T) {
 	vote := review.Vote{State: review.YES, Voter: review.Mitarbeiter{ID: 1, Name: "Mohsen"},
 		AssociatedArticleID: 1,
-		Tags:                []review.Tag{review.Tag{ID: 1, Text: "test1"}, review.Tag{ID: 2, Text: "test2"}}}
+		Tags:                []review.Tag{review.Tag{ID: 1, Text: "test1", ResearchID: 6}, review.Tag{ID: 2, Text: "test2"}}}
 	d := InitMySQLDriver()
 	a, _, err := d.InsertVote(vote)
 	assert.Nil(t, err)
@@ -125,7 +125,7 @@ func TestSelectAllMitarbeiters(t *testing.T) {
 }
 func TestSelectAllTags(t *testing.T) {
 	d := InitMySQLDriver()
-	tags, err := d.SelectAllTags()
+	tags, err := d.SelectAllTags(4)
 	assert.Nil(t, err)
 	assert.NotZero(t, len(tags))
 }

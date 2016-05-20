@@ -29,7 +29,7 @@ type Driver interface {
 	SelectResearchVotes(researchID int64) (r []review.Vote, err error)
 	ReviewPapers(researchID int64, mitarbeiterID int64) (a []review.Article, r review.Research, err error)
 	ReviewNumPapers(researchID int64, mitarbeiterID int64, limit int) (a []review.Article, r review.Research, err error)
-	SelectAllTags() ([]review.Tag, error)
+	SelectAllTags(researchID int64) ([]review.Tag, error)
 	GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s review.Stats, err error)
 	GetResearchStats(researchID int64) (s []review.Stats, err error)
 	GetApprovedPapers(researchID int64, threshold int) ([]review.Article, error)
@@ -122,7 +122,7 @@ func (d MySQLDriver) SelectVote(id int64) (review.Vote, error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
-		m.Id MitarbeiterID,m.Nme,t.TagId as TagID,t.text as TagText
+		m.Id MitarbeiterID,m.Nme,t.TagId as TagID,t.text as TagText,t.ResearchID
 		from Votes inner join articles a
 		on Votes.ArticleId = a.ArticleID inner join Mitarbeiters m
 		on Votes.MitarbeiterId = m.Id left outer join Vote_Tags vt
@@ -136,7 +136,7 @@ func (d MySQLDriver) SelectVote(id int64) (review.Vote, error) {
 
 	for rows.Next() {
 		a := review.Tag{}
-		rows.Scan(&v.ID, &v.State, &v.Review, &v.AssociatedArticleID, &v.Voter.ID, &v.Voter.Name, &a.ID, &a.Text)
+		rows.Scan(&v.ID, &v.State, &v.Review, &v.AssociatedArticleID, &v.Voter.ID, &v.Voter.Name, &a.ID, &a.Text, &a.ResearchID)
 		v.Tags = append(v.Tags, a)
 	}
 	if v.ID <= 0 {
@@ -151,7 +151,7 @@ func (d MySQLDriver) SelectAllVotes() (r []review.Vote, err error) {
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
 m.Id MitarbeiterID,m.Nme
-,t.TagId as TagID,t.text as TagText
+,t.TagId as TagID,t.text as TagText,t.ResearchID
 from Votes inner join articles a
 on Votes.ArticleId = a.ArticleID
 inner join Mitarbeiters m
@@ -170,7 +170,7 @@ left outer join Tags t on vt.Tag_Id = t.TagId`)
 		articleID := 0
 		mit := review.Mitarbeiter{}
 		a := review.Tag{}
-		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text)
+		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text, &a.ResearchID)
 		vote := m[id]
 		vote.ID = id
 		vote.Voter = mit
@@ -194,7 +194,7 @@ func (d MySQLDriver) SelectResearchVotes(researchID int64) (r []review.Vote, err
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
 m.Id MitarbeiterID,m.Nme
-,t.TagId as TagID,t.text as TagText
+,t.TagId as TagID,t.text as TagText,t.ResearchID
 from Votes inner join articles a
 on Votes.ArticleId = a.ArticleID
 inner join Mitarbeiters m
@@ -214,7 +214,7 @@ where a.ResearchId=?`)
 		articleID := 0
 		mit := review.Mitarbeiter{}
 		a := review.Tag{}
-		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text)
+		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text, &a.ResearchID)
 		vote := m[id]
 		vote.ID = id
 		vote.Voter = mit
@@ -232,19 +232,20 @@ where a.ResearchId=?`)
 	}
 	return votearray, err
 }
-func (d MySQLDriver) SelectAllTags() (tags []review.Tag, err error) {
+func (d MySQLDriver) SelectAllTags(researchID int64) (tags []review.Tag, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
-	db, stmt, err := d.Query(`select TagId,Text from Tags`)
+	db, stmt, err := d.Query(`select TagId,Text,ResearchID from Tags where ResearchID=?`)
 	defer stmt.Close()
 	defer db.Close()
-	rows, err := stmt.Query()
+	rows, err := stmt.Query(researchID)
 	checkErr(err)
 	for rows.Next() {
 		id := 0
 		text := ""
-		rows.Scan(&id, &text)
-		tags = append(tags, review.Tag{ID: int64(id), Text: text})
+		researchID := 0
+		rows.Scan(&id, &text, &researchID)
+		tags = append(tags, review.Tag{ID: int64(id), Text: text, ResearchID: researchID})
 	}
 	return tags, err
 }
@@ -377,13 +378,16 @@ func (d MySQLDriver) InsertResearch(research review.Research) (int64, int64, err
 
 //InsertTag insert article tags
 func (d MySQLDriver) InsertTag(tag review.Tag) (affected int64, id int64, err error) {
-	affect, id, err := d.Insert("Tags", "Text=?", tag.Text)
+	affect, id, err := d.Insert("Tags", "Text=?, ResearchID=?", tag.Text, tag.ResearchID)
 	return affect, id, err
 }
 
 //InsertVoteTags insert tags corresponding to a vote
 func (d MySQLDriver) InsertVoteTags(tags []review.Tag, voteID int64) (affected int64, err error) {
 	for _, tag := range tags {
+		if tag.ResearchID == 0 {
+			return 0, errors.New("Tag.ResearchID is missing")
+		}
 		if tag.ID <= 0 {
 			//tag doesn't exist
 			//first query by Text
