@@ -428,10 +428,10 @@ func (d MySQLDriver) InsertTag(tag review.Tag) (affected int64, id int64, err er
 //InsertVoteTags insert tags corresponding to a vote
 func (d MySQLDriver) InsertVoteTags(tags []review.Tag, voteID int64) (affected int64, err error) {
 	for _, tag := range tags {
-		if tag.ResearchID == 0 {
-			return 0, errors.New("Tag.ResearchID is missing")
-		}
 		if tag.ID <= 0 {
+			if tag.ResearchID == 0 {
+				return 0, errors.New("Tag.ResearchID is missing")
+			}
 			//tag doesn't exist
 			//first query by Text
 			// TODO: figure this out
@@ -467,7 +467,11 @@ func (d MySQLDriver) InsertVote(vote review.Vote) (affected int64, id int64, err
 	affect, id, err := d.Insert("Votes", "Vote_State=?,MitarbeiterId=?,ArticleId=?,Review=?",
 		vote.State, vote.Voter.ID, vote.AssociatedArticleID, vote.Review)
 	//Insert Tags
-	d.InsertVoteTags(vote.Tags, id)
+	fmt.Println(vote.Tags)
+	affect, err = d.InsertVoteTags(vote.Tags, id)
+
+	checkErr(err)
+
 	return affect, id, err
 }
 
