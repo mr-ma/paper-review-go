@@ -18,7 +18,7 @@
     <script src="js/scripts.js"></script>
 	
 <script>
-		
+		var APIURL = 'http://localhost:8000/';
 	
 	  function onLoad() {
 
@@ -26,7 +26,7 @@
 	  }
  function PopulateResearchList() {
    
-  var tagsAPI = "http://localhost:8000/research";
+  var tagsAPI = APIURL+"research";
   $.getJSON( tagsAPI, {
     format: "json"
   })
@@ -38,6 +38,35 @@
 	$.each(data, function() {
     options.append($("<option />").val(this.id).text(this.title));
 		});
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+   }
+   
+    function PopulateStats() {
+   
+   var statAPI=  APIURL+"review/stats/"+getSelectedResearch();
+  $.getJSON( statAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	//console.log('response contains: '+data.length);
+
+
+     $.each( data, function( i, item ) {		
+			var reviewedArticles = item.reviewed_articles;
+			var remainingArticles = item.remaining_articles;
+			var id = item.mitarbeiter_id;
+			console.log(remainingArticles+" "+reviewedArticles);
+			
+			$('span#stat_'+id+'').html(reviewedArticles+"/"+remainingArticles);
+	  });
+
     })
 	
 	.fail(function( jqxhr, textStatus, error ) {
@@ -75,7 +104,7 @@
 	
 
 (function() {
-  var mitarbeiterAPI = "http://localhost:8000/mitarbeiter";
+  var mitarbeiterAPI = APIURL+"mitarbeiter";
   $.getJSON( mitarbeiterAPI, {
     format: "json"
   })
@@ -83,13 +112,16 @@
 	data = data.response;
 	console.log('response contains: '+data.length);
 
+	
+	
       $.each( data, function( i, item ) {		
 			var id = item.id;
 			var name = item.name;
-		   $('#list').append('<div id="'+ id +'" class="list-group-item"><a href="#" name='+name+' id='+id+' class="list-group-item active">'+name +' <span class="badge">14</span> </a></div>')
+		   $('#list').append('<div id="'+ id +'" class="list-group-item"><a href="#" name='+name+' id='+id+' class="list-group-item active">'+name +' <span id="stat_'+ id +'" class="badge">14</span> </a></div>')
 	  });
+	  PopulateStats();
     })
-	
+	 
 	.fail(function( jqxhr, textStatus, error ) {
     var err = textStatus + ", " + error;
    alert( "Request Failed: " + err );

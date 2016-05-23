@@ -25,6 +25,7 @@
 	  function onLoad() {
 	  getReview();
 	  PopulateCheckBoxList();
+	  PopulateStats();
 	  }
 
 function getReview() {
@@ -42,7 +43,7 @@ var mitID =  urlParam('id');
 
       $.each( data, function( i, item ) {
 			 r_id = item.id;
-			 authors = item.authors;
+			 authors = item.authors+"";
 			 citedBy = item.cited_by;
 			 authorsSpan.innerText=authors + " ["+citedBy+" citation(s)]" ;
 			 title = item.title;
@@ -197,6 +198,31 @@ function urlParam(name){
 }
 
 
+ function PopulateStats() {
+   
+   var statAPI=  APIURL+"review/stats/"+urlParam('researchID')+"/"+urlParam('id');
+  $.getJSON( statAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+//	console.log(statAPI+'response contains: '+data["reviewed_articles"]);
+
+	var reviewedArticles = data.reviewed_articles;
+	var remainingArticles = data.remaining_articles;
+	console.log(remainingArticles+"-"+reviewedArticles);
+	// titleHeader.innerText= "Reviews: "reviewedArticles+" /"+remainingArticles);
+	$('#stats').html("Completed:"+reviewedArticles+" Remaining: "+remainingArticles);
+
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+   }
+
   window.onload = onLoad();
 	</script>
   </head>
@@ -211,8 +237,8 @@ function urlParam(name){
 			</h3>
 		</div>
 		<div class="col-md-4">
-			<h3>
-				Remaining Reviews: NA
+			<h3 id="stats">
+	
 			</h3>
 		</div>
 		<div class="col-md-4">
