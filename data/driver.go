@@ -402,9 +402,9 @@ func (d MySQLDriver) Insert(tableName string, columns string, values ...interfac
 
 //InsertArticle insert publication
 func (d MySQLDriver) InsertArticle(article review.Article, researchID int64) (int64, error) {
-	affect, _, err := d.Insert("Articles", "Title=?,Authors=?,year=?,Cited_by=?,Keywords=?,Abstract=?,Journal=?,ResearchId=?",
+	affect, _, err := d.Insert("Articles", "Title=?,Authors=?,year=?,Cited_by=?,Keywords=?,Abstract=?,Journal=?,File=?,Source=?,ResearchId=?",
 		article.Title, article.Authors, article.Year, article.CitedBy, article.Keywords,
-		article.Abstract, article.Journal, researchID)
+		article.Abstract, article.Journal, article.File, article.Source, researchID)
 	return affect, err
 }
 

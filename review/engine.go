@@ -27,6 +27,8 @@ type Article struct {
 	Keywords             string `json:"keywords"`
 	Abstract             string `json:"abstract"`
 	Journal              string `json:"journal"`
+	File                 string `json:"file"`
+	Source               string `json:"source"`
 	AssociatedResearchId int64  `json:"associated_research_id"`
 }
 type Mitarbeiter struct {

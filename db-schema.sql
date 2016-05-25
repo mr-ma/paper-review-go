@@ -27,7 +27,7 @@ CREATE TABLE `Mitarbeiters` (
   `Pass_Hash` binary(32) NOT NULL,
   `Nme` varchar(100) NOT NULL,
   PRIMARY KEY (`Id`)
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -43,7 +43,7 @@ CREATE TABLE `Research` (
   `Review_Template` varchar(2000) DEFAULT NULL,
   `Title` varchar(100) NOT NULL,
   PRIMARY KEY (`ResearchId`)
-) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -58,7 +58,7 @@ CREATE TABLE `Tags` (
   `Text` varchar(500) NOT NULL,
   `ResearchID` int(11) NOT NULL,
   PRIMARY KEY (`TagId`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -73,7 +73,7 @@ CREATE TABLE `Vote_Tags` (
   `Tag_Id` int(11) NOT NULL,
   `VoteId` int(11) NOT NULL,
   PRIMARY KEY (`Vote_Tags_Id`)
-) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=129 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -93,8 +93,10 @@ CREATE TABLE `articles` (
   `Journal` varchar(500) DEFAULT NULL,
   `ResearchId` int(11) NOT NULL,
   `Authors` varchar(1000) NOT NULL,
+  `File` varchar(200) NOT NULL,
+  `Source` varchar(50) NOT NULL,
   PRIMARY KEY (`ArticleId`)
-) ENGINE=InnoDB AUTO_INCREMENT=1084 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1088 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -111,7 +113,7 @@ CREATE TABLE `votes` (
   `ArticleId` int(11) NOT NULL,
   `Review` varchar(5000) DEFAULT NULL,
   PRIMARY KEY (`VoteId`)
-) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -123,4 +125,4 @@ CREATE TABLE `votes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-05-20 18:46:25
+-- Dump completed on 2016-05-25 17:46:35
