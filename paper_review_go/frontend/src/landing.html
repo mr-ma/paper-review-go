@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Literture Review Tool</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+	
+	 <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/scripts.js"></script>
+	
+<script>
+		var APIURL = 'http://localhost:8000/';
+	
+	  function onLoad() {
+
+	  PopulateResearchList();
+	  }
+ function PopulateResearchList() {
+   
+  var tagsAPI = APIURL+"research";
+  $.getJSON( tagsAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	//console.log('response contains: '+data.length);
+
+  var options = $("#options");
+	$.each(data, function() {
+    options.append($("<option />").val(this.id).text(this.title));
+		});
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+   }
+   
+    function PopulateStats() {
+   
+   var statAPI=  APIURL+"review/stats/"+getSelectedResearch();
+  $.getJSON( statAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	//console.log('response contains: '+data.length);
+
+
+     $.each( data, function( i, item ) {		
+			var reviewedArticles = item.reviewed_articles;
+			var remainingArticles = item.remaining_articles;
+			var id = item.mitarbeiter_id;
+			console.log(remainingArticles+" "+reviewedArticles);
+			
+			$('span#stat_'+id+'').html(reviewedArticles+"/"+remainingArticles);
+	  });
+
+    })
+	
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+   }
+      window.onload = onLoad();       
+</script>
+
+  </head>
+  <body>
+
+    <div class="container-fluid">
+	<div class="selectBox">
+	<select id="options" class="selectboxdiv" data-live-search="true"></select>
+	</div>
+	<div class="row">
+		<div class="col-md-6">
+			<div id="list" class="list-group">
+				 <span href="#" class="list-group-item active">List of Reviewers</span>
+
+			</div>
+		</div>
+		<div class="col-md-6">
+		</div>
+	</div>
+
+
+</div>
+
+	
+	<script>
+	
+
+(function() {
+  var mitarbeiterAPI = APIURL+"mitarbeiter";
+  $.getJSON( mitarbeiterAPI, {
+    format: "json"
+  })
+    .done(function( data ) {
+	data = data.response;
+	console.log('response contains: '+data.length);
+
+	
+	
+      $.each( data, function( i, item ) {		
+			var id = item.id;
+			var name = item.name;
+		   $('#list').append('<div id="'+ id +'" class="list-group-item"><a href="#" name='+name+' id='+id+' class="list-group-item active">'+name +' <span id="stat_'+ id +'" class="badge">14</span> </a></div>')
+	  });
+	  PopulateStats();
+    })
+	 
+	.fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+   alert( "Request Failed: " + err );
+})
+	;
+
+
+	
+})();
+
+
+function getSelectedResearch() {
+
+	  return $( "#options" ).val();
+	  }
+
+$links = document.getElementById("list");
+
+$links.onclick=function(e){
+  element = e.target;
+  if(element.tagName="a" ){
+    var name =element.getAttribute("name");
+   var id = element.getAttribute("id");
+   var researchId= getSelectedResearch();
+   var url = "./review.html?name="+name+"&id="+id+"&researchID="+researchId;
+   console.log(url);
+	window.location.replace(url);
+  }
+  return false;
+}
+</script>
+
+  </body>
+</html>

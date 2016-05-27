@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/mr-ma/paper_review_go/data"
-	"github.com/mr-ma/paper_review_go/review"
+	"github.com/mr-ma/data"
+	"github.com/mr-ma/review"
 	"github.com/rcrowley/go-tigertonic"
 )
 

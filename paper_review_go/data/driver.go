@@ -6,7 +6,7 @@ import (
 	"fmt"
 	//overriding MySqlDriver
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/mr-ma/paper_review_go/review"
+	"github.com/mr-ma/review"
 )
 
 //Driver is the minimum functions for a DB engine
@@ -334,7 +334,7 @@ func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articl
 a.Abstract,a.Journal,a.Authors,a.ResearchId,
 r.Questions,r.Review_Template
 
-from articles_view a inner join Research r on a.researchId =r.researchid
+from Articles a inner join Research r on a.researchId =r.researchid
 left outer join (select * from votes where MitarbeiterId =?) v on a.ArticleId = v.ArticleId
 where v.MitarbeiterId is null and a.researchId=?`)
 	defer stmt.Close()
@@ -361,7 +361,7 @@ func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limi
 	a.Abstract,a.Journal,a.Authors,a.ResearchId,
 	r.Questions,r.Review_Template
 
-	from articles_view a inner join Research r on a.researchId =r.researchid
+	from Articles a inner join Research r on a.researchId =r.researchid
 	left outer join (select * from votes where MitarbeiterId =?) v on a.ArticleId = v.ArticleId
 	where v.MitarbeiterId is null and a.researchId=?
 	limit ?`)
@@ -486,12 +486,12 @@ func (d MySQLDriver) GetResearchStatsPerMitarbeiter(researchID int64, mitarbeite
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
-from articles_view cross join Mitarbeiters
-left outer join votes on articles_view.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
-inner join (select ResearchId,count(*) CountArticles from articles_view
-group by ResearchId) ar on articles_view.ResearchId = ar.ResearchId
-group by articles_view.ResearchId, Mitarbeiters.Id
-having articles_view.ResearchId = ? and Mitarbeiters.Id = ?`)
+from articles cross join Mitarbeiters
+left outer join votes on articles.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
+inner join (select ResearchId,count(*) CountArticles from articles
+group by ResearchId) ar on articles.ResearchId = ar.ResearchId
+group by articles.ResearchId, Mitarbeiters.Id
+having articles.ResearchId = ? and Mitarbeiters.Id = ?`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(researchID, mitarbeiterID)
@@ -510,12 +510,12 @@ func (d MySQLDriver) GetResearchStats(researchID int64) (s []review.Stats, err e
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Mitarbeiters.Id, LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
-from articles_view cross join Mitarbeiters
-left outer join votes on articles_view.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
-inner join (select ResearchId,count(*) CountArticles from articles_view
-group by ResearchId) ar on articles_view.ResearchId = ar.ResearchId
-group by articles_view.ResearchId, Mitarbeiters.Id
-having articles_view.ResearchId = ? `)
+from articles cross join Mitarbeiters
+left outer join votes on articles.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
+inner join (select ResearchId,count(*) CountArticles from articles
+group by ResearchId) ar on articles.ResearchId = ar.ResearchId
+group by articles.ResearchId, Mitarbeiters.Id
+having articles.ResearchId = ? `)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(researchID)
@@ -538,7 +538,7 @@ func (d MySQLDriver) GetApprovedPapers(researchID int64, threshold int) (article
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
 a.Keywords,a.Abstract,a.Journal,a.ResearchId,a.Authors
-from articles_view a
+from articles a
 inner join votes on a.ArticleId = votes.ArticleId
 group by a.ArticleId,a.ResearchId
 having a.ResearchId = ? and count(votes.Vote_State) > ?`)
