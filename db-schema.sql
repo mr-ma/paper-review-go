@@ -38,7 +38,7 @@ CREATE TABLE `articles` (
   `Source` varchar(50) NOT NULL,
   `Enabled` bit(1) NOT NULL DEFAULT b'0',
   PRIMARY KEY (`ArticleId`)
-) ENGINE=InnoDB AUTO_INCREMENT=3442 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -49,7 +49,7 @@ DROP TABLE IF EXISTS `articles_view`;
 /*!50001 DROP VIEW IF EXISTS `articles_view`*/;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
-/*!50001 CREATE VIEW `articles_view` AS SELECT 
+/*!50001 CREATE VIEW `articles_view` AS SELECT
  1 AS `ArticleId`,
  1 AS `Title`,
  1 AS `year`,
@@ -75,7 +75,7 @@ CREATE TABLE `mitarbeiters` (
   `Pass_Hash` binary(32) NOT NULL,
   `Nme` varchar(100) NOT NULL,
   PRIMARY KEY (`Id`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -91,7 +91,7 @@ CREATE TABLE `research` (
   `Review_Template` varchar(2000) DEFAULT NULL,
   `Title` varchar(100) NOT NULL,
   PRIMARY KEY (`ResearchId`)
-) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -106,7 +106,7 @@ CREATE TABLE `tags` (
   `Text` varchar(500) NOT NULL,
   `ResearchID` int(11) NOT NULL,
   PRIMARY KEY (`TagId`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -117,7 +117,7 @@ DROP TABLE IF EXISTS `unique_articles_view`;
 /*!50001 DROP VIEW IF EXISTS `unique_articles_view`*/;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
-/*!50001 CREATE VIEW `unique_articles_view` AS SELECT 
+/*!50001 CREATE VIEW `unique_articles_view` AS SELECT
  1 AS `ArticleId`,
  1 AS `Title`,
  1 AS `year`,
@@ -143,7 +143,7 @@ CREATE TABLE `vote_tags` (
   `Tag_Id` int(11) NOT NULL,
   `VoteId` int(11) NOT NULL,
   PRIMARY KEY (`Vote_Tags_Id`)
-) ENGINE=InnoDB AUTO_INCREMENT=129 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -160,7 +160,7 @@ CREATE TABLE `votes` (
   `ArticleId` int(11) NOT NULL,
   `Review` varchar(5000) DEFAULT NULL,
   PRIMARY KEY (`VoteId`)
-) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
