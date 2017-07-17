@@ -3,7 +3,7 @@ package data
 import (
 	"testing"
 
-	"github.com/mr-ma/paper_review_go/review"
+	"github.com/mr-ma/paper-review-go/review"
 	"github.com/stretchr/testify/assert"
 )
 
