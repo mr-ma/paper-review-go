@@ -6,7 +6,7 @@ import (
 	"fmt"
 	//overriding MySqlDriver
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/mr-ma/paper_review_go/review"
+	"github.com/mr-ma/paper-review-go/review"
 )
 
 //Driver is the minimum functions for a DB engine
