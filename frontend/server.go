@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	fs := http.FileServer(http.Dir("/Users/mohsen-tum/Go/src/github.com/mr-ma/paper_review_go/frontend/src"))
+	fs := http.FileServer(http.Dir("src"))
 	http.Handle("/", fs)
 
 	log.Println("Listening...")
