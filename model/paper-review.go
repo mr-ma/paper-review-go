@@ -1,4 +1,4 @@
-package review
+package model
 
 type VoteStatus int
 

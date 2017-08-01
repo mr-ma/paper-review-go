@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/mr-ma/paper_review_go/data"
-	"github.com/mr-ma/paper_review_go/review"
+	"github.com/mr-ma/paper-review-go/data"
+	"github.com/mr-ma/paper-review-go/model"
 	"github.com/rcrowley/go-tigertonic"
 )
 
@@ -25,13 +25,13 @@ type MyResponse struct {
 // func myHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 // 	return http.StatusOK, nil, &MyResponse{"ID", "STUFF"}, nil
 // }
-func postResearchHandler(u *url.URL, h http.Header, research *review.Research) (int, http.Header, *MyResponse, error) {
+func postResearchHandler(u *url.URL, h http.Header, research *model.Research) (int, http.Header, *MyResponse, error) {
 	driver := data.InitMySQLDriver()
 	_, id, err := driver.InsertResearch(*research)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), "Research inserted"}, nil
 }
-func postVoteHandler(u *url.URL, h http.Header, vote *review.Vote) (int, http.Header, *MyResponse, error) {
+func postVoteHandler(u *url.URL, h http.Header, vote *model.Vote) (int, http.Header, *MyResponse, error) {
 	if vote.State < -1 || vote.State > 1 {
 		return http.StatusNotAcceptable, nil, &MyResponse{"0", "Vote State value can strictly be set to [-1,1]"}, nil
 	}
@@ -126,7 +126,7 @@ func getReviewHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header
 
 }
 
-func postMitarbeiterHandler(u *url.URL, h http.Header, mitarbeiter *review.Mitarbeiter) (int, http.Header, *MyResponse, error) {
+func postMitarbeiterHandler(u *url.URL, h http.Header, mitarbeiter *model.Mitarbeiter) (int, http.Header, *MyResponse, error) {
 	driver := data.InitMySQLDriver()
 	_, id, err := driver.InsertMitarbeiter(*mitarbeiter)
 	checkErr(err)

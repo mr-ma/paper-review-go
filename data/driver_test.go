@@ -3,7 +3,7 @@ package data
 import (
 	"testing"
 
-	"github.com/mr-ma/paper_review_go/review"
+	"github.com/mr-ma/paper-review-go/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,8 +35,8 @@ func TestInsertArticle(t *testing.T) {
 
 }
 func TestInsertResearch(t *testing.T) {
-	re := review.Research{Questions: "test1", ReviewTemplate: "wrtie whatever", Title: "ola"}
-	articles := []review.Article{review.Article{Title: "title", Authors: "author", File: "file", Source: "source"}}
+	re := model.Research{Questions: "test1", ReviewTemplate: "wrtie whatever", Title: "ola"}
+	articles := []model.Article{model.Article{Title: "title", Authors: "author", File: "file", Source: "source"}}
 	re.Articles = articles
 	d := InitMySQLDriver()
 	a, _, err := d.InsertResearch(re)
@@ -44,16 +44,16 @@ func TestInsertResearch(t *testing.T) {
 	assert.True(t, a > 0)
 }
 func TestInsertVote(t *testing.T) {
-	vote := review.Vote{State: review.YES, Voter: review.Mitarbeiter{ID: 1, Name: "Mohsen"},
+	vote := model.Vote{State: model.YES, Voter: model.Mitarbeiter{ID: 1, Name: "Mohsen"},
 		AssociatedArticleID: 1,
-		Tags:                []review.Tag{review.Tag{ID: 1, Text: "test1", ResearchID: 6}, review.Tag{ID: 2, Text: "test2"}}}
+		Tags:                []model.Tag{model.Tag{ID: 1, Text: "test1", ResearchID: 6}, model.Tag{ID: 2, Text: "test2"}}}
 	d := InitMySQLDriver()
 	a, _, err := d.InsertVote(vote)
 	assert.Nil(t, err)
 	assert.True(t, a > 0)
 }
 func TestInsertMitarbeiter(t *testing.T) {
-	m := review.Mitarbeiter{Name: "test mitarbeiter", PassHash: ""}
+	m := model.Mitarbeiter{Name: "test mitarbeiter", PassHash: ""}
 	d := InitMySQLDriver()
 	a, _, err := d.InsertMitarbeiter(m)
 	assert.Nil(t, err)

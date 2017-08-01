@@ -1,77 +1,46 @@
 package data
-
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	//overriding MySqlDriver
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/mr-ma/paper_review_go/review"
+	"github.com/mr-ma/paper-review-go/model"
 )
 
-//Driver is the minimum functions for a DB engine
-type Driver interface {
-	OpenDB() (*sql.DB, error)
-	Query(query string) (*sql.DB, *sql.Stmt, error)
-	Insert(tableName string, columns string, values ...interface{}) (affected int64, id int64, err error)
-	InsertArticle(article review.Article, researchID int64) (int64, error)
-	InsertResearch(research review.Research) (int64, int64, error)
-	InsertTag(tag review.Tag) (affected int64, id int64, err error)
-	InsertVoteTags(tags []review.Tag, voteID int64) (affected int64, err error)
-	InsertVote(vote review.Vote) (affected int64, id int64, err error)
-	InsertMitarbeiter(mitarbeiter review.Mitarbeiter) (affected int64, id int64, err error)
-	SelectMitarbeiter(id int64) (review.Mitarbeiter, error)
-	SelectAllMitarbeiters() ([]review.Mitarbeiter, error)
-	SelectResearchWithArticles(id int64) (r review.Research, err error)
-	SelectAllResearch() (r []review.Research, err error)
-	SelectAllResearchWithArticles() (r []review.Research, err error)
-	SelectVote(id int64) (r review.Vote, err error)
-	SelectAllVotes() (r []review.Vote, err error)
-	SelectResearchVotes(researchID int64) (r []review.Vote, err error)
-	ReviewPapers(researchID int64, mitarbeiterID int64) (a []review.Article, r review.Research, err error)
-	ReviewNumPapers(researchID int64, mitarbeiterID int64, limit int) (a []review.Article, r review.Research, err error)
-	SelectAllTags(researchID int64) ([]review.Tag, error)
-	GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s review.Stats, err error)
-	GetResearchStats(researchID int64) (s []review.Stats, err error)
-	GetApprovedPapers(researchID int64, threshold int) ([]review.Article, error)
+type PaperReviewDriver interface {
+  DriverCore
+	InsertArticle(article model.Article, researchID int64) (int64, error)
+	InsertResearch(research model.Research) (int64, int64, error)
+	InsertTag(tag model.Tag) (affected int64, id int64, err error)
+	InsertVoteTags(tags []model.Tag, voteID int64) (affected int64, err error)
+	InsertVote(vote model.Vote) (affected int64, id int64, err error)
+	InsertMitarbeiter(mitarbeiter model.Mitarbeiter) (affected int64, id int64, err error)
+	SelectMitarbeiter(id int64) (model.Mitarbeiter, error)
+	SelectAllMitarbeiters() ([]model.Mitarbeiter, error)
+	SelectResearchWithArticles(id int64) (r model.Research, err error)
+	SelectAllResearch() (r []model.Research, err error)
+	SelectAllResearchWithArticles() (r []model.Research, err error)
+	SelectVote(id int64) (r model.Vote, err error)
+	SelectAllVotes() (r []model.Vote, err error)
+	SelectResearchVotes(researchID int64) (r []model.Vote, err error)
+	ReviewPapers(researchID int64, mitarbeiterID int64) (a []model.Article, r model.Research, err error)
+	ReviewNumPapers(researchID int64, mitarbeiterID int64, limit int) (a []model.Article, r model.Research, err error)
+	SelectAllTags(researchID int64) ([]model.Tag, error)
+	GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s model.Stats, err error)
+	GetResearchStats(researchID int64) (s []model.Stats, err error)
+	GetApprovedPapers(researchID int64, threshold int) ([]model.Article, error)
 }
 
-//MySQLDriver mysql startup settings
-type MySQLDriver struct {
-	username string
-	pass     string
-	database string
-}
 
 //InitMySQLDriver initialize a new my sql driver instance
-func InitMySQLDriver() Driver {
+func InitMySQLDriver() PaperReviewDriver {
 	return MySQLDriver{username: "root", pass: "P$m7d2", database: "paper_review"}
 }
 
-//OpenDB opens a db connection
-func (d MySQLDriver) OpenDB() (*sql.DB, error) {
-	db, err := sql.Open("mysql", d.username+":"+d.pass+"@/"+d.database)
-	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
-	}
-	return db, err
-}
 
-//Query queries the db according to the query string
-func (d MySQLDriver) Query(query string) (*sql.DB, *sql.Stmt, error) {
-	db, err := d.OpenDB()
-	if err != nil {
-		checkErr(err)
-	}
-	//defer db.Close()
-	fmt.Println(query)
-	stmtOut, err := db.Prepare(query)
-	checkErr(err)
-	return db, stmtOut, err
-}
 
 //SelectResearchWithArticles a research with it's associated articles
-func (d MySQLDriver) SelectResearchWithArticles(id int64) (r review.Research, err error) {
+func (d MySQLDriver) SelectResearchWithArticles(id int64) (r model.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`Select Research.researchid,research.questions,research.Review_template, research.Title researchTitle,
@@ -84,7 +53,7 @@ func (d MySQLDriver) SelectResearchWithArticles(id int64) (r review.Research, er
 	rows, err := stmt.Query(id)
 	checkErr(err)
 	for rows.Next() {
-		a := review.Article{}
+		a := model.Article{}
 		rows.Scan(&r.ID, &r.Questions, &r.ReviewTemplate, &r.Title, &a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords, &a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId)
 		if a.AssociatedResearchId != 0 {
 			r.Articles = append(r.Articles, a)
@@ -94,7 +63,7 @@ func (d MySQLDriver) SelectResearchWithArticles(id int64) (r review.Research, er
 }
 
 //SelectAllResearchWithArticles a research with it's associated articles
-func (d MySQLDriver) SelectAllResearchWithArticles() (r []review.Research, err error) {
+func (d MySQLDriver) SelectAllResearchWithArticles() (r []model.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`Select Research.researchid,research.questions,
@@ -105,13 +74,13 @@ func (d MySQLDriver) SelectAllResearchWithArticles() (r []review.Research, err e
 	defer db.Close()
 	rows, err := stmt.Query()
 	checkErr(err)
-	m := make(map[int]review.Research)
+	m := make(map[int]model.Research)
 	for rows.Next() {
 		id := 0
 		questions := ""
 		template := ""
 		title := ""
-		a := review.Article{}
+		a := model.Article{}
 		rows.Scan(&id, &questions, &template, &title, &a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords, &a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId)
 		research := m[id]
 		research.ID = id
@@ -121,7 +90,7 @@ func (d MySQLDriver) SelectAllResearchWithArticles() (r []review.Research, err e
 		research.Articles = append(research.Articles, a)
 		m[id] = research
 	}
-	researcharray := []review.Research{}
+	researcharray := []model.Research{}
 	for _, value := range m {
 		researcharray = append(researcharray, value)
 	}
@@ -129,7 +98,7 @@ func (d MySQLDriver) SelectAllResearchWithArticles() (r []review.Research, err e
 }
 
 //SelectAllResearch a research without articles
-func (d MySQLDriver) SelectAllResearch() (r []review.Research, err error) {
+func (d MySQLDriver) SelectAllResearch() (r []model.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`Select researchid,questions,Review_template,Title
@@ -138,7 +107,7 @@ func (d MySQLDriver) SelectAllResearch() (r []review.Research, err error) {
 	defer db.Close()
 	rows, err := stmt.Query()
 	checkErr(err)
-	m := make(map[int]review.Research)
+	m := make(map[int]model.Research)
 	for rows.Next() {
 		id := 0
 		title := ""
@@ -152,7 +121,7 @@ func (d MySQLDriver) SelectAllResearch() (r []review.Research, err error) {
 		research.ReviewTemplate = template
 		m[id] = research
 	}
-	researcharray := []review.Research{}
+	researcharray := []model.Research{}
 	for _, value := range m {
 		researcharray = append(researcharray, value)
 	}
@@ -160,8 +129,8 @@ func (d MySQLDriver) SelectAllResearch() (r []review.Research, err error) {
 }
 
 //SelectVote picks an arbitrary vote
-func (d MySQLDriver) SelectVote(id int64) (review.Vote, error) {
-	v := review.Vote{}
+func (d MySQLDriver) SelectVote(id int64) (model.Vote, error) {
+	v := model.Vote{}
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
@@ -178,7 +147,7 @@ func (d MySQLDriver) SelectVote(id int64) (review.Vote, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		a := review.Tag{}
+		a := model.Tag{}
 		rows.Scan(&v.ID, &v.State, &v.Review, &v.AssociatedArticleID, &v.Voter.ID, &v.Voter.Name, &a.ID, &a.Text, &a.ResearchID)
 		v.Tags = append(v.Tags, a)
 	}
@@ -189,7 +158,7 @@ func (d MySQLDriver) SelectVote(id int64) (review.Vote, error) {
 }
 
 //SelectAllVotes selects all votes
-func (d MySQLDriver) SelectAllVotes() (r []review.Vote, err error) {
+func (d MySQLDriver) SelectAllVotes() (r []model.Vote, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
@@ -205,14 +174,14 @@ left outer join Tags t on vt.Tag_Id = t.TagId`)
 	defer db.Close()
 	rows, err := stmt.Query()
 	checkErr(err)
-	m := make(map[int]review.Vote)
+	m := make(map[int]model.Vote)
 	for rows.Next() {
 		id := 0
-		State := review.UNSURE
+		State := model.UNSURE
 		voteReview := ""
 		articleID := 0
-		mit := review.Mitarbeiter{}
-		a := review.Tag{}
+		mit := model.Mitarbeiter{}
+		a := model.Tag{}
 		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text, &a.ResearchID)
 		vote := m[id]
 		vote.ID = id
@@ -224,7 +193,7 @@ left outer join Tags t on vt.Tag_Id = t.TagId`)
 		}
 		m[id] = vote
 	}
-	votearray := []review.Vote{}
+	votearray := []model.Vote{}
 	for _, value := range m {
 		votearray = append(votearray, value)
 	}
@@ -232,7 +201,7 @@ left outer join Tags t on vt.Tag_Id = t.TagId`)
 }
 
 //SelectResearchVotes selects all votes
-func (d MySQLDriver) SelectResearchVotes(researchID int64) (r []review.Vote, err error) {
+func (d MySQLDriver) SelectResearchVotes(researchID int64) (r []model.Vote, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
@@ -249,14 +218,14 @@ where a.ResearchId=?`)
 	defer db.Close()
 	rows, err := stmt.Query(researchID)
 	checkErr(err)
-	m := make(map[int]review.Vote)
+	m := make(map[int]model.Vote)
 	for rows.Next() {
 		id := 0
-		State := review.UNSURE
+		State := model.UNSURE
 		voteReview := ""
 		articleID := 0
-		mit := review.Mitarbeiter{}
-		a := review.Tag{}
+		mit := model.Mitarbeiter{}
+		a := model.Tag{}
 		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text, &a.ResearchID)
 		vote := m[id]
 		vote.ID = id
@@ -269,13 +238,13 @@ where a.ResearchId=?`)
 		}
 		m[id] = vote
 	}
-	votearray := []review.Vote{}
+	votearray := []model.Vote{}
 	for _, value := range m {
 		votearray = append(votearray, value)
 	}
 	return votearray, err
 }
-func (d MySQLDriver) SelectAllTags(researchID int64) (tags []review.Tag, err error) {
+func (d MySQLDriver) SelectAllTags(researchID int64) (tags []model.Tag, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select TagId,Text,ResearchID from Tags where ResearchID=?`)
@@ -288,13 +257,13 @@ func (d MySQLDriver) SelectAllTags(researchID int64) (tags []review.Tag, err err
 		text := ""
 		researchID := 0
 		rows.Scan(&id, &text, &researchID)
-		tags = append(tags, review.Tag{ID: int64(id), Text: text, ResearchID: researchID})
+		tags = append(tags, model.Tag{ID: int64(id), Text: text, ResearchID: researchID})
 	}
 	return tags, err
 }
 
 //SelectMitarbeiter select
-func (d MySQLDriver) SelectMitarbeiter(id int64) (m review.Mitarbeiter, err error) {
+func (d MySQLDriver) SelectMitarbeiter(id int64) (m model.Mitarbeiter, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Id,Nme from Mitarbeiters where Id=?`)
@@ -303,14 +272,14 @@ func (d MySQLDriver) SelectMitarbeiter(id int64) (m review.Mitarbeiter, err erro
 	rows, err := stmt.Query(id)
 	checkErr(err)
 	for rows.Next() {
-		m = review.Mitarbeiter{}
+		m = model.Mitarbeiter{}
 		rows.Scan(&m.ID, &m.Name)
 	}
 	return m, err
 }
 
 //SelectAllMitarbeiters all mitarbeiters
-func (d MySQLDriver) SelectAllMitarbeiters() (marr []review.Mitarbeiter, err error) {
+func (d MySQLDriver) SelectAllMitarbeiters() (marr []model.Mitarbeiter, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Id,Nme from Mitarbeiters`)
@@ -322,12 +291,12 @@ func (d MySQLDriver) SelectAllMitarbeiters() (marr []review.Mitarbeiter, err err
 		id := 0
 		nme := ""
 		rows.Scan(&id, &nme)
-		marr = append(marr, review.Mitarbeiter{ID: id, Name: nme})
+		marr = append(marr, model.Mitarbeiter{ID: id, Name: nme})
 	}
 	return marr, err
 }
 
-func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articleArray []review.Article, r review.Research, err error) {
+func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articleArray []model.Article, r model.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year, a.cited_by,a.Keywords,
@@ -343,7 +312,7 @@ where v.MitarbeiterId is null and a.researchId=?`)
 	checkErr(err)
 
 	for rows.Next() {
-		a := review.Article{}
+		a := model.Article{}
 		rows.Scan(&a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords,
 			&a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId,
 			&r.Questions, &r.ReviewTemplate)
@@ -354,7 +323,7 @@ where v.MitarbeiterId is null and a.researchId=?`)
 }
 
 //ReviewNumPapers review limited papers
-func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limit int) (articleArray []review.Article, r review.Research, err error) {
+func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limit int) (articleArray []model.Article, r model.Research, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year, a.cited_by,a.Keywords,
@@ -371,7 +340,7 @@ func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limi
 	checkErr(err)
 
 	for rows.Next() {
-		a := review.Article{}
+		a := model.Article{}
 		rows.Scan(&a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords, &a.Abstract, &a.Journal, &a.Authors, &a.AssociatedResearchId,
 			&r.Questions, &r.ReviewTemplate)
 		r.ID = a.ID
@@ -380,28 +349,9 @@ func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limi
 	return articleArray, r, err
 }
 
-//Insert general insert function
-func (d MySQLDriver) Insert(tableName string, columns string, values ...interface{}) (affected int64, id int64, err error) {
-	db, err := d.OpenDB()
-	if err != nil {
-		checkErr(err)
-	}
-	defer db.Close()
-	fmt.Printf("tablename:%+v columns:%+v values:%+v\n", tableName, columns, values)
-
-	stmt, err := db.Prepare("INSERT " + tableName + " SET " + columns)
-	checkErr(err)
-	res, err := stmt.Exec(values...)
-	checkErr(err)
-	fmt.Printf("res:%+v \n", res)
-	id, err = res.LastInsertId()
-	affect, err := res.RowsAffected()
-	checkErr(err)
-	return affect, id, err
-}
 
 //InsertArticle insert publication
-func (d MySQLDriver) InsertArticle(article review.Article, researchID int64) (int64, error) {
+func (d MySQLDriver) InsertArticle(article model.Article, researchID int64) (int64, error) {
 	affect, _, err := d.Insert("Articles", "Title=?,Authors=?,year=?,Cited_by=?,Keywords=?,Abstract=?,Journal=?,File=?,Source=?,ResearchId=?",
 		article.Title, article.Authors, article.Year, article.CitedBy, article.Keywords,
 		article.Abstract, article.Journal, article.File, article.Source, researchID)
@@ -409,7 +359,7 @@ func (d MySQLDriver) InsertArticle(article review.Article, researchID int64) (in
 }
 
 //InsertResearch insert overall research including articles
-func (d MySQLDriver) InsertResearch(research review.Research) (int64, int64, error) {
+func (d MySQLDriver) InsertResearch(research model.Research) (int64, int64, error) {
 	affect, id, err := d.Insert("Research", "Questions=?,Review_template=?,Title=?",
 		research.Questions, research.ReviewTemplate, research.Title)
 	for _, element := range research.Articles {
@@ -420,13 +370,13 @@ func (d MySQLDriver) InsertResearch(research review.Research) (int64, int64, err
 }
 
 //InsertTag insert article tags
-func (d MySQLDriver) InsertTag(tag review.Tag) (affected int64, id int64, err error) {
+func (d MySQLDriver) InsertTag(tag model.Tag) (affected int64, id int64, err error) {
 	affect, id, err := d.Insert("Tags", "Text=?, ResearchID=?", tag.Text, tag.ResearchID)
 	return affect, id, err
 }
 
 //InsertVoteTags insert tags corresponding to a vote
-func (d MySQLDriver) InsertVoteTags(tags []review.Tag, voteID int64) (affected int64, err error) {
+func (d MySQLDriver) InsertVoteTags(tags []model.Tag, voteID int64) (affected int64, err error) {
 	for _, tag := range tags {
 		if tag.ID <= 0 {
 			if tag.ResearchID == 0 {
@@ -454,7 +404,7 @@ func (d MySQLDriver) InsertVoteTags(tags []review.Tag, voteID int64) (affected i
 }
 
 //InsertVote insert review vote
-func (d MySQLDriver) InsertVote(vote review.Vote) (affected int64, id int64, err error) {
+func (d MySQLDriver) InsertVote(vote model.Vote) (affected int64, id int64, err error) {
 	if vote.Voter.ID <= 0 {
 		err = errors.New("Voter id is missing")
 	}
@@ -476,13 +426,13 @@ func (d MySQLDriver) InsertVote(vote review.Vote) (affected int64, id int64, err
 }
 
 //InsertMitarbeiter insert researcher
-func (d MySQLDriver) InsertMitarbeiter(mitarbeiter review.Mitarbeiter) (affected int64, id int64, err error) {
+func (d MySQLDriver) InsertMitarbeiter(mitarbeiter model.Mitarbeiter) (affected int64, id int64, err error) {
 	affect, id, err := d.Insert("Mitarbeiters", "Pass_Hash=?,Nme=?", mitarbeiter.PassHash, mitarbeiter.Name)
 	return affect, id, err
 }
 
 //GetResearchStatsPerMitarbeiter get statistics on reviewing process
-func (d MySQLDriver) GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s review.Stats, err error) {
+func (d MySQLDriver) GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s model.Stats, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
@@ -506,7 +456,7 @@ having articles_view.ResearchId = ? and Mitarbeiters.Id = ?`)
 }
 
 //GetResearchStats get statistics on reviewing process
-func (d MySQLDriver) GetResearchStats(researchID int64) (s []review.Stats, err error) {
+func (d MySQLDriver) GetResearchStats(researchID int64) (s []model.Stats, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Mitarbeiters.Id, LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
@@ -523,7 +473,7 @@ having articles_view.ResearchId = ? `)
 
 	for rows.Next() {
 		allArticles := 0
-		stats := review.Stats{}
+		stats := model.Stats{}
 		rows.Scan(&stats.MitarbeiterID, &stats.ReviewedArticles, &allArticles)
 		stats.RemainingArticles = allArticles - stats.ReviewedArticles
 		s = append(s, stats)
@@ -533,7 +483,7 @@ having articles_view.ResearchId = ? `)
 }
 
 //GetApprovedPapers get approved papers by threshold
-func (d MySQLDriver) GetApprovedPapers(researchID int64, threshold int) (articles []review.Article, err error) {
+func (d MySQLDriver) GetApprovedPapers(researchID int64, threshold int) (articles []model.Article, err error) {
 	db, err := d.OpenDB()
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
@@ -548,17 +498,11 @@ having a.ResearchId = ? and count(votes.Vote_State) > ?`)
 	checkErr(err)
 
 	for rows.Next() {
-		a := review.Article{}
+		a := model.Article{}
 		rows.Scan(&a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords,
 			&a.Abstract, &a.Journal, &a.AssociatedResearchId, &a.Authors)
 		articles = append(articles, a)
 	}
 
 	return articles, err
-}
-
-func checkErr(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
