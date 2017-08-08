@@ -12,6 +12,9 @@ import (
 	"github.com/mr-ma/paper-review-go/data"
 	"github.com/mr-ma/paper-review-go/model"
 	"github.com/rcrowley/go-tigertonic"
+	"path/filepath"
+	"strings"
+	"bytes"
 )
 
 //MyRequest standard request
@@ -54,7 +57,51 @@ func main() {
 	// mux.Handle("GET","/",cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIndexHandler), "getIndexHandler", nil)))
 	mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
     p := loadPage("frontend/taxonomy/index.html")
-    fmt.Fprintf(w, "%s", p.Body)
+    fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/pdf/{file}", func(w http.ResponseWriter, r *http.Request) {
+		fp := filepath.Clean(r.URL.Path)
+		var p []byte
+		if strings.Contains(fp,"system.pdf"){
+			p = loadPage("frontend/pdfs/system.pdf")
+		} else if strings.Contains(fp,"attack.pdf"){
+			p = loadPage("frontend/pdfs/attack.pdf")
+		} else if strings.Contains(fp,"defense.pdf"){
+			p = loadPage("frontend/pdfs/defense.pdf")
+		} else if strings.Contains(fp,"relations.pdf"){
+			p = loadPage("frontend/pdfs/view-relations.pdf")
+		}
+
+		b := bytes.NewBuffer(p)
+		// stream straight to client(browser)
+		w.Header().Set("Content-type", "application/pdf")
+
+		if _, err := b.WriteTo(w); err != nil { // <----- here!
+				fmt.Fprintf(w, "%s", err)
+		}
+		w.Write([]byte("PDF Generated"))
+	})
+	mux.HandleFunc("GET", "/png/{file}", func(w http.ResponseWriter, r *http.Request) {
+		fp := filepath.Clean(r.URL.Path)
+		var p []byte
+		if strings.Contains(fp,"system"){
+			p = loadPage("frontend/pngs/system.png")
+		} else if strings.Contains(fp,"attack"){
+			p = loadPage("frontend/pngs/attack.png")
+		} else if strings.Contains(fp,"defense"){
+			p = loadPage("frontend/pngs/defense.png")
+		} else if strings.Contains(fp,"relations"){
+			p = loadPage("frontend/pngs/relations.png")
+		}
+
+		b := bytes.NewBuffer(p)
+		// stream straight to client(browser)
+		w.Header().Set("Content-type", "application/png")
+
+		if _, err := b.WriteTo(w); err != nil { // <----- here!
+				fmt.Fprintf(w, "%s", err)
+		}
+		w.Write([]byte("PNG Generated"))
 	})
 
 	// c := &Config{}
@@ -111,8 +158,8 @@ func getCitationsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Hea
 	return http.StatusOK, nil, &MyResponse{"0",len(citations), citations}, nil
 }
 
-func loadPage(filename string) *Page {
+func loadPage(filename string) []byte {
     body, err := ioutil.ReadFile(filename)
 		checkErr(err)
-    return &Page{Body: body}
+    return body
 }

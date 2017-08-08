@@ -33,7 +33,7 @@ func (d MySQLDriver) ExportCorrelations(filterAttributes []model.Attribute,
 		parameters = append(parameters,attribute.Text)
 	}
 	queryStr+=";"
-	queryStr = `select id_paper, citation, bib,atts
+	queryStr = `select id_paper, citation, bib,leaf_atts
 		from paper_merged_attributes
 		where id_taxonomy=?`+queryStr
 	fmt.Println(queryStr)

@@ -131,7 +131,8 @@ SET character_set_client = utf8;
  1 AS `citation`,
  1 AS `bib`,
  1 AS `id_attribute`,
- 1 AS `text_attribute`*/;
+ 1 AS `text_attribute`,
+ 1 AS `leaf_attribute`*/;
 SET character_set_client = @saved_cs_client;
 
 --
@@ -147,7 +148,8 @@ SET character_set_client = utf8;
  1 AS `id_paper`,
  1 AS `citation`,
  1 AS `bib`,
- 1 AS `atts`*/;
+ 1 AS `atts`,
+ 1 AS `leaf_atts`*/;
 SET character_set_client = @saved_cs_client;
 
 --
@@ -269,7 +271,7 @@ UNLOCK TABLES;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `paper_attribute` AS select `taxonomy`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`mapping`.`id_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`mapping`.`id_attribute`) AS `text_attribute` from ((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) join `taxonomy`) union select `rel1`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`rel1`.`id_src_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`rel1`.`id_src_attribute`) AS `text_attribute` from ((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) left join `taxonomy_relation` `rel1` on((`rel1`.`id_dest_attribute` = `mapping`.`id_attribute`))) where (`rel1`.`id_src_attribute` is not null) union select `rel2`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`rel2`.`id_src_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`rel2`.`id_src_attribute`) AS `text_attribute` from (((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) left join `taxonomy_relation` `rel1` on((`rel1`.`id_dest_attribute` = `mapping`.`id_attribute`))) left join `taxonomy_relation` `rel2` on((`rel2`.`id_dest_attribute` = `rel1`.`id_src_attribute`))) where (`rel2`.`id_src_attribute` is not null) union select `rel3`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`rel3`.`id_src_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`rel3`.`id_src_attribute`) AS `text_attribute` from ((((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) left join `taxonomy_relation` `rel1` on((`rel1`.`id_dest_attribute` = `mapping`.`id_attribute`))) left join `taxonomy_relation` `rel2` on((`rel2`.`id_dest_attribute` = `rel1`.`id_src_attribute`))) left join `taxonomy_relation` `rel3` on((`rel3`.`id_dest_attribute` = `rel2`.`id_src_attribute`))) where (`rel3`.`id_src_attribute` is not null) */;
+/*!50001 VIEW `paper_attribute` AS select `taxonomy`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`mapping`.`id_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`mapping`.`id_attribute`) AS `text_attribute`,`GETATTRIBUTENAME`(`mapping`.`id_attribute`) AS `leaf_attribute` from ((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) join `taxonomy`) union select `rel1`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`rel1`.`id_src_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`rel1`.`id_src_attribute`) AS `text_attribute`,NULL AS `leaf_attribute` from ((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) left join `taxonomy_relation` `rel1` on((`rel1`.`id_dest_attribute` = `mapping`.`id_attribute`))) where (`rel1`.`id_src_attribute` is not null) union select `rel2`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`rel2`.`id_src_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`rel2`.`id_src_attribute`) AS `text_attribute`,NULL AS `leaf_attribute` from (((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) left join `taxonomy_relation` `rel1` on((`rel1`.`id_dest_attribute` = `mapping`.`id_attribute`))) left join `taxonomy_relation` `rel2` on((`rel2`.`id_dest_attribute` = `rel1`.`id_src_attribute`))) where (`rel2`.`id_src_attribute` is not null) union select `rel3`.`id_taxonomy` AS `id_taxonomy`,`paper`.`id_paper` AS `id_paper`,`paper`.`citation` AS `citation`,`paper`.`bib` AS `bib`,`rel3`.`id_src_attribute` AS `id_attribute`,`GETATTRIBUTENAME`(`rel3`.`id_src_attribute`) AS `text_attribute`,NULL AS `leaf_attribute` from ((((`paper` join `mapping` on((`paper`.`id_paper` = `mapping`.`id_paper`))) left join `taxonomy_relation` `rel1` on((`rel1`.`id_dest_attribute` = `mapping`.`id_attribute`))) left join `taxonomy_relation` `rel2` on((`rel2`.`id_dest_attribute` = `rel1`.`id_src_attribute`))) left join `taxonomy_relation` `rel3` on((`rel3`.`id_dest_attribute` = `rel2`.`id_src_attribute`))) where (`rel3`.`id_src_attribute` is not null) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -287,7 +289,7 @@ UNLOCK TABLES;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `paper_merged_attributes` AS select distinct `paper_attribute`.`id_taxonomy` AS `id_taxonomy`,`paper_attribute`.`id_paper` AS `id_paper`,`paper_attribute`.`citation` AS `citation`,`paper_attribute`.`bib` AS `bib`,`att_table`.`atts` AS `atts` from (`classification`.`paper_attribute` join (select `a`.`id_paper` AS `id_paper`,group_concat(concat(`a`.`text_attribute`) separator ',') AS `atts` from (select `paper_attribute`.`id_paper` AS `id_paper`,`paper_attribute`.`id_attribute` AS `id_attribute`,`paper_attribute`.`text_attribute` AS `text_attribute` from `classification`.`paper_attribute` order by `paper_attribute`.`id_attribute`) `a` group by `a`.`id_paper`) `att_table` on((`att_table`.`id_paper` = `paper_attribute`.`id_paper`))) */;
+/*!50001 VIEW `paper_merged_attributes` AS select distinct `paper_attribute`.`id_taxonomy` AS `id_taxonomy`,`paper_attribute`.`id_paper` AS `id_paper`,`paper_attribute`.`citation` AS `citation`,`paper_attribute`.`bib` AS `bib`,`att_table`.`atts` AS `atts`,`att_table`.`leaf_atts` AS `leaf_atts` from (`classification`.`paper_attribute` join (select `a`.`id_paper` AS `id_paper`,group_concat(concat(`a`.`text_attribute`) separator ',') AS `atts`,group_concat(concat(`a`.`leaf_attribute`) separator ',') AS `leaf_atts` from (select `paper_attribute`.`id_paper` AS `id_paper`,`paper_attribute`.`id_attribute` AS `id_attribute`,`paper_attribute`.`text_attribute` AS `text_attribute`,`paper_attribute`.`leaf_attribute` AS `leaf_attribute` from `classification`.`paper_attribute` order by `paper_attribute`.`id_attribute`) `a` group by `a`.`id_paper`) `att_table` on((`att_table`.`id_paper` = `paper_attribute`.`id_paper`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -301,4 +303,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-08-01 17:01:14
+-- Dump completed on 2017-08-08 15:43:31
