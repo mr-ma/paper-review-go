@@ -1,5 +1,6 @@
 package data
 import (
+	"fmt"
 	//overriding MySqlDriver
 	_ "github.com/go-sql-driver/mysql"
 		"github.com/mr-ma/paper-review-go/model"
@@ -15,8 +16,8 @@ type ClassificationDriver interface {
 
 
 //InitMySQLDriver initialize a new my sql driver instance
-func InitClassificationDriver() ClassificationDriver {
-	return MySQLDriver{username: "root", pass: "P$m7d2", database: "classification"}
+func InitClassificationDriver(user string, password string) ClassificationDriver {
+	return MySQLDriver{username: user, pass: password, database: "classification"}
 }
 
 //ExportCorrelations export correlations with the given attributes
@@ -25,16 +26,23 @@ func (d MySQLDriver) ExportCorrelations(filterAttributes []model.Attribute,
 	db, err := d.OpenDB()
 	checkErr(err)
 	//prepare list of attribute ids for the where clause
-	attributeStr := "%"
+	queryStr := ""
+	parameters := []interface{}{taxonomyId}
 	for _, attribute := range filterAttributes {
-		attributeStr+=attribute.Text+",%"
+		queryStr+=" and atts REGEXP ?"
+		parameters = append(parameters,attribute.Text)
 	}
-	db, stmt, err := d.Query(`select id_paper, citation, bib,atts
+	queryStr+=";"
+	queryStr = `select id_paper, citation, bib,atts
 		from paper_merged_attributes
-where id_taxonomy=? and atts like ?;`)
+		where id_taxonomy=?`+queryStr
+	fmt.Println(queryStr)
+	fmt.Println(parameters...)
+	fmt.Println(len(parameters))
+	db, stmt, err := d.Query(queryStr)
 	defer stmt.Close()
 	defer db.Close()
-	rows, err := stmt.Query(taxonomyId,attributeStr)
+	rows, err := stmt.Query(parameters...)
 	checkErr(err)
 	for rows.Next() {
 		a := model.Paper{}

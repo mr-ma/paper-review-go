@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Bootstrap Example</title>
+  <title>Taxonomy of Integrity Protection Techniques</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
@@ -63,6 +63,16 @@ $('#dimension-input').keyup(function(e){
 });
 
 });
+function dumpBibCitation(citation){
+  cit = JSON.parse(citation)
+  strBody=""
+  for (var key in cit) {
+    if (key != "ENTRYTYPE" && key!="ID")
+      strBody += key +"={"+cit[key]+"},\n";
+  }
+  dump = "@"+cit["ENTRYTYPE"]+"{"+cit["ID"]+",\n"+strBody+"}";
+  return dump;
+}
 function addDimension(){
   event.preventDefault(); // stop default behaviour of submit button
  // value of input
@@ -106,7 +116,7 @@ function FillUpTable(data){
   for (var i in data.response){
     var paper = data.response[i];
     var id = paper.id;
-    var citation = paper.citation;
+    var attributes = paper.str_attributes;
     var bib = paper.bib;
     var tr = "<tr>\
                     <td>" +count+
@@ -114,9 +124,9 @@ function FillUpTable(data){
                     "+
                     //<td>" +id+
                     //"</td>\
-                    "<td><pre> " +citation+
-                    "</pre></td>\
-                    <td><code>" +bib+
+                    "<td> <p class=\"text-info\">" +attributes+
+                    "</p></td>\
+                    <td><code>" +dumpBibCitation(bib)+
                     "</code></td>\
                 </tr>";
     count++;
@@ -195,7 +205,7 @@ function correlateReport(){
         <tr>
           <th>#</th>
           <!-- <th>PaperId</th> -->
-          <th>Citation</th>
+          <th>Attributes</th>
           <th>Bib</th>
         </tr>
       </thead>

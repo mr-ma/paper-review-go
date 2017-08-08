@@ -26,7 +26,7 @@ type MySQLDriver struct {
 func (d MySQLDriver) OpenDB() (*sql.DB, error) {
 	db, err := sql.Open("mysql", d.username+":"+d.pass+"@/"+d.database)
 	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		checkErr(err)// Just for example purpose. You should use proper error handling instead of panic
 	}
 	return db, err
 }
