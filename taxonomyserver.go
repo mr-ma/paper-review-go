@@ -47,13 +47,12 @@ func main() {
 
 	flag.Parse()
 
-	//TODO: Remove cors
-	// cors := tigertonic.NewCORSBuilder()//.AddAllowedOrigins("*").AddAllowedHeaders("Origin, X-Requested-With, Content-Type, Accept")
+	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(listen)//.AddAllowedHeaders("Origin, X-Requested-With, Content-Type, Accept")
 
 	mux := tigertonic.NewTrieServeMux()
-	mux.Handle("POST", "/correlation", tigertonic.Timed(tigertonic.Marshaled(getCorrelationHandler), "getCorrelationHandler", nil))
-	mux.Handle("GET", "/attribute", tigertonic.Timed(tigertonic.Marshaled(getAttributesHandler), "getAttributesHandler", nil))
-	mux.Handle("GET", "/citation", tigertonic.Timed(tigertonic.Marshaled(getCitationsHandler), "getCitationsHandler", nil))
+	mux.Handle("POST", "/correlation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCorrelationHandler), "getCorrelationHandler", nil)))
+	mux.Handle("GET", "/attribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributesHandler), "getAttributesHandler", nil)))
+	mux.Handle("GET", "/citation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsHandler), "getCitationsHandler", nil)))
 	// mux.Handle("GET","/",cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIndexHandler), "getIndexHandler", nil)))
 	mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
     p := loadPage("frontend/taxonomy/index.html")
