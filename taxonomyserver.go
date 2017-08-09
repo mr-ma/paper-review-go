@@ -47,7 +47,7 @@ func main() {
 
 	flag.Parse()
 
-	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(listen)//.AddAllowedHeaders("Origin, X-Requested-With, Content-Type, Accept")
+	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)//.AddAllowedHeaders("Origin, X-Requested-With, Content-Type, Accept")
 
 	mux := tigertonic.NewTrieServeMux()
 	mux.Handle("POST", "/correlation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCorrelationHandler), "getCorrelationHandler", nil)))
