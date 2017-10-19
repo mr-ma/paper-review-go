@@ -44,8 +44,8 @@ $(function() {
 // button
 var add = $('#add-btn');
 // click event for button
-add.on('click', function() {
-  addDimension();
+add.on('click', function(event) {
+  addDimension(event,this);
 });
 
 
@@ -82,7 +82,8 @@ function dumpBibCitation(citation){
   dump = "@"+cit["ENTRYTYPE"]+"{"+cit["ID"]+",\n"+strBody+"}";
   return dump;
 }
-function addDimension(){
+function addDimension(e,d){
+  event = e || window.event;
   event.preventDefault(); // stop default behaviour of submit button
  // value of input
  inputValue = $('#dimension-input').val();
@@ -247,7 +248,7 @@ function correlateReport(){
      <label>Dimension to correlate:</label>
      <input id="dimension-input" class="form-control autocomplete" placeholder="Enter a dimension" />
      <span class="input-group-btn">
-       <button id="add-btn" type="button" class="btn btn-success">Add</button>
+       <button id="add-btn"  type="button" class="btn btn-success">Add</button>
      </span>
   </div>
 
