@@ -77,6 +77,8 @@ CREATE TABLE allChildrenPerAttribute (
   UNIQUE KEY allChildrenPerAttribute_id_attribute_UNIQUE (id_attribute)
 ) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
 
+/* procedure creation + call has to be run after every db import/recreation: */
+
 DROP PROCEDURE IF EXISTS insertAllChildrenPerAttribute;
 DELETE FROM allChildrenPerAttribute;
 DELIMITER ;;
@@ -125,6 +127,8 @@ ALTER TABLE taxonomy_relation ADD COLUMN edgeBendPoints longtext;
 ALTER TABLE paper ADD COLUMN referenceCount int(20) DEFAULT "0";
 
 ALTER TABLE attribute ADD UNIQUE KEY attribute_text_UNIQUE (text);
+ALTER TABLE taxonomy_dimension ADD UNIQUE KEY taxonomy_dimension_id_attribute_UNIQUE (id_attribute);
+ALTER TABLE taxonomy_relation ADD UNIQUE KEY taxonomy_relation_attributes_UNIQUE (id_src_attribute, id_dest_attribute);
 
 /* foreign keys start */
 

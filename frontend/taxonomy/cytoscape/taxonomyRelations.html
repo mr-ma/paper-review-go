@@ -448,7 +448,7 @@
       if (!isNaN(x) && !isNaN(y)) {
         for ( var i = 0; i < citationCounts.length; i++ ) {
           if (citationCounts[i].attribute == attribute.text) {
-            if (attribute.dimension == '') console.log('no dimension: ' + attribute.text)
+            if (attribute.text.split(':').length > 1) console.log('found: ' + attribute.text);
             items.push({ data: { id: attribute.text, table: 'attribute', citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
             break;
           }
