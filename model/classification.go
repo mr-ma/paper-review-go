@@ -9,26 +9,118 @@ type Taxonomy struct {
 type Dimension struct{
   ID int `json:"id"`
   Text string  `json:"text"`
+  X string `json:"x"`
+  Y string `json:"y"`
+  XMajor string `json:"xMajor"`
+  YMajor string `json:"yMajor"`
   Attributes []Attribute `json:"attributes"`
 }
 
 type Attribute struct{
   ID int `json:"id"`
   Text string  `json:"text"`
+  ParentID int `json:"parentID"`
+  ParentText string `json:"parentText"`
+  X string `json:"x"`
+  Y string `json:"y"`
+  XMajor string `json:"xMajor"`
+  YMajor string `json:"xMajor"`
+  X3D string `json:"x3D"`
+  Y3D string `json:"y3D"`
+  Z3D string `json:"z3D"`
+  XMajor3D string `json:"xMajor3D"`
+  YMajor3D string `json:"yMajor3D"`
+  ZMajor3D string `json:"zMajor3D"`
+  Major int8 `json:"major"`
+  Dimension string `json:"dimension"`
   MappedPapers []Paper `json:"papers"`
-  Relations []Relation
+  Relations []Relation `json:"relations"`
 }
 type Paper struct {
   ID int `json:"id"`
   Citation string `json:"citation"`
+  Text string `json:"text"`
   Attributes []Attribute `json:"attributes"`
 	StrAttributes string `json:"str_attributes"`
 	Bib string `json:"bib"`
+  ReferenceCount int64 `json:"referenceCount"`
+}
+
+type Position struct {
+  ID string `json:"id"`
+  Table string `json:"table"`
+  X string `json:"x"`
+  Y string `json:"y"`
+  Z string `json:"z"`
+}
+
+type AttributeRequest struct{
+  Text string  `json:"text"`
+  X string `json:"x"`
+  Y string `json:"y"`
+  XMajor string `json:"xMajor"`
+  YMajor string `json:"xMajor"`
+  Major int8 `json:"major"`
+  Dimension string `json:"dimension"`
 }
 
 type CorrelationRequest struct {
 	TaxonomyID int64 `json:"taxonomy_id"`
 	Attributes []Attribute `json:"attributes"`
+}
+
+type RenameAttributeRequest struct {
+  PreviousName string `json:"previousName"`
+  NewName string `json:"newName"`
+}
+
+type AttributeRelationsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  AttributeSrc string `json:"attributeSrc"`
+  AttributeDest string `json:"attributeDest"`
+  Text string `json:"text"`
+  Dimension string `json:"dimension"`
+  MinValue int64 `json:"minValue"`
+  MaxValue int64 `json:"maxValue"`
+}
+
+type MajorAttributesRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+}
+
+type AllChildrenAttributesRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  Parent string `json:"parent"`
+}
+
+type SavePositionsRequest struct {
+  Positions []Position `json:"positions"`
+}
+
+type SaveEdgeBendPointsRequest struct {
+  AttributeSrc string `json:"attributeSrc"`
+  AttributeDest string `json:"attributeDest"`
+  EdgeBendPoints string `json:"edgeBendPoints"`
+}
+
+type CitationsPerAttributeRequest struct {
+  Attribute string `json:"attribute"`
+}
+
+type SharedPapersRequest struct {
+  Text1 string `json:"text1"`
+  Text2 string `json:"text2"`
+}
+
+type AttributeDetailsRequest struct {
+  Text string `json:"text"`
+}
+
+type MergeAttributesRequest struct {
+  Text1 string  `json:"text1"`
+  Text2 string  `json:"text2"`
+  Dimension1 string `json:"dimension1"`
+  Dimension2 string `json:"dimension2"`
 }
 
 type Relation struct{
@@ -37,6 +129,54 @@ type Relation struct{
   Comment string  `json:"comment"`
   SourceAttribute Attribute `json:"src_attribute"`
   DestinationAttribute Attribute `json:"dest_attribute"`
+}
+
+type RelationType struct{
+  ID int `json:"id"`
+  Text string  `json:"text"`
+  Comment string `json:"comment"`
+}
+
+type ConceptCorrelation struct {
+  Attribute1 string `json:"attribute1"`
+  Attribute2 string `json:"attribute2"`
+  Text1 string `json:"text1"`
+  Text2 string `json:"text2"`
+  ID1 int `json:"id1"`
+  ID2 int `json:"id2"`
+  Value int `json:"value"`
+}
+
+type AttributeCoverage struct {
+  AttributeName string `json:"attributeName"`
+  PaperName string `json:"paperName"`
+  Text1 string `json:"text1"`
+  Text2 string `json:"text2"`
+  AttributeID int `json:"attributeID"`
+  PaperID int `json:"paperID"`
+  Value int `json:"value"`
+}
+
+type AttributeRelation struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  AttributeSrc string `json:"attributeSrc"`
+  AttributeDest string `json:"attributeDest"`
+  DimensionSrc string `json:"dimensionSrc"`
+  DimensionDest string `json:"dimensionDest"`
+  Dimension string `json:"dimension"`
+  Relation string `json:"relation"`
+  Annotation string `json:"annotation"`
+  EdgeBendPoints string `json:"edgeBendPoints"`
+}
+
+type CitationCount struct {
+  Attribute string `json:"attribute"`
+  CitationCount int64 `json:"citationCount"`
+  MaxReferenceCount int64 `json:"maxReferenceCount"`
+}
+
+type Result struct {
+  Success bool `json:"success"`
 }
 
 //

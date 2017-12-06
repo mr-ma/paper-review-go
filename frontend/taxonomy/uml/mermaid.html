@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Mermaid Quick Test Page</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+</head>
+<body>
+  <div id="diagramContainer" class="mermaid">
+classDiagram
+Class01 <|-- AveryLongClass : Cool
+Tools *-- Disassembler
+Tools *-- Debugger
+Tools *-- Tracer
+Tools *-- Emulator
+Class05 o-- Class06
+Class07 .. Class08
+Class09 --> C2 : Where am i?
+Class09 --* C3
+Class09 --|> Class07
+Class07 : equals()
+Class07 : Object[] elementData
+Class01 : size()
+Class01 : int chimp
+Class01 : int gorilla
+Class08 <--> C2: Cool label
+  </div>
+  <script src="./mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({startOnLoad: true, theme: 'forest'});
+  </script>
+</body>
+</html>

@@ -1,0 +1,950 @@
+<!doctype html>
+<html>
+<head>
+    <title>Taxonomy Relations</title>
+    <script src="jquery.min.js"></script>
+    <script src='cytoscape.min.js'></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.6/cytoscape.min.js -->
+
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap.min.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <script src='cytoscape-undo-redo.js'></script>
+    <script src='cytoscape-clipboard.js'></script>
+    <script src='cytoscape-graphml.js'></script>
+    <script src='cytoscape-view-utilities.js'></script>
+
+    <link href="cytoscape-context-menus.css" type="text/css" rel="stylesheet"/>
+    <script src='cytoscape-context-menus.js'></script>
+    <script src='cytoscape-cxtmenu.js'></script>
+    <script src='cytoscape-autopan-on-drag.js'></script>
+    <script src='cytoscape-edge-bend-editing.js'></script>
+    <script src='CytoscapeEdgeEditation.js'></script>
+    <script src='cytoscape-edgehandles.js'></script>
+    <script src='cytoscape-expand-collapse.js'></script>
+
+    <link href="cytoscape.js-navigator.css" type="text/css" rel="stylesheet"/>
+    <script src='cytoscape-navigator.js'></script>
+
+    <script src='konva.min.js'></script>
+    <script src='cytoscape-node-resize.js'></script>
+
+    <script src='cytoscape-noderesize.js'></script>
+    <link href="cytoscape.js-panzoom.css" type="text/css" rel="stylesheet"/>
+    <script src='cytoscape-panzoom.js'></script>
+
+    <link href="jquery.qtip.min.css" type="text/css" rel="stylesheet"/>
+    <script src='jquery.qtip.min.js'></script>
+    <script src='cytoscape-qtip.js'></script>
+
+    <script src='cytoscape-snap-to-grid.js'></script>
+
+    <!-- promises -->
+    <script src="bluebird.min.js"></script>
+    <script src="error.js"></script>
+<style>
+    #cy {
+        width: 100%; /* 100% */
+        height: 100%; /* 100% */
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+</style>
+
+
+</head>
+<body>
+ <input type="button" id="clickMe" value="click" hidden>
+ <input type="button" id="getEdges" value="click" hidden>
+ <input type="button" id="qtip" value="click" hidden>
+ <input type="button" id="merge" value="click" hidden>
+	<div id="cy"></div>
+<script>
+  const STYLES =       [
+        {
+          selector: '.child',
+          style: {
+            width: 'data(width)',
+            height: '50px',
+            color: 'black',
+            'border-width': '2px',
+            'border-style': 'solid',
+            'border-color': 'grey',
+            shape: 'rectangle',
+            'background-color': 'white',
+            label: 'data(id)',
+            'text-valign': 'center',
+            'text-halign': 'center'
+          }
+        },
+        {
+          selector: '.parent',
+          style: {
+            width: 'data(width)',
+            height: '50px',
+            color: 'black',
+            'border-width': '2px',
+            'border-style': 'solid',
+            'border-color': 'lightgrey',
+            shape: 'roundrectangle',
+            'background-color': 'white',
+            label: 'data(id)',
+            'text-valign': 'center',
+            'text-halign': 'center'
+          }
+        },
+        {
+          selector: '.dimension',
+          style: {
+              'background-color': 'white',
+              'border-width': '5px',
+              label: 'data(id)',
+              'text-valign': 'top',
+              'text-halign': 'right',
+              'text-margin-x': '-100px',
+              'text-margin-y': '30px'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+           'curve-style': 'bezier',
+           'width': 1,
+           'target-arrow-color': 'black', // #ccc
+           'line-color': 'black',
+            label: 'data(annotation)',
+            'text-valign': 'center',
+            'text-halign': 'center'
+          }
+        },
+        {
+          selector: '.Depends',
+          style: {
+            'target-arrow-shape': 'none',
+            'target-arrow-fill': 'filled',
+            'arrow-scale': 1
+          }
+        },
+        {
+          selector: '.DependsDirected',
+          style: {
+            'target-arrow-shape': 'triangle',
+            'target-arrow-fill': 'filled',
+            'arrow-scale': 1
+          }
+        },
+        {
+          selector: '.InstanceOf',
+          style: {
+            'target-arrow-shape': 'triangle',
+            'target-arrow-fill': 'hollow',
+            'arrow-scale': 2
+          }
+        },
+        {
+          selector: '.MemberOf',
+          style: {
+            'target-arrow-shape': 'diamond',
+            'target-arrow-fill': 'hollow',
+            'arrow-scale': 2.5,
+          }
+        },
+        {
+          selector: '.PartOf',
+          style: {
+            'target-arrow-shape': 'diamond',
+            'target-arrow-fill': 'filled',
+            'arrow-scale': 2.5,
+          }
+        }
+      ];
+  function savePositions ( cy, dimensions ) {
+    if (dimensions.length > 1) var saveURL = 'saveMajorPositions';
+    else var saveURL = 'savePositions';
+    var positions = [];
+    cy.nodes().forEach ( function ( node ) {
+      var table = node.data('table');
+      var position = node.position();
+      positions.push({id: node.id(), table: table, x: '' + position.x, y: '' + position.y});
+    });
+    $.ajax
+      ({
+          type: "POST",
+          //the url where you want to sent the userName and password to
+          url: saveURL,
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          //json object to sent to the authentication url
+          data: JSON.stringify({positions: positions}),
+          success: function ( ) {
+            console.log('Saved positions successfully.');
+          }
+      });
+  }
+
+  function traverseChildren ( cy, relations, parentID ) {
+    relations.forEach ( function ( relation ) {
+      if ((relation.relation == 'InstanceOf' || relation.relation == 'MemberOf' || relation.relation == 'PartOf') && relation.attributeDest == parentID) {
+        var srcNode = cy.$('[id="' + relation.attributeSrc + '"]');
+        if (srcNode.visible()) srcNode.style('display', 'none');
+        else srcNode.style('display', 'element');
+        traverseChildren(cy, relations, relation.attributeSrc);
+      }
+    });
+  }
+
+  function renameNode ( ele ) {
+    var dialog = BootstrapDialog.show({
+      title: 'Enter new attribute name',
+      message: '<div><label for="newAttributeName">Name:</label><input type="text" id="newAttributeName" placeholder="name"></div>',
+      onshown: function () {
+        $('#newAttributeName').val(ele.data('id'));
+      },
+      buttons: [{
+          label: 'Save',
+          cssClass: 'btn-primary',
+          hotkey: 13, // Enter
+          action: function(data) {
+            var newAttributeName = $('#newAttributeName').val();
+            if (newAttributeName == '' || cy.$('[id="' + newAttributeName + '"]').length > 0) {
+              handleError('This attribute name already exists in this domain.');
+              return;
+            }
+            var previousName = ele.data('id');
+            $.ajax
+              ({
+                  type: "POST",
+                  url: 'renameAttribute',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  data: JSON.stringify({previousName: previousName, newName: newAttributeName}),
+                  success: function ( result ) {
+                    if (!result || !result.response || !result.response.success) {
+                      handleError('Cannot rename attribute "' + previousName + '" to "' + newAttributeName + '". This name already exists.');
+                      return;
+                    }
+                    dialog.close();
+                    window.location.reload(false);
+                  }
+              });
+          }
+      },{
+          label: 'Cancel',
+          cssClass: 'btn-primary',
+          hotkey: 27, // Esc
+          action: function(data) {
+            dialog.close();
+          }
+      }]
+    });
+    dialog.open();
+  }
+
+  function addNode ( cy, ele, e, major ) {
+    var dialog = BootstrapDialog.show({
+      title: 'Enter attribute name',
+      message: '<div><label for="attributeName">Name:</label><input type="text" id="attributeName" placeholder="name"></div>',
+      buttons: [{
+          label: 'Add',
+          cssClass: 'btn-primary',
+          hotkey: 13, // Enter
+          action: function(data) {
+            var attributeName = $('#attributeName').val();
+            if (attributeName == '' || cy.$('[id="' + attributeName + '"]').length > 0) {
+              handleError('This attribute name already exists in this domain.');
+              return;
+            }
+            var request = {text: attributeName};
+            if (isInterDimensional) {
+              request.xMajor = '' + e.position.x;
+              request.yMajor = '' + e.position.y;
+              request.x = '';
+              request.y = '';
+            } else {
+              request.x = '' + e.position.x;
+              request.y = '' + e.position.y;
+              request.xMajor = '';
+              request.yMajor = '';
+            }
+            request.major = !!major ? 1 : 0;
+            request.dimension = ele.id();
+            console.log('sending post')
+            $.ajax
+              ({
+                  type: "POST",
+                  //the url where you want to sent the userName and password to
+                  url: 'addAttribute',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  //json object to sent to the authentication url
+                  data: JSON.stringify(request),
+                  success: function ( result ) {
+                    cy.add({ data: { id: attributeName, table: 'attribute', citationCount: 0, parent: ele.id(), width: attributeName.length * 10 }, classes: !!major ? 'parent' : 'child', position: e.position });
+                    dialog.close();
+                  }
+              });
+          }
+      },{
+          label: 'Cancel',
+          cssClass: 'btn-primary',
+          hotkey: 27, // Esc
+          action: function(data) {
+            dialog.close();
+          }
+      }]
+    });
+    dialog.open();
+  }
+
+  function removeNodes ( ur, selecteds ) {
+    var promises = [];
+    selecteds.forEach ( function ( selected ) {
+      var removePromise = new Promise ( function ( resolve, reject ) {
+        $.ajax
+          ({
+            type: "POST",
+            //the url where you want to sent the userName and password to
+            url: 'removeAttribute',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            //json object to sent to the authentication url
+            data: JSON.stringify({text: selected.id()}),
+            success: function () {
+              resolve();
+            }
+          });
+      });
+      promises.push(removePromise);
+    });
+    Promise.all(promises)
+      .then ( function ( results ) {
+        console.log('Removed ' + results.length + ' attribute' + (results.length > 1 ? 's' : '') + ' successfully.');
+        ur.do("remove", selecteds);
+      }).catch ( function ( err ) {
+        handleError(err);
+      });
+  }
+
+  function mergeNodes ( nodes ) {
+    if (nodes.length != 2) {
+      handleError('Can only merge 2 attributes at a time.');
+      return;
+    }
+    var text1 = nodes[0].data('id');
+    var text2 = nodes[1].data('id');
+    var dimension1 = nodes[0].data('parent');
+    var dimension2 = nodes[1].data('parent');
+    $.ajax
+      ({
+          type: "POST",
+          //the url where you want to sent the userName and password to
+          url: 'mergeAttributes',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          //json object to sent to the authentication url
+          data: JSON.stringify({text1: text1, text2: text2, dimension1: dimension1, dimension2: dimension2}),
+          success: function ( result ) {
+            if (!result || !result.response || !result.response.success) {
+              handleError('Error occurred while merging the attributes "' + text1 + '" and "' + text2 + '".');
+              return;
+            }
+            window.location.reload(false);
+          }
+      });
+  }
+
+  function updateEdgeAnnotation ( cy, ele, sourceID, targetID, dimensions, isInterDimensional ) {
+    var dialog = BootstrapDialog.show({
+      title: 'Enter edge annotation',
+      message: '<div><label for="edgeAnnotation">Annotation:</label><input type="text" id="edgeAnnotation" placeholder="annotation"></div>',
+      buttons: [{
+          label: 'Save',
+          cssClass: 'btn-primary',
+          hotkey: 13, // Enter
+          action: function(data) {
+            var annotation = $('#edgeAnnotation').val();
+            $.ajax
+              ({
+                  type: "POST",
+                  //the url where you want to sent the userName and password to
+                  url: 'updateTaxonomyRelationAnnotation',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  //json object to sent to the authentication url
+                  data: JSON.stringify({'taxonomy_id': 1, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: annotation}),
+                  success: function ( result ) {
+                    console.log('Updated taxonomy relation annotation successfully, annotation: ' + annotation + ', source: ' + sourceID + ', target: ' + targetID + '.');
+                    ele.data('annotation', annotation);
+                    dialog.close();
+                  }
+              });
+          }
+      },{
+          label: 'Cancel',
+          cssClass: 'btn-primary',
+          hotkey: 27, // Esc
+          action: function(data) {
+            dialog.close();
+          }
+      }]
+    });
+    dialog.open();
+  }
+
+  function removeEdges ( ur, selecteds ) {
+    var promises = [];
+    selecteds.forEach ( function ( selected ) {
+      var removePromise = new Promise ( function ( resolve, reject ) {
+        $.ajax
+          ({
+            type: "POST",
+            //the url where you want to sent the userName and password to
+            url: 'removeTaxonomyRelation',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            //json object to sent to the authentication url
+            data: JSON.stringify({'taxonomy_id': 1, attributeSrc: selected.data('source'), attributeDest: selected.data('target'), dimension: selected.data('dimension'), text: selected.data('relation')}),
+            success: function () {
+              resolve();
+            }
+          });
+      });
+      promises.push(removePromise);
+    });
+    Promise.all(promises)
+      .then ( function ( results ) {
+        console.log('Removed ' + results.length + ' taxonomy relation' + (results.length > 1 ? 's' : '') + ' successfully.');
+        ur.do("remove", selecteds);
+      }).catch ( function ( err ) {
+        handleError(err);
+      });
+  }
+
+  var cy;
+  var isInterDimensional = true;
+
+  function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts ) {
+    console.log('creating json, sttr: ', attributes);
+    isInterDimensional = dimensions.length > 1;
+    var items = [];
+    var menuItems = [];
+    dimensions.forEach ( function ( dimension ) {
+      if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension' }, classes: 'dimension', position: {x: (dimension.xMajor - 0), y: (dimension.yMajor - 0)} });
+      else items.push({data: { id: dimension.text, table: 'dimension' }, classes: 'dimension' }); // , style: { events: 'no' }
+    });
+    attributes.forEach ( function ( attribute ) {
+      var x = attribute.x - 0;
+      var y = attribute.y - 0;
+      if (!isNaN(x) && !isNaN(y)) {
+        for ( var i = 0; i < citationCounts.length; i++ ) {
+          if (citationCounts[i].attribute == attribute.text) {
+            if (attribute.dimension == '') console.log('no dimension: ' + attribute.text)
+            items.push({ data: { id: attribute.text, table: 'attribute', citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
+            break;
+          }
+        }
+      }
+    });
+    relations.forEach ( function ( relation ) {
+      var relationObj = { data: { id: relation.attributeSrc + '_' + relation.attributeDest, source: relation.attributeSrc, target: relation.attributeDest, annotation: !!relation.annotation ? relation.annotation : '', dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), relation: relation.relation }, classes: relation.relation };
+      if (!!relation.edgeBendPoints) relationObj.data.bendPointPositions = JSON.parse('[' + relation.edgeBendPoints + ']');
+      //else relationObj.data.bendPointPositions = [];
+      items.push(relationObj);
+    });
+
+
+    var options = {
+        // List of initial menu items
+        menuItems: menuItems,
+        // css classes that menu items will have
+        menuItemClasses: [
+          // add class names to this list
+        ],
+        // css classes that context menu will have
+        contextMenuClasses: [
+          // add class names to this list
+        ]
+    };
+    //registerContextMenus();
+    //cxtmenu( cytoscape );
+    cy = cytoscape({  
+      container: document.getElementById('cy'),
+      elements: items,
+      layout: {
+        name: 'preset',
+        zoom: 0.75
+        //rows: 3
+      },
+      style: STYLES
+    });
+    attributes.forEach ( function ( attribute ) {
+      var nodeCommands = [];
+      nodeCommands.push({
+        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+        content: 'Rename', // html/text content to be displayed in the menu
+        select: function(ele){ // a function to execute when the command is selected
+          renameNode(ele);
+        },
+        enabled: true // whether the command is selectable
+      });
+      nodeCommands.push({
+        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+        content: 'All', // html/text content to be displayed in the menu
+        select: function(ele){ // a function to execute when the command is selected
+          traverseChildren(cy, relations, attribute.text);
+          cy.forceRender();
+        },
+        enabled: true // whether the command is selectable
+      });
+      relations.forEach ( function ( relation ) {
+        if (attribute.text == relation.attributeDest) {
+          /*
+          menuItems.push(
+            {
+              id: 'menu_' + relation.attributeDest + '_' + relation.attributeSrc, // ID of menu item
+              content: relation.attributeSrc, // Display content of menu item
+              tooltipText: relation.relation, // Tooltip text for menu item
+              // Filters the elements to have this menu item on cxttap
+              // If the selector is not truthy no elements will have this menu item on cxttap
+              selector: '[id="' + attribute.text + '"]', 
+              onClickFunction: function () { // The function to be executed on click
+                console.log('clicked: ', this);
+              },
+              disabled: false, // Whether the item will be created as disabled
+              show: true, // Whether the item will be shown or not
+              hasTrailingDivider: true, // Whether the item will have a trailing divider
+              coreAsWell: false // Whether core instance have this item on cxttap
+            }
+          );
+          */
+          nodeCommands.push({
+            fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+            content: relation.attributeSrc, // html/text content to be displayed in the menu
+            select: function(ele){ // a function to execute when the command is selected
+              traverseChildren(cy, relations, relation.attributeSrc);
+              var srcNode = cy.$('[id="' + relation.attributeSrc + '"]');
+              if (srcNode.visible()) srcNode.style('display', 'none');
+              else srcNode.style('display', 'element');
+              cy.forceRender();
+            },
+            enabled: true // whether the command is selectable
+          });
+        }
+      });
+      if (nodeCommands.length > 0) {
+        cy.cxtmenu({
+          menuRadius: 100, // the radius of the circular menu in pixels
+          selector: '[id="' + attribute.text + '"]', // elements matching this Cytoscape.js selector will trigger cxtmenus
+          commands: nodeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
+          fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
+          activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
+          activePadding: 20, // additional size in pixels for the active command
+          indicatorSize: 24, // the size in pixels of the pointer to the active command
+          separatorWidth: 3, // the empty spacing in pixels between successive commands
+          spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
+          minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
+          maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
+          openMenuEvents: 'cxttapstart taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
+          itemColor: 'white', // the colour of text in the command's content
+          itemTextShadowColor: 'black', // the text shadow colour of the command's content
+          zIndex: 9999, // the z-index of the ui div
+          atMouse: false // draw menu at mouse position
+        });
+      }
+    });
+    var edgeCommands = [];
+    edgeCommands.push({
+      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+      content: 'Annotation', // html/text content to be displayed in the menu
+      title: 'Annotation',
+      select: function(ele){ // a function to execute when the command is selected
+        var sourceID = ele.data('source');
+        var targetID = ele.data('target');
+        updateEdgeAnnotation(cy, ele, sourceID, targetID, dimensions, isInterDimensional);
+      },
+      enabled: true // whether the command is selectable
+    });
+    relationTypes.forEach ( function ( relationType ) {
+      edgeCommands.push({
+        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+        content: relationType.text, // html/text content to be displayed in the menu
+        title: relationType.comment,
+        select: function(ele){ // a function to execute when the command is selected
+          if (ele.data('relation') == relationType.text) return;
+          var sourceID = ele.data('source');
+          var targetID = ele.data('target');
+          $.ajax
+            ({
+                type: "POST",
+                //the url where you want to sent the userName and password to
+                url: 'updateTaxonomyRelationType',
+                dataType: 'json',
+                contentType:'application/json',
+                async: true,
+                //json object to sent to the authentication url
+                data: JSON.stringify({'taxonomy_id': 1, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: relationType.text}),
+                success: function ( citationsPerAttribute ) {
+                  console.log('Updated taxonomy relation type successfully, type: ' + relationType.text + ', source: ' + sourceID + ', target: ' + targetID + '.');
+                  ele.classes(relationType.text);
+                }
+            });
+        },
+        enabled: true // whether the command is selectable
+      });
+    });
+    cy.cxtmenu({
+      menuRadius: 100, // the radius of the circular menu in pixels
+      selector: 'edge', // elements matching this Cytoscape.js selector will trigger cxtmenus
+      commands: edgeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
+      fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
+      activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
+      activePadding: 20, // additional size in pixels for the active command
+      indicatorSize: 24, // the size in pixels of the pointer to the active command
+      separatorWidth: 3, // the empty spacing in pixels between successive commands
+      spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
+      minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
+      maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
+      openMenuEvents: 'taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
+      itemColor: 'white', // the colour of text in the command's content
+      itemTextShadowColor: 'black', // the text shadow colour of the command's content
+      zIndex: 9999, // the z-index of the ui div
+      atMouse: false // draw menu at mouse position
+    });
+    var dimensionCommands = [];
+    if (!isInterDimensional) {
+      dimensionCommands.push({
+        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+        content: 'Add node', // html/text content to be displayed in the menu
+        title: 'Add node',
+        select: function(ele, e){ // a function to execute when the command is selected
+          e.preventDefault();
+          addNode(cy, ele, e, false);
+        },
+        enabled: true // whether the command is selectable
+      });
+    }
+    dimensionCommands.push({
+      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+      content: 'Add major node', // html/text content to be displayed in the menu
+      title: 'Add major node',
+      select: function(ele, e){ // a function to execute when the command is selected
+        e.preventDefault();
+        addNode(cy, ele, e, true);
+      },
+      enabled: true // whether the command is selectable
+    });
+    cy.cxtmenu({
+      menuRadius: 100, // the radius of the circular menu in pixels
+      selector: '.dimension', // elements matching this Cytoscape.js selector will trigger cxtmenus
+      commands: dimensionCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
+      fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
+      activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
+      activePadding: 20, // additional size in pixels for the active command
+      indicatorSize: 24, // the size in pixels of the pointer to the active command
+      separatorWidth: 3, // the empty spacing in pixels between successive commands
+      spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
+      minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
+      maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
+      openMenuEvents: 'cxttapstart taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
+      itemColor: 'white', // the colour of text in the command's content
+      itemTextShadowColor: 'black', // the text shadow colour of the command's content
+      zIndex: 9999, // the z-index of the ui div
+      atMouse: true // draw menu at mouse position
+    });
+    var ur = cy.undoRedo();
+    //document.removeEventListener("keydown");
+    document.addEventListener("keydown", function (e) {
+      if(e.which === 46) { // delete
+            var selecteds = cy.$("node:selected");
+            if (selecteds.length > 0) {
+              removeNodes(ur, selecteds);
+            }
+            selecteds = cy.$("edge:selected");
+            if (selecteds.length > 0) {
+              removeEdges(ur, selecteds);
+            }
+        }
+        else if (e.ctrlKey && e.target.nodeName === 'BODY')
+            if (e.which === 90)
+                ur.undo();
+            else if (e.which === 89)
+                ur.redo();
+    });
+    cy.$('.parent,.child').each ( function ( entry, index ) {
+      var titleText = (entry.data('citationCount') > 0) ? '<span><label>Citations</label><input type="button" class="listCitations" value="List" name="' + entry.data('id') + '" style="margin-left:15px;"></span>' : 'Citations';
+      entry.qtip({
+        content: {
+          text: function ( event, api ) {
+            return '' + this.data('citationCount');
+          },
+          title: {
+            text: titleText,
+            button: true
+          }
+        },
+        position: {
+            my: 'top center',
+            // Position my top left...
+            at: 'bottom center' // at the bottom right of...
+        },
+        style: {
+            classes: 'qtip-light',
+            tip: {
+                corner: true,
+                width: 23,
+                height: 12
+            }
+        },
+        hide: false,
+        events: {
+          render: function(event, api) {
+            $('.listCitations').unbind().click( function () {
+              event.preventDefault();
+              var attribute = $(this).attr('name');
+              if (!attribute) return;
+              $.ajax
+                ({
+                    type: "POST",
+                    //the url where you want to sent the userName and password to
+                    url: 'citationsPerAttributeIncludingChildren',
+                    dataType: 'json',
+                    contentType:'application/json',
+                    async: true,
+                    //json object to sent to the authentication url
+                    data: JSON.stringify({attribute: attribute}),
+                    success: function ( citationsPerAttribute ) {
+                      if (!citationsPerAttribute) {
+                        handleError('Cannot get citations from DB for attribute: ' + attribute + '.');
+                        return;
+                      }
+                      var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+                      if (!!citationsPerAttribute.response) {
+                        citationsPerAttribute.response.forEach ( function ( citationPerAttribute ) {
+                          citationTable += '<tr><td>' + citationPerAttribute.citation + '</td><td>' + citationPerAttribute.referenceCount + '</td><td>' + citationPerAttribute.bib + '</td></tr>';
+                        });
+                      }
+                      citationTable += '</tbody></table></div>';
+                      cy.elements().trigger('qtiphide');
+                      BootstrapDialog.show({
+                        title: 'Citations for attribute "' + attribute + '"',
+                        message: citationTable
+                      });
+                    }
+                });
+            });
+          }
+        },
+        show: {
+          event: 'click qtipshow'
+        },
+        hide: {
+          event: 'qtiphide'
+        }
+      });
+    });
+    cy.panzoom();
+    //cy.navigator();
+    cy.edgehandles({handleNodes: '.child, .parent'});
+    //var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
+    cy.on('ehcomplete', function (event, sourceNode, targetNode, addedEles) {
+      var sourceID = sourceNode.id();
+      var targetID = targetNode.id();
+      $.ajax
+        ({
+            type: "POST",
+            //the url where you want to sent the userName and password to
+            url: 'addTaxonomyRelation',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            //json object to sent to the authentication url
+            data: JSON.stringify({'taxonomy_id': 1, attributeSrc: sourceNode.id(), attributeDest: targetNode.id(), dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: 'Depends'}),
+            success: function ( result ) {
+              console.log('Added taxonomy relation successfully, source: ' + sourceID + ', target: ' + targetID + '.');
+            }
+        });    
+    });
+    var expandCollapseApi = cy.expandCollapse({
+      layoutBy: {
+        name: "preset",
+        animate: "end"
+      },
+      fisheye: true,
+      animate: true,
+      undoable: false
+    });
+    cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
+      cy.destroy();
+      if (isInterDimensional) showDimension(1, this.id());
+      else showDimension(1, 'Interdimensional view');
+    });
+    //var instance = cy.contextMenus( options );
+    $('#clickMe').unbind().click ( function () {
+      savePositions(cy, dimensions);
+    });
+    $('#getEdges').unbind().click ( function () {
+      cy.edges().forEach ( function ( entry ) {
+        var segments = edgeBendEditingApi.getSegmentPoints(entry);
+        if (!!segments) {
+          console.log('seg: ', segments);
+          var attributeSrc = entry.data('source');
+          var attributeDest = entry.data('target');
+          $.ajax
+            ({
+                type: "POST",
+                //the url where you want to sent the userName and password to
+                url: 'saveEdgeBendPoints',
+                dataType: 'json',
+                contentType:'application/json',
+                async: true,
+                //json object to sent to the authentication url
+                data: JSON.stringify({attributeSrc: attributeSrc, attributeDest: attributeDest, edgeBendPoints: segments.toString()}),
+                success: function ( result ) {
+                  console.log('Saved edge bend points successfully.');
+                }
+            });
+          }
+      });
+    });
+    $('#merge').unbind().click ( function () {
+       var selecteds = cy.$(".parent:selected, .child:selected");
+       if (selecteds.length < 2) {
+         handleError('Not enough attributes selected.');
+         return;
+       } else if (selecteds.length > 2) {
+         handleError('Can only merge 2 attributes at a time.');
+         return;
+       }
+       mergeNodes(selecteds);
+    });
+    var qtipShown = false;
+    $('#qtip').unbind().click ( function () {
+      if (!qtipShown) {
+        cy.elements().trigger('qtipshow');
+        qtipShown = true;
+      } else {
+        cy.elements().trigger('qtiphide');
+        qtipShown = false;
+      }
+    });
+    /*
+    cy.$('.parent,.child').on('click', function ( e ) {
+      var nodeID = this.id();
+      traverseChildren(cy, relations, nodeID);
+      cy.forceRender();
+    });
+    */
+    /*
+    cy.$('.dimension').on('click', function ( e ) {
+      var dimension = this.id();
+      var url = window.location.href;
+      if (url.split(dimension).length > 1) return; // TODO
+      window.location.href = url.split('#').shift() + '#' + dimension;
+      window.location.reload(false);
+    });
+    */
+  }
+
+    function showDimension ( taxonomyID, dimension ) {
+      $.get('dimension', function ( dimensionResults ) {
+        if (!dimensionResults || !dimensionResults.response) {
+          console.log('Cannot get dimensions from DB.');
+          return;
+        }
+        var request = {'taxonomy_id': taxonomyID};
+        var attributeURL, attributeRelationsURL, dimensions;
+        switch(dimension) {
+          case 'Interdimensional view': attributeURL = 'majorAttributes'; attributeRelationsURL = 'interdimensionalRelations'; dimensions = dimensionResults.response; break;
+          default: attributeURL = 'attributesPerDimension'; attributeRelationsURL = 'attributeRelations'; dimensions = [{text: dimension}]; request.dimension = dimension;
+        }
+        $.ajax
+          ({
+              type: "POST",
+              //the url where you want to sent the userName and password to
+              url: attributeURL,
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              //json object to sent to the authentication url
+              data: JSON.stringify(request),
+              success: function ( attributes ) {
+                if (!attributes || !attributes.response) {
+                  console.log('Cannot get attributes from DB.');
+                  return;
+                }
+                console.log(attributes.response)
+                $.ajax
+                  ({
+                      type: "POST",
+                      //the url where you want to sent the userName and password to
+                      url: attributeRelationsURL,
+                      dataType: 'json',
+                      contentType:'application/json',
+                      async: true,
+                      //json object to sent to the authentication url
+                      data: JSON.stringify(request),
+                      success: function ( relations ) {
+                        if (!relations || !relations.response) {
+                          console.log('Cannot get attribute relations from DB.');
+                          return;
+                        }
+                        $.get('relationTypes', function ( relationTypes ) {
+                          if (!relationTypes || !relationTypes.response) {
+                            console.log('Cannot get relation types from DB.');
+                            return;
+                          }
+                          $.get('citationCountsIncludingChildren', function ( citationCounts ) {
+                              if (!citationCounts || !citationCounts.response) {
+                                console.log('Cannot get citation counts from DB.');
+                                return;
+                              }
+                            createJSON(dimensions, attributes.response, relations.response, relationTypes.response, citationCounts.response);
+                          });
+                        });
+                      }
+                  });
+              }
+          });
+      });
+    }
+
+    function showDimensionRelations () {
+      var request = {'taxonomy_id': taxonomyID};
+      $.ajax
+        ({
+            type: "POST",
+            //the url where you want to sent the userName and password to
+            url: 'dimensionMajorAttributes',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            //json object to sent to the authentication url
+            data: JSON.stringify(request),
+            success: function ( majorAttributes ) {
+              showDimensions(majorAttributes.response);
+            }
+        });
+    }
+
+    $(document).ready( function () {
+      var taxonomyID = 1;
+      var dimension = window.location.href.split('#').pop().replace(/%20/g, ' ');
+      if (dimension != '') {
+        console.log('dimension: ' + dimension);
+        showDimension(taxonomyID, dimension);
+      }
+    });
+	</script>
+</body>
+</html>
+

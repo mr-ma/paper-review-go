@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<!-- https://github.com/lonelydatum/bost.ocks.org/blob/gh-pages/mike/treemap/index.html -->
+<meta charset="utf-8">
+<title>Zoomable Treemaps</title>
+<head>
+
+</style>
+
+    <script type="text/javascript" src="d3.v2.min.js"></script>
+    <script src="jquery.min.js"></script>
+    <script src='cytoscape.min.js'></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.6/cytoscape.min.js -->
+
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap.min.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <link href="treemap.css" type="text/css" rel="stylesheet"/>
+
+    <script src="error.js"></script>
+
+<style>
+
+#chart {
+  width: 960px;
+  height: 500px;
+  background: #ddd;
+}
+
+text {
+  pointer-events: none;
+}
+
+.grandparent text {
+  font-weight: bold;
+}
+
+rect {
+  fill: none;
+  stroke: #fff;
+}
+
+rect.parent,
+.grandparent rect {
+  stroke-width: 2px;
+}
+
+.grandparent rect {
+  fill: orange;
+}
+
+.grandparent:hover rect {
+  fill: #ee9700;
+}
+
+.children rect.parent,
+.grandparent rect {
+  cursor: pointer;
+}
+
+.children rect.parent {
+  fill: #bbb;
+  fill-opacity: .5;
+}
+
+.children:hover rect.child {
+  fill: #bbb;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<p id="chart">
+<script>
+
+function drawMap ( jsonObj ) {
+var margin = {top: 20, right: 0, bottom: 0, left: 0},
+    width = 960,
+    height = 500 - margin.top - margin.bottom,
+    formatNumber = d3.format(",d"),
+    transitioning;
+
+var x = d3.scale.linear()
+    .domain([0, width])
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .domain([0, height])
+    .range([0, height]);
+
+var treemap = d3.layout.treemap()
+    .children(function(d, depth) { return depth ? null : d._children; })
+    .sort(function(a, b) { return a.value - b.value; })
+    .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
+    .round(false);
+
+var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.bottom + margin.top)
+    .style("margin-left", -margin.left + "px")
+    .style("margin.right", -margin.right + "px")
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .style("shape-rendering", "crispEdges");
+
+var grandparent = svg.append("g")
+    .attr("class", "grandparent");
+
+grandparent.append("rect")
+    .attr("y", -margin.top)
+    .attr("width", width)
+    .attr("height", margin.top);
+
+grandparent.append("text")
+    .attr("x", 6)
+    .attr("y", 6 - margin.top)
+    .attr("dy", ".75em");
+
+d3.json(jsonObj, function(root) {
+  root = jsonObj;
+
+  initialize(root);
+  accumulate(root);
+  layout(root);
+  display(root);
+
+  function initialize(root) {
+    root.x = root.y = 0;
+    root.dx = width;
+    root.dy = height;
+    root.depth = 0;
+  }
+
+  // Aggregate the values for internal nodes. This is normally done by the
+  // treemap layout, but not here because of our custom implementation.
+  // We also take a snapshot of the original children (_children) to avoid
+  // the children being overwritten when when layout is computed.
+  function accumulate(d) {
+    return (d._children = d.children)
+        ? d.value = d.children.reduce(function(p, v) { return p + accumulate(v); }, 0)
+        : d.value;
+  }
+
+  // Compute the treemap layout recursively such that each group of siblings
+  // uses the same size (1×1) rather than the dimensions of the parent cell.
+  // This optimizes the layout for the current zoom state. Note that a wrapper
+  // object is created for the parent node for each group of siblings so that
+  // the parent’s dimensions are not discarded as we recurse. Since each group
+  // of sibling was laid out in 1×1, we must rescale to fit using absolute
+  // coordinates. This lets us use a viewport to zoom.
+  function layout(d) {
+    if (d._children) {
+      treemap.nodes({_children: d._children});
+      d._children.forEach(function(c) {
+        c.x = d.x + c.x * d.dx;
+        c.y = d.y + c.y * d.dy;
+        c.dx *= d.dx;
+        c.dy *= d.dy;
+        c.parent = d;
+        layout(c);
+      });
+    }
+  }
+
+  function display(d) {
+    grandparent
+        .datum(d.parent)
+        .on("click", transition)
+      .select("text")
+        .text(name(d));
+
+    var g1 = svg.insert("g", ".grandparent")
+        .datum(d)
+        .attr("class", "depth");
+
+    var g = g1.selectAll("g")
+        .data(d._children)
+      .enter().append("g");
+
+    g.filter(function(d) { return d._children; })
+        .classed("children", true)
+        .on("click", transition);
+
+    g.selectAll(".child")
+        .data(function(d) { return d._children || [d]; })
+      .enter().append("rect")
+        .attr("class", "child")
+        .call(rect);
+
+    g.append("rect")
+        .attr("class", "parent")
+        .call(rect)
+      .append("title")
+        .text(function(d) { return formatNumber(d.value); });
+
+    g.append("text")
+        .attr("dy", ".75em")
+        .text(function(d) { return d.name; })
+        .call(text);
+
+    function transition(d) {
+      if (transitioning || !d) return;
+      transitioning = true;
+
+      var g2 = display(d),
+          t1 = g1.transition().duration(750),
+          t2 = g2.transition().duration(750);
+
+      // Update the domain only after entering new elements.
+      x.domain([d.x, d.x + d.dx]);
+      y.domain([d.y, d.y + d.dy]);
+
+      // Enable anti-aliasing during the transition.
+      svg.style("shape-rendering", null);
+
+      // Draw child nodes on top of parent nodes.
+      svg.selectAll(".depth").sort(function(a, b) { return a.depth - b.depth; });
+
+      // Fade-in entering text.
+      g2.selectAll("text").style("fill-opacity", 0);
+
+      // Transition to the new view.
+      t1.selectAll("text").call(text).style("fill-opacity", 0);
+      t2.selectAll("text").call(text).style("fill-opacity", 1);
+      t1.selectAll("rect").call(rect);
+      t2.selectAll("rect").call(rect);
+
+      // Remove the old node when the transition is finished.
+      t1.remove().each("end", function() {
+        svg.style("shape-rendering", "crispEdges");
+        transitioning = false;
+      });
+    }
+
+    return g;
+  }
+
+  function text(text) {
+    text.attr("x", function(d) { return x(d.x) + 6; })
+        .attr("y", function(d) { return y(d.y) + 6; });
+  }
+
+  function rect(rect) {
+    rect.attr("x", function(d) { return x(d.x); })
+        .attr("y", function(d) { return y(d.y); })
+        .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
+        .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
+  }
+
+  function name(d) {
+    return d.parent
+        ? name(d.parent) + "." + d.name
+        : d.name;
+  }
+});
+}
+
+function traverseChildren ( parent, attributes, relations ) {
+  var children = [];
+  attributes.forEach ( function ( attribute ) {
+    for ( var i = 0; i < relations.length; i++ ) {
+      if (relations[i].attributeSrc == attribute.text && relations[i].attributeDest == parent.name && relations[i].relation != 'Depends' && relations[i].relation != 'DependsDirected') {
+        var jsonObj = {name: relations[i].attributeSrc};
+        jsonObj.children = traverseChildren({name: relations[i].attributeSrc}, attributes, relations);
+        jsonObj.value = Math.max(jsonObj.children.length * 100, 500);
+        children.push(jsonObj);
+        break;
+      }
+    }
+  });
+  return children;
+}
+
+function createJSON ( dimension, attributes, relations ) {
+
+  var jsonObj = {name: dimension, children: []};
+  attributes.forEach ( function ( attribute ) {
+    var foundParent = false;
+    for ( var i = 0; i < relations.length; i++ ) {
+      if (relations[i].attributeSrc == attribute.text && relations[i].relation != 'Depends' && relations[i].relation != 'DependsDirected')  {
+        foundParent = true;
+        break;
+      }
+    }
+    if (!foundParent) {
+      jsonObj.children.push({name: attribute.text});
+    }
+  });
+  jsonObj.children.forEach ( function ( child ) {
+    child.children = traverseChildren(child, attributes, relations);
+    child.value = Math.max(child.children.length * 100, 500);
+  });
+  jsonObj.value = Math.max(jsonObj.children.length * 100, 500);
+  console.log('done: ', jsonObj);
+
+  drawMap(jsonObj);
+}
+
+$(document).ready( function () {
+  var dimension = 'Attack view';
+  var request = {'taxonomy_id': 1, dimension: dimension};
+  $.ajax
+    ({
+        type: "POST",
+        //the url where you want to sent the userName and password to
+        url: 'attributesPerDimension',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        //json object to sent to the authentication url
+        data: JSON.stringify(request),
+        success: function ( attributes ) {
+          if (!attributes || !attributes.response) {
+            console.log('Cannot get attributes from DB.');
+            return;
+          }
+          $.ajax
+            ({
+                type: "POST",
+                //the url where you want to sent the userName and password to
+                url: 'attributeRelations',
+                dataType: 'json',
+                contentType:'application/json',
+                async: true,
+                //json object to sent to the authentication url
+                data: JSON.stringify(request),
+                success: function ( relations ) {
+                  if (!relations || !relations.response) {
+                    console.log('Cannot get attribute relations from DB.');
+                    return;
+                  }
+                  createJSON(dimension, attributes.response, relations.response);
+                }
+          });
+        }
+    });
+
+});
+</script>
+</body>
+</html>

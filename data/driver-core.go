@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	//overriding MySqlDriver
-	_ "github.com/go-sql-driver/mysql"
+	_ "../mysql"
 )
 
 //Driver is the minimum functions for a DB engine

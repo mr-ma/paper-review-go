@@ -3,8 +3,8 @@ import (
 	"errors"
 	"fmt"
 	//overriding MySqlDriver
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/mr-ma/paper-review-go/model"
+	_ "../mysql"
+	"../model"
 )
 
 type PaperReviewDriver interface {

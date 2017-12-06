@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<!-- https://searchcode.com/file/72780018/mike/miserables/index.html -->
+<meta charset="utf-8">
+<title>Colored Concept Correlations</title>
+<header>
+<style>
+
+@import url(style.css);
+
+.background {
+  fill: #eee;
+}
+
+line {
+  stroke: #fff;
+}
+
+text.active {
+  fill: red;
+}
+
+</style>
+    <script type="text/javascript" src="d3.min.js"></script>
+    <script src="jquery.min.js"></script>
+
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap.min.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <script src="error.js"></script>
+
+</header>
+<body>
+
+<ul class="nav nav-tabs tabs-up" id="tabsContainer">
+  <li><a href="javascript:void(0)" name="parent" data-target="#parentFrame" class="media_node active span" id="parent" data-toggle="tabajax" rel="tooltip">Parent</a></li>
+  <li><a href="javascript:void(0)" name="Number of children" data-target="#numChildrenFrame" class="media_node active span" id="numChildren" data-toggle="tabajax" rel="tooltip">Number of children</a></li>
+</ul>
+
+<div class="tab-content" style="width:200px;">
+  <div class="tab-pane fade in active" id="parentFrame">
+    <label for="parents">Parent Attribute: </label>
+    <select class="form-control" id="parents">
+      <option></option>
+    </select>
+  </div>
+  <div class="tab-pane fade in" id="numChildrenFrame" hidden>
+    <form>
+      <label for="maxChildren">Min children: </label><input type="text" class="form-control" id="minChildren">
+      <label for="maxChildren">Max children: </label><input type="text" class="form-control" id="maxChildren">
+    </form>
+  </div>
+</div>
+
+<form style="padding:10px;width:200px;">
+
+<div>
+  <label for="includeChildren">Include children</label>
+  <input type="checkbox" id="includeChildren" title="Include citations of children" style="margin-left:15px;" checked>
+</div>
+<label for = "regionTextField">Filter</label>
+<div class="input-group class="form-control"">
+  <div class="input-group-btn">
+    <button  class="btn btn-default dropdown-toggle" id="filterAttributesButton" title="Filter Attributes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-placeholder="Please select">
+      <i class="glyphicon glyphicon-th-list" style="color:#4078c0;"></i>
+      <span>Filter</span>
+      <span class="caret" aria-hidden="true"></span>
+    </button>
+    <ul class="dropdown-menu" id="attributeDropdownMenu" style="max-height:500px;overflow-y:auto;">
+    </ul>
+    <input type="button" class="btn btn-default" id="refreshFilter" value="Refresh">
+  </div>
+</div>
+<label for="order">Order by: </label><select class="form-control" id="order">
+  <option value="name">by Name</option>
+  <option value="count">by Frequency</option>
+</select>
+</form>
+
+<script>
+
+  function buildMatrix ( attributes, correlations ) {
+    var matrix = [],
+        nodes = attributes.response,
+        n = attributes.response.length;
+
+    // Compute index per node.
+    nodes.forEach(function(node, i) {
+      node.index = i;
+      node.count = 0;
+      matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0}; });
+    });
+
+    correlations.response.forEach(function(link) {
+      //if (link.NumberOfPapers > 49) console.log('ERROR: More than 49 citations: ', link);
+      //link.id1--;
+      //link.id2--;
+      var foundNodes = 0;
+      for ( var i = 0; i < nodes.length; i++ ) {
+        if (nodes[i].id == link.id1 || nodes[i].id == link.id2) {
+          nodes[i].count += link.NumberOfPapers;
+          foundNodes++;
+          if (foundNodes > 1) break;
+        }
+      }
+      foundNodes = 0;
+      for ( var i = 0; i < nodes.length; i++ ) {
+        if (nodes[i].id == link.id1) {
+          for ( var j = 0; j < nodes.length; j++ ) {
+            if (nodes[j].id == link.id2) {
+              matrix[i][j].z += link.NumberOfPapers;
+              matrix[i][j].src = nodes[i].text;
+              matrix[i][j].dest = nodes[j].text;
+              matrix[j][i].z += link.NumberOfPapers;
+              matrix[j][i].src = nodes[j].text;
+              matrix[j][i].dest = nodes[i].text;
+              foundNodes = 2;
+              break;
+            }
+          }
+          if (foundNodes > 1) break;
+        }
+      }
+      /*
+      matrix[link.id1][link.id2].z += link.NumberOfPapers;
+      matrix[link.id2][link.id1].z += link.NumberOfPapers;
+      nodes[link.id1].count += link.NumberOfPapers;
+      nodes[link.id2].count += link.NumberOfPapers;
+      */
+    });
+
+    var maxValue = -1;
+    var minValue = Infinity
+
+    for ( var i = 0; i < matrix.length; i++ ) {
+      for ( var j = 0; j < matrix[i].length; j++ ) {
+        if (matrix[i][j].z > maxValue) maxValue = matrix[i][j].z;
+        if (matrix[i][j].z < minValue) minValue = matrix[i][j].z;
+      }
+    }
+
+    maxValue = Math.min(maxValue, 30);
+
+    var margin = {top: 240, right: 0, bottom: 30, left: 240},
+        width = 1440,
+        height = 1440;
+
+    d3.select("svg").remove();
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .style("margin-left", margin.left + "px")
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var defs = svg.append("defs");
+
+      var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
+    var colourRangeYGB = d3.range(0, 1, 1.0 / (coloursYGB.length - 1));
+    colourRangeYGB.push(1);
+           
+    //Create color gradient
+    var colorScaleYGB = d3.scale.linear()
+      .domain(colourRangeYGB)
+      .range(coloursYGB)
+      .interpolate(d3.interpolateHcl);
+
+    //Needed to map the values of the dataset to the color scale
+    var colorInterpolateYGB = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////// Create the YGB color gradient ///////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Calculate the gradient  
+    defs.append("linearGradient")
+      .attr("id", "gradient-ygb-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(coloursYGB)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(coloursYGB.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+
+    ///////////////////////////////////////////////////////////////////////////
+    //////////// Get continuous color scale for the Rainbow ///////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    var coloursRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
+    var colourRangeRainbow = d3.range(0, 1, 1.0 / (coloursRainbow.length - 1));
+    colourRangeRainbow.push(1);
+           
+    //Create color gradient
+    var colorScaleRainbow = d3.scale.linear()
+      .domain(colourRangeRainbow)
+      .range(coloursRainbow)
+      .interpolate(d3.interpolateHcl);
+
+    //Needed to map the values of the dataset to the color scale
+    var colorInterpolateRainbow = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    ///////////////////////////////////////////////////////////////////////////
+    //////////////////// Create the Rainbow color gradient ////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Calculate the gradient  
+    defs.append("linearGradient")
+      .attr("id", "gradient-rainbow-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(coloursRainbow)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+
+    var x = d3.scale.ordinal().rangeBands([0, width]),
+        z = d3.scale.linear().domain([0, 4]).clamp(true),
+        c = d3.scale.category10().domain(d3.range(10));
+
+    // Precompute the orders.
+    var orders = {
+      name: d3.range(n).sort(function(a, b) { return d3.ascending(nodes[a].text, nodes[b].text); }),
+      count: d3.range(n).sort(function(a, b) { return nodes[b].count - nodes[a].count; })
+    };
+
+    // The default sort order.
+    x.domain(orders.name);
+
+    svg.append("rect")
+        .attr("class", "background")
+        .attr("width", width)
+        .attr("height", height);
+
+    var row = svg.selectAll(".row")
+        .data(matrix)
+      .enter().append("g")
+        .attr("class", "row")
+        .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+        .each(row);
+
+    row.append("line")
+        .attr("x2", width);
+
+    row.append("text")
+        .attr("x", -6)
+        .attr("y", x.rangeBand() / 2)
+        .attr("dy", ".32em")
+        .attr("text-anchor", "end")
+        .text(function(d, i) { return nodes[i].text; });
+
+    var column = svg.selectAll(".column")
+        .data(matrix)
+      .enter().append("g")
+        .attr("class", "column")
+        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+
+    column.append("line")
+        .attr("x1", -width);
+
+    column.append("text")
+        .attr("x", 6)
+        .attr("y", x.rangeBand() / 2)
+        .attr("dy", ".32em")
+        .attr("text-anchor", "start")
+        .text(function(d, i) { return nodes[i].text; });
+
+    function row(row) {
+      var cell = d3.select(this).selectAll(".cell")
+          .data(row.filter(function(d) { return d.z; }))
+        .enter().append("rect")
+          .attr("class", "cell")
+          .attr("x", function(d) { return x(d.x); })
+          .attr("width", x.rangeBand())
+          .attr("height", x.rangeBand())
+          .style("fill-opacity", function(d) { return z(d.z); })
+          .on("mouseover", mouseover)
+          .on("mouseout", mouseout);
+    }
+
+    function mouseover(p) {
+      d3.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
+      d3.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
+      console.log('value: ' + p.z + ', src: ' + p.src + ', dest: ' + p.dest);
+    }
+
+    function mouseout() {
+      d3.selectAll("text").classed("active", false);
+    }
+
+    d3.select("#order").on("change", function() {
+      //clearTimeout(timeout);
+      order(this.value);
+    });
+
+    function order(value) {
+      x.domain(orders[value]);
+
+      var t = svg.transition().duration(2500);
+
+      t.selectAll(".row")
+          .delay(function(d, i) { return x(i) * 4; })
+          .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+        .selectAll(".cell")
+          .delay(function(d) { return x(d.x) * 4; })
+          .attr("x", function(d) { return x(d.x); });
+
+      t.selectAll(".column")
+          .delay(function(d, i) { return x(i) * 4; })
+          .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////// Color Interactions /////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    //On click transition
+    d3.select("#color").on("change", function() {
+      var currentFill = this.value
+        if(currentFill === "rainbow") {
+          updateRainbow();
+        } else {
+          updateYGB();
+        }//else 
+      });
+
+    //Update the colors to a more light yellow-green-dark blue
+    function updateYGB() {
+      //Fill the legend rectangle
+      svg.select(".cell")
+        .style("fill", "url(#gradient-ygb-colors)");
+      //Transition the hexagon colors
+      svg.selectAll(".cell")
+        .transition().duration(1000)
+        .style("fill", function (d,i) { return colorScaleYGB(colorInterpolateYGB(d.z)); });
+    }//updateYGB
+
+    //Transition the colors to a rainbow
+    function updateRainbow() {
+      //Fill the legend rectangle
+      svg.select(".cell")
+        .style("fill", "url(#gradient-rainbow-colors)");
+      //Transition the hexagon colors
+      svg.selectAll(".cell")
+        .transition().duration(1000)
+        .style("fill", function (d,i) { return colorScaleRainbow(colorInterpolateRainbow(d.z)); })
+    }//updateRainbow
+
+    //Start set-up
+    updateRainbow();
+  }
+
+  function showMatrix ( attributes, correlations ) {
+    buildMatrix(attributes, correlations);
+  }
+
+  function loadAttributes ( init, correlations, ajaxType, attributeURL, request, callback, filter ) {
+    $.ajax
+      ({
+          type: ajaxType,
+          //the url where you want to sent the userName and password to
+          url: attributeURL, // allChildrenAttributes
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          //json object to sent to the authentication url
+          data: JSON.stringify(request),
+          success: function ( attributesResult) {
+            if (!attributesResult || !attributesResult.response) {
+              console.log('Cannot get attributes from DB.');
+              return;
+            }
+            var attributes = {response: []};
+            if (!!filter) {
+              attributesResult.response.forEach ( function ( attribute ) {
+                filter.each ( function ( index, entry ) {
+                  if ($(entry).val() == attribute.text) {
+                    attributes.response.push(attribute);
+                    return false;
+                  }
+                });
+              });
+            } else attributes.response = attributesResult.response;
+            if (init) {
+              //$('#parents, #attributeDropdownMenu').html('');
+              attributesResult.response.sort( function ( a, b ) {
+                return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+              });
+              attributes.response.forEach ( function ( attribute ) {
+                $('#parents').append('<option>' + attribute.text + '</option>');
+              });
+            }
+            if (!filter) {
+              $('#attributeDropdownMenu').html('<li><input class="attributeFilterCheck" id="attributeFilterCheckAll" type="checkbox" value="Check all" style="margin-right:5px;" checked><label value="Check all" title="Check all" style="margin-right:5px;">Check all</label></li>');
+              attributes.response.forEach ( function ( attribute ) {
+                $('#attributeDropdownMenu').append('<li><input class="attributeFilterCheck" type="checkbox" value="' + attribute.text + '" style="margin-right:5px;" checked><label value="' + attribute.text + '" title="' + attribute.text + '" style="margin-right:5px;">' +
+                                      attribute.text + '</label></li>');
+              });
+              $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').unbind().on('change', function ( e ) {
+                var checked = $(this).is(':checked');
+                console.log($('.attributeFilterCheck:not(:checked)'))
+                if (!checked) $('#attributeFilterCheckAll').prop('checked', false);
+                else if ($('.attributeFilterCheck:not(:checked)').length <= 1) $('#attributeFilterCheckAll').prop('checked', true);
+              });
+              $('#attributeFilterCheckAll').unbind().on('change', function ( e ) {
+                var checked = $(this).is(':checked');
+                if (checked) $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').prop('checked', true);
+                else $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').prop('checked', false);
+              });
+              $('#refreshFilter').unbind().on('click', function ( e ) {
+                loadAttributes(false, correlations, ajaxType, attributeURL, request, showMatrix, $('.attributeFilterCheck[id!="attributeFilterCheckAll"]:checked'));
+              });
+            }
+            callback(attributes, correlations);
+          }
+      });
+    }
+
+function initPage () {
+
+  var correlationURL = $('#includeChildren').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+  $.get(correlationURL, function ( correlations ) {
+    if (!correlations || !correlations.response) {
+      console.log('Cannot get correlation data from DB.');
+      return;
+    }
+    loadAttributes(true, correlations, 'GET', 'attribute', {}, showMatrix);
+    var parentText = 'Trace';
+    $('.media_node').unbind().on('click', function ( e ) {
+      var frameID = $(this).attr('id') + 'Frame';
+      $('.tab-pane[id != "' + frameID + '"]').hide();
+      $('#' + frameID).show();
+    })
+    $('#parents').unbind().on('change', function ( e ) {
+      var parentValue = $(this).val();
+      if (parentValue == '') loadAttributes(false, correlations, 'GET', 'attribute', {}, showMatrix);
+      else loadAttributes(false, correlations, 'POST', 'allChildrenAttributes', {'taxonomy_id': 1, 'parent': parentValue}, showMatrix);
+    });
+    $('#minChildren, #maxChildren').unbind().on('keydown', function ( e ) {
+      console.log('enter')
+      if (e.keyCode == 13) {
+        var minValue = $('#minChildren').val() - 0;
+        if ($('#minChildren').val() == '') minValue = 0;
+        var maxValue = $('#maxChildren').val() - 0;
+        if ($('#maxChildren').val() == '') maxValue = 1000000; // TODO
+        if (isNaN(minValue) || isNaN(maxValue)) {
+          handleError('Invalid min or max value, not a number.');
+          return;
+        }
+        loadAttributes(false, correlations, 'POST', 'intermediateAttributes', {'taxonomy_id': 1, 'minValue': minValue, 'maxValue': maxValue}, showMatrix);
+      }
+    });
+  });
+}
+
+$(document).ready( function () {
+  initPage();
+  $('#includeChildren').unbind().on('change', function () {
+    initPage();
+  });
+});
+
+</script>
+</body>
+</html>

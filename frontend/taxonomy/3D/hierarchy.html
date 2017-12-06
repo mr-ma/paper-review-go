@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>3D</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background:#fff;
+				padding:0;
+				margin:0;
+				font-weight: bold;
+				overflow:hidden;
+			}
+			#container {
+			  width: 100%;
+			  height: 100%;
+			  padding: 0;
+			  margin: 0;
+			  position: relative;
+			}
+
+			.text-label {
+			  color: #fff;
+			  font-family: "Fira Mono", Monaco, "Andale Mono", "Lucida Console", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace;
+			  margin: -5px 0 0 15px;
+			  pointer-events:none;
+			}
+		</style>
+		<script src="jquery.min.js"></script>
+	    <script src='cytoscape.min.js'></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.6/cytoscape.min.js -->
+
+	    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+	    <script src="bootstrap.min.js"></script>
+
+	    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+	    <script src="bootstrap-dialog.min.js"></script>
+
+	    <script src="three.min.js"></script>
+	    <script src="threex.dynamictexture.js"></script>
+	    <script src="threex.dynamictext2dobject.js"></script>
+		<script src="DragControls.js"></script>
+		<script src="TrackballControls.js"></script>
+		<!-- <script src="PointerLockControls.js"></script> -->
+		<script src="FlyControls.js"></script>
+		<script src="stats.min.js"></script>
+
+		<script src="error.js"></script>
+	</head>
+	<body>
+
+	<input type="button" id="clickMe" value="click" hidden>
+
+		<script>
+
+			var container, stats;
+			var camera, controls, scene, renderer;
+			var objects = [];
+			var textlabels = [];
+			var dimensions;
+
+  function Label(object, camera, content) {
+    this.object = object;
+    this.camera = camera;
+    this.content = content;
+
+    this.el = this.buildElement();
+    this.track();
+  }
+
+   Label.prototype.buildElement = function() {
+    var el = document.createElement('div');
+    el.textContent = this.content;
+    el.style.backgroundColor = 'white';
+    el.style.position = 'absolute';
+    el.style.padding = '1px 4px';
+    el.style.borderRadius = '2px';
+    el.style.maxWidth = (window.innerWidth * 0.25) + 'px';
+    el.style.maxHeight = (window.innerHeight * 0.25) + 'px';
+    el.style.overflowY = 'auto';
+    document.body.appendChild(el);
+    return el;
+  };
+
+  Label.prototype.track = function() {
+    var p3d = this.object.position.clone();
+    //p3d.x = p3d.x + this.object.boundRadius;
+    p3d.y = p3d.y + this.object.boundRadius * 2;
+    //p3d.z = p3d.z + this.object.boundRadius;
+
+        pos = p3d.project(camera),
+        width = window.innerWidth,
+        height = window.innerHeight,
+        w = this.el.offsetWidth,
+        h = this.el.offsetHeight;
+    this.el.style.top = '' + (height/2 - height/2 * pos.y - 1.5*h) + 'px';
+    this.el.style.left = '' + (width/2 * pos.x + width/2 - w/2) + 'px';
+
+    var that = this;
+    setTimeout(function(){that.track();}, 1000/60);
+  };
+
+  function createTextLabel () {
+    var div = document.createElement('div');
+    div.className = 'text-label';
+    div.style.position = 'absolute';
+    div.style.width = 100;
+    div.style.height = 100;
+    div.style.color = 'blue';
+    div.innerHTML = " ";
+    div.style.top = -1000;
+    div.style.left = -1000;
+    
+    var _this = this;
+    
+    return {
+      element: div,
+      parent: false,
+      position: new THREE.Vector3(0,0,0),
+      setHTML: function(html) {
+        this.element.innerHTML = html;
+      },
+      setParent: function(threejsobj) {
+        this.parent = threejsobj;
+      },
+      updatePosition: function() {
+        if(parent) {
+          this.position.copy(this.parent.position);
+        }
+        
+        var coords2d = this.get2DCoords(this.position, _this.camera);
+        this.element.style.left = coords2d.x + 'px';
+        this.element.style.top = coords2d.y + 'px';
+      },
+      get2DCoords: function(position, camera) {
+        var vector = position.project(camera);
+        vector.x = (vector.x + 1)/2 * window.innerWidth;
+        vector.y = -(vector.y - 1)/2 * window.innerHeight;
+        return vector;
+      }
+    };
+  }
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				stats.update();
+
+			}
+
+			function render() {
+				controls.update();
+			    for(var i=0; i<textlabels.length; i++) {
+			      textlabels[i].updatePosition();
+			    }
+				renderer.render( scene, camera );
+
+			}
+
+
+			// function for drawing rounded rectangles
+			function roundRect(ctx, x, y, w, h, r) 
+			{
+			    ctx.beginPath();
+			    ctx.moveTo(x+r, y);
+			    ctx.lineTo(x+w-r, y);
+			    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+			    ctx.lineTo(x+w, y+h-r);
+			    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+			    ctx.lineTo(x+r, y+h);
+			    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+			    ctx.lineTo(x, y+r);
+			    ctx.quadraticCurveTo(x, y, x+r, y);
+			    ctx.closePath();
+			    ctx.fill();
+				ctx.stroke();   
+			}
+
+			function makeTextSprite(message, fontColor, materialColor) {
+			    var fontface = "Georgia";
+			    var fontsize = 24;
+			    var borderThickness = 4;
+			    var canvas = document.createElement('canvas');
+			    var context = canvas.getContext('2d');
+			    var backgroundColor = {
+			        r: 255,
+			        g: 255,
+			        b: 255,
+			        a: 0.0
+			    };
+			    context.font = "Bold " + fontsize + "px " + fontface;
+
+			    // get size data (height depends only on font size)
+			    var metrics = context.measureText(message);
+			    var textWidth = metrics.width;
+			    context.fillStyle = "rgba(" + fontColor.r + "," + fontColor.g + "," + fontColor.b + "," + fontColor.a + ")";
+			    //context.fillStyle = "rgba(" + backgroundColor.r + "," + backgroundColor.g + "," + backgroundColor.b + "," + backgroundColor.a + ")";
+
+			    context.fillText(message, borderThickness, fontsize + borderThickness);
+
+			    // canvas contents will be used for a texture
+			    var texture = new THREE.Texture(canvas)
+			    texture.needsUpdate = true;
+
+			    var spriteMaterial = new THREE.SpriteMaterial({
+			        map: texture,
+			        color: materialColor != undefined ? materialColor : 0xffffff
+			    });
+			    var sprite = new THREE.Sprite(spriteMaterial);
+			    sprite.scale.set(100, 50, 1.0);
+			    return sprite;
+			}
+
+			function create3D( dimensions, attributes, relations, relationTypes, citationCounts ) {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.z = 4000;
+
+				controls = new THREE.TrackballControls( camera );
+				controls.rotateSpeed = 1.0;
+				controls.zoomSpeed = 1.2;
+				controls.panSpeed = 0.8;
+				controls.noZoom = false;
+				controls.noPan = false;
+				controls.staticMoving = true;
+				controls.dynamicDampingFactor = 0.3;
+/*
+				controls = new THREE.FlyControls( camera );
+
+				controls.movementSpeed = 1000;
+				controls.domElement = container;
+				controls.rollSpeed = Math.PI / 24;
+				controls.autoForward = false;
+				controls.dragToLook = false;
+*/
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xf0f0f0 );
+
+				scene.add( new THREE.AmbientLight( 0x505050 ) );
+
+				var light = new THREE.SpotLight( 0xffffff, 1.5 );
+				light.position.set( 0, 500, 2000 );
+				light.castShadow = true;
+
+				light.shadow = new THREE.LightShadow( new THREE.PerspectiveCamera( 50, 1, 200, 10000 ) );
+				light.shadow.bias = - 0.00022;
+
+				light.shadow.mapSize.width = 2048;
+				light.shadow.mapSize.height = 2048;
+
+				scene.add( light );
+
+				var geometry = new THREE.SphereGeometry( 75, 32, 32 );
+				//var dynamicTexture	= new THREEx.DynamicTexture(512,512)
+				//dynamicTexture.texture.needsUpdate = true;
+
+				attributes.forEach ( function ( attribute ) {
+
+					//dynamicTexture.clear();
+					//dynamicTexture.drawText(attribute.text, 32, 256, 'white');
+					var object = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { color: !!attribute.major ? 0x000000 : 0xffffff } ) );
+					object.text = attribute.text;
+
+					if (!!attribute.xMajor3D && !!attribute.yMajor3D && attribute.zMajor3D) {
+						object.position.x = attribute.xMajor3D;
+						object.position.y = attribute.yMajor3D;
+						object.position.z = attribute.zMajor3D;
+					} else {
+						object.position.x = attribute.x3D;
+						object.position.y = attribute.y3D;
+						object.position.z = attribute.z3D;
+					}
+
+			/*
+
+					object.position.x = Math.random() * 1000 - 500;
+					object.position.y = Math.random() * 600 - 300;
+					object.position.z = Math.random() * 800 - 400;
+			*/
+
+					object.rotation.x = Math.random() * 2 * Math.PI;
+					object.rotation.y = Math.random() * 2 * Math.PI;
+					object.rotation.z = Math.random() * 2 * Math.PI;
+
+					//object.scale.x = Math.random() * 2 + 1;
+					//object.scale.y = Math.random() * 2 + 1;
+					//object.scale.z = Math.random() * 2 + 1;
+
+					object.castShadow = true;
+					object.receiveShadow = true;
+
+					scene.add( object );
+
+				    var text = createTextLabel();
+				    text.setHTML(attribute.text);
+				    text.setParent(object);
+				    textlabels.push(text);
+				    container.appendChild(text.element);
+      				objects.push( object );
+				});
+
+				var materialLine = new THREE.LineBasicMaterial({ color: 0x000000 }); // 0x0000ff
+
+				relations.forEach ( function ( relation ) {
+					var origin, terminus;
+					objects.forEach ( function ( object ) {
+						if (object.text == relation.attributeSrc) origin = object.position;
+						else if (object.text == relation.attributeDest) terminus = object.position;
+					});
+					if (!!origin && !!terminus) {
+						if (relation.relation == 'Depends') {
+							var geometry = new THREE.Geometry();
+							geometry.vertices.push(origin);
+							geometry.vertices.push(terminus);
+							var line = new THREE.Line(geometry, materialLine);
+							scene.add(line);
+						} else {
+							var direction = new THREE.Vector3().subVectors(terminus, origin);
+							var vectorLength = Math.max(1, Math.floor(direction.length()));
+							var arrow = new THREE.ArrowHelper(direction.normalize(), origin, vectorLength, 0x000000, 250);
+							scene.add(arrow);
+						}
+					}
+				});
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCFShadowMap;
+
+				container.appendChild( renderer.domElement );
+
+				var dragControls = new THREE.DragControls( objects, camera, renderer.domElement );
+				dragControls.addEventListener( 'dragstart', function ( event ) { controls.enabled = false; } );
+				dragControls.addEventListener( 'dragend', function ( event ) { controls.enabled = true; } );
+
+				stats = new Stats();
+				container.appendChild( stats.dom );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+		    	$('#clickMe').unbind().click ( function () {
+	      			savePositions(dimensions);
+	    		});
+
+			}
+
+			/*
+
+			function create3D( dimensions, attributes, relations, relationTypes, citationCounts ) {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.z = 500;
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xffffff );
+				scene.fog = new THREE.Fog( 0xffffff, 1, 10000 );
+
+				var geometry = new THREE.SphereGeometry( 100, 32, 32 );
+				var material = new THREE.MeshBasicMaterial( {color: 'blue'} );
+
+				group = new THREE.Group();
+				var labels = [];
+
+				var fontColor = {
+            r: 255,
+            g: 255,
+            b: 255,
+            a: 1.0
+        };
+
+				attributes.forEach ( function ( attribute ) {
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.position.x = Math.random() * 2000 - 1000;
+					mesh.position.y = Math.random() * 2000 - 1000;
+					mesh.position.z = Math.random() * 2000 - 1000;
+
+					mesh.rotation.x = Math.random() * 2 * Math.PI;
+					mesh.rotation.y = Math.random() * 2 * Math.PI;
+
+					mesh.matrixAutoUpdate = false;
+
+					var spritey = makeTextSprite(attribute.text, fontColor);
+					spritey.name = attribute.text;
+					spritey.parent = mesh;
+					//spritey.position.set( mesh.position.add( new THREE.Vector3(3,4,5) ) );
+
+					spritey.position.set(new THREE.Vector3(mesh.position.x + 300, mesh.position.y + 300, mesh.position.z + 300));
+					scene.add(spritey);
+	
+					mesh.updateMatrix();
+
+					group.add( mesh );
+				});
+
+				scene.add( group );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				container.appendChild( stats.dom );
+
+			//
+
+			window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			*/
+
+	  function savePositions ( dimensions ) {
+	  	if (dimensions.length > 1) var saveURL = 'saveMajor3DPositions';
+    	else var saveURL = 'save3DPositions';
+	    var positions = [];
+	    objects.forEach ( function ( object ) {
+	    	positions.push({id: object.text, table: 'attribute', x: '' + object.position.x, y: '' + object.position.y, z: '' + object.position.z});
+	    });
+	    $.ajax
+	      ({
+	          type: "POST",
+	          //the url where you want to sent the userName and password to
+	          url: saveURL,
+	          dataType: 'json',
+	          contentType:'application/json',
+	          async: true,
+	          //json object to sent to the authentication url
+	          data: JSON.stringify({positions: positions}),
+	          success: function ( ) {
+	          	console.log('Saved 3D positions successfully.');
+	          }
+	      });
+	  }
+
+	   function showDimension ( taxonomyID, dimension ) {
+	      $.get('dimension', function ( dimensionResults ) {
+	        if (!dimensionResults || !dimensionResults.response) {
+	          console.log('Cannot get dimensions from DB.');
+	          return;
+	        }
+	        var request = {'taxonomy_id': taxonomyID};
+	        var attributeURL, attributeRelationsURL, dimensions;
+	        switch(dimension) {
+	          case 'Interdimensional view': attributeURL = 'majorAttributes'; attributeRelationsURL = 'interdimensionalRelations'; dimensions = dimensionResults.response; break;
+	          default: attributeURL = 'attributesPerDimension'; attributeRelationsURL = 'attributeRelations'; dimensions = [{text: dimension}]; request.dimension = dimension;
+	        }
+	        $.ajax
+	          ({
+	              type: "POST",
+	              //the url where you want to sent the userName and password to
+	              url: attributeURL,
+	              dataType: 'json',
+	              contentType:'application/json',
+	              async: true,
+	              //json object to sent to the authentication url
+	              data: JSON.stringify(request),
+	              success: function ( attributes ) {
+	                if (!attributes || !attributes.response) {
+	                  console.log('Cannot get attributes from DB.');
+	                  return;
+	                }
+	                console.log(attributes.response)
+	                $.ajax
+	                  ({
+	                      type: "POST",
+	                      //the url where you want to sent the userName and password to
+	                      url: attributeRelationsURL,
+	                      dataType: 'json',
+	                      contentType:'application/json',
+	                      async: true,
+	                      //json object to sent to the authentication url
+	                      data: JSON.stringify(request),
+	                      success: function ( relations ) {
+	                        if (!relations || !relations.response) {
+	                          console.log('Cannot get attribute relations from DB.');
+	                          return;
+	                        }
+	                        $.get('relationTypes', function ( relationTypes ) {
+	                          if (!relationTypes || !relationTypes.response) {
+	                            console.log('Cannot get relation types from DB.');
+	                            return;
+	                          }
+	                          $.get('citationCounts', function ( citationCounts ) {
+	                              if (!citationCounts || !citationCounts.response) {
+	                                console.log('Cannot get citation counts from DB.');
+	                                return;
+	                              }
+	                            create3D(dimensions, attributes.response, relations.response, relationTypes.response, citationCounts.response);
+	                            animate();
+	                          });
+	                        });
+	                      }
+	                  });
+	              }
+	          });
+	      });
+	    }
+		$(document).ready( function () {
+		  var taxonomyID = 1;
+		  var dimension = window.location.href.split('#').pop().replace(/%20/g, ' ');
+		  if (dimension == '' || dimension.split('view').length <= 1) {
+		  	dimension = 'Interdimensional view';
+		  	window.location.href = window.location.href.split('#').shift() + '#' + dimension;
+		  }
+		  console.log('dimension: ' + dimension);
+		  //document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+		  showDimension(1, dimension);
+		});
+		</script>
+
+	</body>
+</html>

@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<!-- https://searchcode.com/file/72780018/mike/miserables/index.html -->
+<meta charset="utf-8">
+<title>Colored Concept Correlations</title>
+<header>
+<style>
+
+@import url(style.css);
+
+.background {
+  fill: #eee;
+}
+
+line {
+  stroke: #fff;
+}
+
+text.active {
+  fill: red;
+}
+
+</style>
+    <script type="text/javascript" src="d3.min.js"></script>
+    <script src="jquery.min.js"></script>
+
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap.min.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <link href="selectize.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="selectize.min.js"></script>
+    <link href="selectize.bootstrap3.css" rel="stylesheet" type="text/css">
+
+     <link href="d3-tip.css" type="text/css" rel="stylesheet"/>
+    <script src='d3-tip.js'></script>
+
+    <script src="error.js"></script>
+
+</header>
+<body>
+
+<div style="margin-left:20px;margin-top:50px;">
+
+<ul class="nav nav-tabs tabs-up" id="tabsContainer">
+  <li><a href="javascript:void(0)" name="parent" data-target="#parentFrame" class="media_node active span" id="parent" data-toggle="tabajax" rel="tooltip">Parent</a></li>
+  <li><a href="javascript:void(0)" name="Number of children" data-target="#numChildrenFrame" class="media_node active span" id="numChildren" data-toggle="tabajax" rel="tooltip">Number of children</a></li>
+</ul>
+
+<div class="tab-content" style="width:200px;">
+  <div class="tab-pane fade in active" id="parentFrame">
+    <label for="parents1">x property: </label>
+    <select class="form-control" id="parents2" hidden>
+    </select>
+    <label for="parents2">y property: </label>
+    <select class="form-control" id="parents1" hidden>
+    </select>
+  </div>
+  <div class="tab-pane fade in" id="numChildrenFrame" hidden>
+    <form>
+      <label for="maxChildren">Min children: </label><input type="text" class="form-control" id="minChildren">
+      <label for="maxChildren">Max children: </label><input type="text" class="form-control" id="maxChildren">
+    </form>
+  </div>
+</div>
+
+<form style="padding:10px;width:200px;">
+
+<div>
+  <label for="showChildAttributes">Show child attributes</label>
+  <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
+  <label for="includeChildAttributes">Include child attributes</label>
+  <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;" checked>
+</div>
+<label for = "filterAttributesButton">Filter</label>
+<div class="input-group class="form-control"">
+  <div class="input-group-btn">
+    <button  class="btn btn-default dropdown-toggle" id="filterAttributesButton" title="Filter Attributes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-placeholder="Please select">
+      <i class="glyphicon glyphicon-th-list" style="color:#4078c0;"></i>
+      <span>Filter</span>
+      <span class="caret" aria-hidden="true"></span>
+    </button>
+    <ul class="dropdown-menu" id="attributeDropdownMenu" style="max-height:500px;overflow-y:auto;">
+    </ul>
+    <input type="button" class="btn btn-default" id="refreshFilter" value="Refresh">
+  </div>
+</div>
+<label for="order">Order by: </label><select class="form-control" id="order">
+  <option value="default" selected="selected"></option>
+  <option value="name">by Name</option>
+  <option value="count">by Frequency</option>
+</select>
+<label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme">
+  <option value="YGB">YGB</option>
+  <option value="Rainbow">Rainbow</option>
+</select>
+</form>
+</div>
+
+<script>
+
+  var lastParentText = '';
+  var totalNumberOfCitations, maxReferenceCount;
+  var selectize1, selectize2;
+  var buildingMatrix = false;
+
+  function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {
+    buildingMatrix = true;
+    var matrixX = [],
+        matrixY = [],
+        nodesX = attributesX.response,
+        n = attributesX.response.length,
+        nodesY = attributesY.response,
+        m = attributesY.response.length;
+
+    if (n > m) {
+      for ( var i = 0; i < (n - m); i++ ) {
+        nodesY.push({id: -Infinity, text: ''});
+      }
+      m = n;
+    } else if (n < m) {
+      for ( var i = 0; i < (m - n); i++ ) {
+        nodesX.push({id: -Infinity, text: ''});
+      }
+      n = m;
+    }
+
+    nodesX.forEach ( function (node, i) {
+      node.index = i;
+      if (node.id < 0) node.count = -Infinity;
+      else node.count = 0;
+      matrixX[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0}; });;
+    });
+
+    // Compute index per node.
+    nodesY.forEach(function(node, i) {
+      node.index = i;
+      if (node.id < 0) node.count = -Infinity;
+      else node.count = 0;
+      matrixY[i] = d3.range(n).map(function(j) { return {x: i, y: j, z: 0}; });
+    });
+
+
+    correlations.response.forEach(function(link) {
+      //if (link.value > 49) console.log('ERROR: More than 49 citations: ', link);
+      //link.id1--;
+      //link.id2--;
+      /*
+      var foundLinks = 0;
+      for ( var i = 0; i < nodesX.length; i++ ) {
+        if (nodesX[i].text == link.text1 || nodesX[i].text == link.text2) {
+          nodesX[i].count += link.value;
+          foundLinks++;
+          if (foundLinks > 1) break;
+        }
+      }
+      foundNodes = 0;
+      for ( var i = 0; i < nodesY.length; i++ ) {
+        if (nodesY[i].text == link.text1 || nodesY[i].text == link.text2) {
+          nodesY[i].count += link.value;
+          foundLinks++;
+          if (foundLinks > 1) break;
+        }
+      }
+      foundLinks = 0;
+      */
+      var foundLinks = 0;
+      if (link.text1 == link.text2) {
+        for ( var k = 0; k < nodesX.length; k++) {
+          if (nodesX[k].text == link.text1) {
+            for ( var l = 0; l < nodesY.length; l++) {
+              if (nodesY[l].text == link.text2) {
+                matrixX[k][l].z += link.value;
+                matrixX[k][l].src = nodesX[k].text;
+                matrixX[k][l].dest = nodesY[l].text;
+                matrixX[k][l].onClickURL = onClickURL;
+                matrixY[l][k].z += link.value;
+                matrixY[l][k].src = nodesX[k].text;
+                matrixY[l][k].dest = nodesY[l].text;
+                matrixY[l][k].onClickURL = onClickURL;
+                nodesX[k].count += link.value;
+                nodesY[l].count += link.value;
+                foundLinks++;
+                break;
+              }
+            }
+            if (foundLinks > 0) break;
+          }
+        }
+      } else {
+        for ( var k = 0; k < nodesX.length; k++ ) {
+          if (nodesX[k].text == link.text1 || nodesX[k].text == link.text2) {
+            for ( var l = 0; l < nodesY.length; l++) {
+              if (nodesY[l].text == link.text2 && nodesX[k].text != nodesY[l].text) {
+                matrixX[k][l].z += link.value;
+                matrixX[k][l].src = nodesX[k].text;
+                matrixX[k][l].dest = nodesY[l].text;
+                matrixX[k][l].onClickURL = onClickURL;
+                matrixY[l][k].z += link.value;
+                matrixY[l][k].src = nodesX[k].text;
+                matrixY[l][k].dest = nodesY[l].text;
+                matrixY[l][k].onClickURL = onClickURL;
+                nodesX[k].count += link.value;
+                nodesY[l].count += link.value;
+                foundLinks++;
+                break;
+              } else if (nodesY[l].text == link.text1 && nodesX[k].text != nodesY[l].text) {
+                matrixX[k][l].z += link.value;
+                matrixX[k][l].src = nodesY[l].text;
+                matrixX[k][l].dest = nodesX[k].text;
+                matrixX[k][l].onClickURL = onClickURL;
+                matrixY[l][k].z += link.value;
+                matrixY[l][k].src = nodesY[l].text;
+                matrixY[l][k].dest = nodesX[k].text;
+                matrixY[l][k].onClickURL = onClickURL;
+                nodesX[k].count += link.value;
+                nodesY[l].count += link.value;
+                foundLinks++;
+                break;
+              }
+            }
+            if (foundLinks > 1) break;
+          }
+        }
+      }
+      /*
+      matrix[link.id1][link.id2].z += link.value;
+      matrix[link.id2][link.id1].z += link.value;
+      nodes[link.id1].count += link.value;
+      nodes[link.id2].count += link.value;
+      */
+    });
+    /*
+
+            if (nodesX[i].id == link.id1) {
+          for ( var j = 0; j < nodesY.length; j++ ) {
+            if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id2) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesX[i].text;
+              matrixX[i][j].dest = nodesY[j].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesX[i].text;
+              matrixY[j][i].dest = nodesY[j].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesY[j].text;
+              matrixX[i][j].dest = nodesX[i].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesY[j].text;
+              matrixY[j][i].dest = nodesX[i].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            }
+          }
+          if (foundNodes > 1) break;
+        } else if (nodesX[i].id == link.id2) {
+          for ( var j = 0; j < nodesY.length; j++ ) {
+            if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesX[i].text;
+              matrixX[i][j].dest = nodesY[j].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesX[i].text;
+              matrixY[j][i].dest = nodesY[j].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesY[j].text;
+              matrixX[i][j].dest = nodesX[i].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesY[j].text;
+              matrixY[j][i].dest = nodesX[i].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            }
+          }
+          if (foundNodes > 1) break;
+        }
+      */
+      console.log('x: ', nodesX);
+      console.log('y: ', nodesY);
+    var minValue = 0;
+    var margin = {top: 400, right: 0, bottom: 30, left: 400}, // left/top: 240
+        width = 1600, // 1440
+        height = 1600; // 1440
+
+    d3.select("svg").remove();
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .style("margin-left", margin.left + "px")
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var defs = svg.append("defs");
+
+      var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
+    var colourRangeYGB = d3.range(0, 1, 1.0 / (coloursYGB.length - 1));
+    colourRangeYGB.push(1);
+           
+    //Create color gradient
+    var colorScaleYGB = d3.scale.linear()
+      .domain(colourRangeYGB)
+      .range(coloursYGB)
+      .interpolate(d3.interpolateHcl);
+
+    //Needed to map the values of the dataset to the color scale
+    var colorInterpolateYGB = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////// Create the YGB color gradient ///////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Calculate the gradient  
+    defs.append("linearGradient")
+      .attr("id", "gradient-ygb-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(coloursYGB)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(coloursYGB.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+
+    ///////////////////////////////////////////////////////////////////////////
+    //////////// Get continuous color scale for the Rainbow ///////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    var coloursRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
+    var colourRangeRainbow = d3.range(0, 1, 1.0 / (coloursRainbow.length - 1));
+    colourRangeRainbow.push(1);
+           
+    //Create color gradient
+    var colorScaleRainbow = d3.scale.linear()
+      .domain(colourRangeRainbow)
+      .range(coloursRainbow)
+      .interpolate(d3.interpolateHcl);
+
+    //Needed to map the values of the dataset to the color scale
+    var colorInterpolateRainbow = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    ///////////////////////////////////////////////////////////////////////////
+    //////////////////// Create the Rainbow color gradient ////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Calculate the gradient  
+    defs.append("linearGradient")
+      .attr("id", "gradient-rainbow-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(coloursRainbow)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+
+    var x = d3.scale.ordinal().rangeBands([0, width]),
+        y = d3.scale.ordinal().rangeBands([0, height]),
+        z = d3.scale.linear().domain([0, 4]).clamp(true),
+        c = d3.scale.category10().domain(d3.range(10));
+
+    var orders = [];
+    orders.push({
+      name: d3.range(m).sort(function(a, b) { if (nodesY[a].text == '') return 1; if (nodesY[b].text == '') return -1; else return d3.ascending(nodesY[a].text.toLowerCase(), nodesY[b].text.toLowerCase()); }),
+      count: d3.range(m).sort(function(a, b) { return nodesY[b].count - nodesY[a].count; }),
+      default: d3.range(n)
+    });
+    orders.push({
+      name: d3.range(n).sort(function(a, b) { if (nodesX[a].text == '') return 1; if (nodesX[b].text == '') return -1; else return d3.ascending(nodesX[a].text.toLowerCase(), nodesX[b].text.toLowerCase()); }),
+      count: d3.range(n).sort(function(a, b) { return nodesX[b].count - nodesX[a].count; }),
+      default: d3.range(m)
+    });
+
+    // The default sort order.
+    x.domain(d3.range(m));
+    y.domain(d3.range(n));
+
+    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return '' + d.z + (d.onClickURL == 'citationDetails' ? ' references' : ' citations'); });
+    svg.call(d3Tip);
+
+    svg.append("rect")
+        .attr("class", "background")
+        .attr("width", width)
+        .attr("height", height);
+
+    var row = svg.selectAll(".row")
+        .data(matrixX)
+      .enter().append("g")
+        .attr("class", "row")
+        .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+        .each(row);
+
+    row.append("line")
+        .attr("x2", width);
+
+    row.append("text")
+        .attr("x", -6)
+        .attr("y", x.rangeBand() / 2)
+        .attr("dy", ".32em")
+        .attr("text-anchor", "end")
+        .text(function(d, i) { return nodesX[i].text; });
+
+/*
+    row.append("text")
+        .attr("x", -150)
+        .attr("y", x.rangeBand() / 2)
+        .attr("dy", ".32em")
+        .attr("text-anchor", "end")
+        .text(function(d, i) { return nodesX[i].parentText != lastParentText ? (lastParentText = nodesX[i].parentText) : ''; })
+        .attr("transform", function(d, i) { return "translate(-200)rotate(-90)"});
+*/
+
+    var column = svg.selectAll(".column")
+        .data(matrixY)
+      .enter().append("g")
+        .attr("class", "column")
+        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+
+    column.append("line")
+        .attr("x1", -width);
+
+    column.append("text")
+        .attr("x", 6)
+        .attr("y", x.rangeBand() / 2)
+        .attr("dy", ".32em")
+        .attr("text-anchor", "start")
+        .text(function(d, i) { return nodesY[i].text; });
+
+    function row(row) {
+      var cell = d3.select(this).selectAll(".cell")
+          .data(row.filter(function(d) { return d.z; }))
+          .enter().append("rect")
+          .attr("class", "cell")
+          .attr("x", function(d) { return x(d.x); })
+          .attr("width", x.rangeBand())
+          .attr("height", x.rangeBand())
+          .style("fill-opacity", function(d) { return z(d.z); })
+          .on("mouseover", mouseover)
+          .on("mouseout", mouseout)
+          .on("click", clickCell);
+    }
+
+    function clickCell(p) {
+      var text1 = nodesX[p.y].text;
+      var text2 = nodesY[p.x].text;
+      $.ajax
+         ({
+          type: "POST",
+          //the url where you want to sent the userName and password to
+          url: onClickURL,
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          //json object to sent to the authentication url
+          data: JSON.stringify({text1: text1, text2: text2}),
+          success: function ( citations ) {
+            if (!citations) {
+             handleError('Cannot get papers from DB.');
+             return;
+            }
+            var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+            if (!!citations.response) {
+              citations.response.forEach ( function ( citation ) {
+                citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
+              });
+            }
+            citationTable += '</tbody></table></div>';
+            BootstrapDialog.show({
+              title: '' + citations.count + ' shared paper' + (citations.count > 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
+              message: citationTable
+            });
+          }
+         });
+    }
+
+    function mouseover(p) {
+      d3.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
+      d3.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
+      d3Tip.show(p);
+      console.log('value: ' + matrixX[p.y][p.x].z + ', src: ' + nodesX[p.y].text + ', dest: ' + nodesY[p.x].text);
+      //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
+    }
+
+    function mouseout(p) {
+      d3.selectAll("text").classed("active", false);
+      d3Tip.hide(p);
+    }
+
+    $('#order').unbind().on("change", function() {
+      order(this.value);
+    });
+/*
+    function order(value) {
+      x.domain(orders[value]);
+
+      var t = svg.transition().duration(2500);
+
+      t.selectAll(".row")
+          .delay(function(d, i) { return x(i) * 4; })
+          .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+        .selectAll(".cell")
+          .delay(function(d) { return x(d.x) * 4; })
+          .attr("x", function(d) { return x(d.x); });
+
+      t.selectAll(".column")
+          .delay(function(d, i) { return x(i) * 4; })
+          .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+    }
+*/
+
+    function order(value) {
+      x.domain(orders[0][value]);
+      y.domain(orders[1][value]);
+
+
+      var t = svg.transition().duration(2500);
+
+      t.selectAll(".row")
+          .delay(function(d, i) { return y(i) * 4; })
+          .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
+          .attr("y", function(d) { return y(d.y); }) // TODO remove?
+        .selectAll(".cell")
+          .delay(function(d) { return x(d.x) * 4; })
+          .attr("x", function(d) { return x(d.x); });
+
+      t.selectAll(".column")
+          .delay(function(d, i) { return x(i) * 4; })
+          .attr("x", function(d) { return x(d.x); })
+          .attr("transform", function(d, i) { return "translate(" + x(i) + ",0)rotate(-90)"; });
+    }
+    //setTimeout(function () { order('count'); }, 2000);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////// Color Interactions /////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    //On click transition
+    d3.select("#color").on("change", function() {
+      var currentFill = this.value
+        if(currentFill === "rainbow") {
+          updateRainbow();
+        } else {
+          updateYGB();
+        }//else 
+      });
+
+    //Update the colors to a more light yellow-green-dark blue
+    function updateYGB() {
+      //Fill the legend rectangle
+      svg.select(".cell")
+        .style("fill", "url(#gradient-ygb-colors)");
+      //Transition the hexagon colors
+      svg.selectAll(".cell")
+        .transition().duration(1000)
+        .style("fill", function (d,i) { return colorScaleYGB(colorInterpolateYGB(d.z)); });
+    }//updateYGB
+
+    //Transition the colors to a rainbow
+    function updateRainbow() {
+      //Fill the legend rectangle
+      svg.select(".cell")
+        .style("fill", "url(#gradient-rainbow-colors)");
+      //Transition the hexagon colors
+      svg.selectAll(".cell")
+        .transition().duration(1000)
+        .style("fill", function (d,i) { return colorScaleRainbow(colorInterpolateRainbow(d.z)); })
+    }//updateRainbow
+
+    //Start set-up
+    updateYGB();
+
+    $('#colorTheme').unbind().on('change', function ( e ) {
+      switch(this.value) {
+        case 'YGB': updateYGB(); break;
+        case 'Rainbow': updateRainbow(); break;
+        default: updateYGB();
+      }
+    });
+    buildingMatrix = false;
+  }
+
+  function showMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {
+    buildMatrix(attributesX, attributesY, correlations, maxValue, onClickURL);
+  }
+
+  function loadAttributes ( init, correlations, options, maxValue, onClickURL, callback, filter ) {
+    $.ajax
+      ({
+          type: options.ajaxTypeX,
+          url: options.attributeUrlX, // allChildrenAttributes
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify(options.requestX),
+          success: function ( attributesResultX) {
+            if (!attributesResultX || !attributesResultX.response) {
+              handleError('Cannot get attributes from DB.');
+              return;
+            }
+            console.log('attributes: ', attributesResultX.response);
+            $.ajax
+              ({
+                  type: options.ajaxTypeY,
+                  url: options.attributeUrlY, // allChildrenAttributes
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  data: JSON.stringify(options.requestY),
+                  success: function ( attributesResultY) {
+                    if (!attributesResultY || !attributesResultY.response) {
+                      handleError('Cannot get attributes from DB.');
+                      return;
+                    }
+                    var attributesX = {response: []};
+                    var attributesY = {response: []};
+                    /*
+                    if (!!filter) {
+                      attributesResult.response.forEach ( function ( attribute ) {
+                        filter.each ( function ( index, entry ) {
+                          if ($(entry).val() == attribute.text) {
+                            attributes.response.push(attribute);
+                            return false;
+                          }
+                        });
+                      });
+                    } else attributes.response = attributesResult.response;
+                    if (init) {
+                      $('#parents1, #parents2, #attributeDropdownMenu').html('');
+                      attributesResultX.response.sort( function ( a, b ) {
+                        return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+                      });
+                      attributesX.response.forEach ( function ( attribute ) {
+                        $('#parents1').append('<option>' + attribute.text + '</option>');
+                      });
+                      attributesResultY.response.sort( function ( a, b ) {
+                        return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+                      });
+                      attributesY.response.forEach ( function ( attribute ) {
+                        $('#parents2').append('<option>' + attribute.text + '</option>');
+                      });
+                    }
+                    /*
+                    if (!filter) {
+                      $('#attributeDropdownMenu').html('<li><input class="attributeFilterCheck" id="attributeFilterCheckAll" type="checkbox" value="Check all" style="margin-right:5px;" checked><label value="Check all" title="Check all" style="margin-right:5px;">Check all</label></li>');
+                      attributes.response.forEach ( function ( attribute ) {
+                        $('#attributeDropdownMenu').append('<li><input class="attributeFilterCheck" type="checkbox" value="' + attribute.text + '" style="margin-right:5px;" checked><label value="' + attribute.text + '" title="' + attribute.text + '" style="margin-right:5px;">' +
+                                              attribute.text + '</label></li>');
+                      });
+                      $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').unbind().on('change', function ( e ) {
+                        var checked = $(this).is(':checked');
+                        console.log($('.attributeFilterCheck:not(:checked)'))
+                        if (!checked) $('#attributeFilterCheckAll').prop('checked', false);
+                        else if ($('.attributeFilterCheck:not(:checked)').length <= 1) $('#attributeFilterCheckAll').prop('checked', true);
+                      });
+                      $('#attributeFilterCheckAll').unbind().on('change', function ( e ) {
+                        var checked = $(this).is(':checked');
+                        if (checked) $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').prop('checked', true);
+                        else $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').prop('checked', false);
+                      });
+                      $('#refreshFilter').unbind().on('click', function ( e ) {
+                        loadAttributes(false, correlations, ajaxType, attributeURL, request, showMatrix, $('.attributeFilterCheck[id!="attributeFilterCheckAll"]:checked'));
+                      });
+                    }
+                    */
+                    $('#order').val('');
+                    callback(attributesResultX, attributesResultY, correlations, maxValue, onClickURL);
+                  }
+                });
+              }
+      });
+    }
+
+function renderMatrixHelper () {
+    var parent1 = $('#parents1').val();
+    var parent2 = $('#parents2').val();
+    if (parent1 == '') parent1 = 'All attributes';
+    if (parent2 == '') parent2 = 'All attributes';
+    var ajaxTypeX, ajaxTypeY, attributeUrlX, attributeUrlY;
+    var requestX = {'taxonomy_id': 1};
+    var requestY = {'taxonomy_id': 1};
+    var correlationURL = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+    var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
+    var showChildAttributes = $('#showChildAttributes').is(':checked');
+    var maxValue = totalNumberOfCitations;
+    switch(parent1) {
+      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'attribute'; break;
+      case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'attributesPerDimension'; requestX.dimension = parent1; break;
+      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
+    }
+    switch(parent2) {
+      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'attribute'; break;
+      case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'attributesPerDimension'; requestY.dimension = parent2; break;
+      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
+    }
+    var options = {ajaxTypeX: ajaxTypeX, ajaxTypeY: ajaxTypeY, attributeUrlX: attributeUrlX, attributeUrlY: attributeUrlY, requestX: requestX, requestY: requestY};
+    $.get(correlationURL, function ( correlations ) {
+      if (!correlations || !correlations.response) {
+        handleError('Cannot get correlation data from DB.');
+        return;
+      }
+      console.log('rendering with max value: ' + maxValue)
+      loadAttributes(false, correlations, options, maxValue, onClickURL, showMatrix);
+    });
+}
+
+function renderMatrix () {
+  if (!buildingMatrix && (!!totalNumberOfCitations || !!maxReferenceCount)) renderMatrixHelper();
+}
+
+function initPage () {
+  $.get('citation', function ( citations ) {
+    if (!citations || !citations.response) {
+      handleError('Cannot get citations from DB.');
+      return;
+    }
+    /*
+    citations.response.forEach ( function ( citation ) {
+      console.log(JSON.parse(citation.bib).title);
+    });
+    */
+    $.get('citationCount', function ( citationCount ) {
+      if (!citationCount || !citationCount.response || citationCount.response.length == 0) {
+        handleError('Cannot get number of papers from DB.');
+        return;
+      }
+      $.get('dimension', function ( dimensions ) {
+        if (!dimensions || !dimensions.response) {
+          handleError('Cannot get dimensions From DB.');
+          return;
+        }
+        $.get('attribute', function ( allAttributes ) {
+          if (!allAttributes || !allAttributes.response) {
+            handleError('Cannot get attributes from DB.');
+            return;
+          }
+          dimensions.response.sort( function ( a, b ) {
+            return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+          });
+          allAttributes.response.sort( function ( a, b ) {
+            return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+          });
+          $('#parents1, #parents2').html('');
+          $('#parents1, #parents2').append('<option>All attributes</option>');
+          $('#parents1, #parents2').append('<option>All citations</option>');
+          dimensions.response.forEach ( function ( dimension ) {
+            $('#parents1, #parents2').append('<option>' + dimension.text + '</option>');
+          });
+          allAttributes.response.forEach ( function ( attribute ) {
+            $('#parents1, #parents2').append('<option>' + attribute.text + '</option>');
+          });
+          $('#parents1').val('');
+          if (!!selectize1) selectize1.destroy();
+          selectize1 = $('#parents1').selectize({
+            closeAfterSelect: true,
+            highlight: false,
+            placeholder: 'Search',
+            openOnFocus: true,
+            closeAfterSelect: true,
+            allowEmptyOption: true,
+            onChange: renderMatrix 
+          })[0].selectize;
+          $('#parents1-selectized').off('focus').on('focus', function () {
+            $(this).trigger({type: 'keydown', keyCode: 8});
+          });
+          $('#parents2').val('');
+          if (!!selectize2) selectize2.destroy();
+          selectize2 = $('#parents2').selectize({
+            closeAfterSelect: true,
+            highlight: false,
+            placeholder: 'Search',
+            openOnFocus: true,
+            closeAfterSelect: true,
+            allowEmptyOption: true,
+            onChange: renderMatrix
+          })[0].selectize;
+          $('#parents2-selectized').off('focus').on('focus', function () {
+            $(this).trigger({type: 'keydown', keyCode: 8});
+          });
+          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', requestX: {'taxonomy_id': 1}, requestY: {'taxonomy_id': 1}};
+          var correlationURL = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+          var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
+          $.get(correlationURL, function ( correlations ) {
+            if (!correlations || !correlations.response) {
+              handleError('Cannot get correlation data from DB.');
+              return;
+            }
+            totalNumberOfCitations = citationCount.response[0].citationCount;
+            maxReferenceCount = citationCount.response[0].maxReferenceCount;
+            console.log('max: ' + maxReferenceCount)
+            loadAttributes(true, correlations, options, totalNumberOfCitations, onClickURL, showMatrix);
+          });
+          $('#showChildAttributes, #includeChildAttributes').unbind().on('change', renderMatrix);
+        });
+      });
+    });
+  });
+}
+
+$(document).ready( function () {
+  $('.media_node').unbind().on('click', function ( e ) {
+    var frameID = $(this).attr('id') + 'Frame';
+    $('.tab-pane[id != "' + frameID + '"]').hide();
+    $('#' + frameID).show();
+  });
+  initPage();
+});
+
+</script>
+</body>
+</html>

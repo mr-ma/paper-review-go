@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html >
+<head>
+  <meta charset="UTF-8">
+  <title>Nomnoml UML Diagram</title>
+   
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+ 
+   
+      <style>
+      /* NOTE: The styles were added inline because Prefixfree needs access to your styles and they must be inlined if they are on local disk! */
+      body {
+  text-align: center;
+  padding: 1vw;
+}
+ 
+canvas {
+  max-width: 98vw;
+  max-height: 98vh;
+  margin: 0 auto;
+}
+ 
+a {
+  display: inline-block;
+  color: gray;
+  font-size: 10px;
+  text-decoration: none;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  padding: 2px;
+}
+ 
+    </style>
+ 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+</head>
+ 
+<body>
+  <!-- Write your diagram here -->
+ 
+<!-- Diagram rendered with http://nomnoml.com/ -->
+ 
+  <script src='http://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.7.0/lodash.min.js'></script>
+<script src='http://cdnjs.cloudflare.com/ajax/libs/nomnoml/0.0.3/nomnoml.min.js'></script>
+ 
+<script type="text/javascript">
+ 
+var canvas = document.createElement('canvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+ 
+nomnoml.draw(canvas, `
+[<frame> Attack View | [Tools] +- [Disassembler]
+	[Tools] +- [Debugger]
+	[Tools] +- [Tracer]
+	[Tools] +- [Emulator]
+	[Reverse Engineering] +- [Tools]
+	[Reverse Engineering] +- [Attacker]
+	[Reverse Engineering] +- [Discovery]
+	[Reverse Engineering] +- [Attack]
+	[Attacker] <:- [No root]
+	[Discovery] <:- [Pattern matching]
+	[Discovery] <:- [Taint Analysis]
+	[Discovery] <:- [Graph-based analysis]
+	[Discovery] <:- [Symbolic execution]
+	[Attack] <:- [Binary Patching]
+	[Attack] <:- [Process memory patching]
+	[Attack] <:- [Runtime data manipulation]
+	[Attack] <:- [Call interposition]
+	[Attack] <:- [Control flow hijacking]]`);
+document.body.innerHTML = '<a href="http://nomnoml.com/">Created with nomnoml</a>';
+document.body.appendChild(canvas);
+</script>
+ 
+</body>
+</html>
