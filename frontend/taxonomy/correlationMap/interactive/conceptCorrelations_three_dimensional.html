@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- https://searchcode.com/file/72780018/mike/miserables/index.html -->
 <meta charset="utf-8">
 <title>Colored Concept Correlations</title>
 <header>
@@ -23,6 +22,9 @@ text.active {
     <script type="text/javascript" src="d3.min.js"></script>
     <script src="jquery.min.js"></script>
 
+    <link href="vis.min.css" type="text/css" rel="stylesheet"/>
+    <script src="vis.min.js"></script>
+
     <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
     <script src="bootstrap.min.js"></script>
 
@@ -32,9 +34,6 @@ text.active {
     <link href="selectize.css" rel="stylesheet" type="text/css">
     <script type="text/javascript" src="selectize.min.js"></script>
     <link href="selectize.bootstrap3.css" rel="stylesheet" type="text/css">
-
-     <link href="d3-tip.css" type="text/css" rel="stylesheet"/>
-    <script src='d3-tip.js'></script>
 
     <script src="error.js"></script>
 
@@ -88,15 +87,12 @@ text.active {
 </div>
 <label for="order">Order by: </label><select class="form-control" id="order">
   <option value="default" selected="selected"></option>
-  <option value="name">by Name</option>
   <option value="count">by Value</option>
-</select>
-<label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme">
-  <option value="YGB">YGB</option>
-  <option value="Rainbow">Rainbow</option>
 </select>
 </form>
 </div>
+
+<div id="graph"></div>
 
 <script>
 
@@ -105,7 +101,7 @@ text.active {
   var selectize1, selectize2;
   var buildingMatrix = false;
 
-  function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {
+  function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL, sortValues ) {
     buildingMatrix = true;
     var matrixX = [],
         matrixY = [],
@@ -130,7 +126,7 @@ text.active {
       node.index = i;
       if (node.id < 0) node.count = -Infinity;
       else node.count = 0;
-      matrixX[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0}; });;
+      matrixX[i] = {index: i, values: d3.range(m).map(function(j) { return {x: j, y: i, z: 0}; })};
     });
 
     // Compute index per node.
@@ -138,7 +134,7 @@ text.active {
       node.index = i;
       if (node.id < 0) node.count = -Infinity;
       else node.count = 0;
-      matrixY[i] = d3.range(n).map(function(j) { return {x: i, y: j, z: 0}; });
+      matrixY[i] = {index: i, values: d3.range(n).map(function(j) { return {x: i, y: j, z: 0}; })};
     });
 
 
@@ -171,14 +167,14 @@ text.active {
           if (nodesX[k].text == link.text1) {
             for ( var l = 0; l < nodesY.length; l++) {
               if (nodesY[l].text == link.text2) {
-                matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesX[k].text;
-                matrixX[k][l].dest = nodesY[l].text;
-                matrixX[k][l].onClickURL = onClickURL;
-                matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesX[k].text;
-                matrixY[l][k].dest = nodesY[l].text;
-                matrixY[l][k].onClickURL = onClickURL;
+                matrixX[k].values[l].z += link.value;
+                matrixX[k].values[l].src = nodesX[k].text;
+                matrixX[k].values[l].dest = nodesY[l].text;
+                matrixX[k].values[l].onClickURL = onClickURL;
+                matrixY[l].values[k].z += link.value;
+                matrixY[l].values[k].src = nodesX[k].text;
+                matrixY[l].values[k].dest = nodesY[l].text;
+                matrixY[l].values[k].onClickURL = onClickURL;
                 nodesX[k].count += link.value;
                 nodesY[l].count += link.value;
                 foundLinks++;
@@ -193,27 +189,27 @@ text.active {
           if (nodesX[k].text == link.text1 || nodesX[k].text == link.text2) {
             for ( var l = 0; l < nodesY.length; l++) {
               if (nodesY[l].text == link.text2 && nodesX[k].text != nodesY[l].text) {
-                matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesX[k].text;
-                matrixX[k][l].dest = nodesY[l].text;
-                matrixX[k][l].onClickURL = onClickURL;
-                matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesX[k].text;
-                matrixY[l][k].dest = nodesY[l].text;
-                matrixY[l][k].onClickURL = onClickURL;
+                matrixX[k].values[l].z += link.value;
+                matrixX[k].values[l].src = nodesX[k].text;
+                matrixX[k].values[l].dest = nodesY[l].text;
+                matrixX[k].values[l].onClickURL = onClickURL;
+                matrixY[l].values[k].z += link.value;
+                matrixY[l].values[k].src = nodesX[k].text;
+                matrixY[l].values[k].dest = nodesY[l].text;
+                matrixY[l].values[k].onClickURL = onClickURL;
                 nodesX[k].count += link.value;
                 nodesY[l].count += link.value;
                 foundLinks++;
                 break;
               } else if (nodesY[l].text == link.text1 && nodesX[k].text != nodesY[l].text) {
-                matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesY[l].text;
-                matrixX[k][l].dest = nodesX[k].text;
-                matrixX[k][l].onClickURL = onClickURL;
-                matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesY[l].text;
-                matrixY[l][k].dest = nodesX[k].text;
-                matrixY[l][k].onClickURL = onClickURL;
+                matrixX[k].values[l].z += link.value;
+                matrixX[k].values[l].src = nodesY[l].text;
+                matrixX[k].values[l].dest = nodesX[k].text;
+                matrixX[k].values[l].onClickURL = onClickURL;
+                matrixY[l].values[k].z += link.value;
+                matrixY[l].values[k].src = nodesY[l].text;
+                matrixY[l].values[k].dest = nodesX[k].text;
+                matrixY[l].values[k].onClickURL = onClickURL;
                 nodesX[k].count += link.value;
                 nodesY[l].count += link.value;
                 foundLinks++;
@@ -293,24 +289,49 @@ text.active {
           if (foundNodes > 1) break;
         }
       */
-      console.log('x: ', nodesX);
-      console.log('y: ', nodesY);
-    var minValue = 0;
-    var margin = {top: 200, right: 0, bottom: 30, left: 150}, // left/top: 240
-        width = 1440, // 1440
-        height = 1440; // 1440
+
+  if (!!sortValues) {
+    console.log('sorting values...');
+    // TODO sort matrixX, matrixY ? or by a.z, b.z ?
+    matrixY.sort( function ( a, b ) {
+      return nodesY[b.index].count - nodesY[a.index].count;
+    });
+    matrixX.sort( function ( a, b ) {
+      return nodesX[b.index].count - nodesX[a.index].count;
+    });
+    for ( var i = 0; i < matrixY.length; i++ ) {
+      matrixY[i].values.sort( function ( a, b ) {
+        return nodesX[b.y].count - nodesX[a.y].count;
+      });
+    }
+    for ( var i = 0; i < matrixX.length; i++ ) {
+      matrixX[i].values.sort( function ( a, b ) {
+        return nodesY[b.x].count - nodesY[a.x].count;
+      });
+    }
+    nodesX.sort( function ( a, b ) {
+      return b.count - a.count;
+    });
+    nodesY.sort( function ( a, b ) {
+      return b.count - a.count;
+    });
+  }
+
+  var data = null;
+  var graph = null;
+
+  function custom(x, y) {
+    return (Math.sin(x/50) * Math.cos(y/50) * 50 + 50);
+  }
+
+  var minValue = 0;
 
     d3.select("svg").remove();
     var svg = d3.select("body").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .style("margin-left", margin.left + "px")
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      .attr('style', 'display:none;');
+    var defs = svg.append("defs");
 
-      var defs = svg.append("defs");
-
-      var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
+    var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
     var colourRangeYGB = d3.range(0, 1, 1.0 / (coloursYGB.length - 1));
     colourRangeYGB.push(1);
            
@@ -374,228 +395,101 @@ text.active {
       .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
       .attr("stop-color", function(d) { return d; });
 
-    var x = d3.scale.ordinal().rangeBands([0, width]),
-        y = d3.scale.ordinal().rangeBands([0, height]),
-        z = d3.scale.linear().domain([0, 4]).clamp(true),
-        c = d3.scale.category10().domain(d3.range(10));
-
-    var orders = [];
-    orders.push({
-      name: d3.range(m).sort(function(a, b) { if (nodesY[a].text == '') return 1; if (nodesY[b].text == '') return -1; else return d3.ascending(nodesY[a].text.toLowerCase(), nodesY[b].text.toLowerCase()); }),
-      count: d3.range(m).sort(function(a, b) { return nodesY[b].count - nodesY[a].count; }),
-      default: d3.range(n)
-    });
-    orders.push({
-      name: d3.range(n).sort(function(a, b) { if (nodesX[a].text == '') return 1; if (nodesX[b].text == '') return -1; else return d3.ascending(nodesX[a].text.toLowerCase(), nodesX[b].text.toLowerCase()); }),
-      count: d3.range(n).sort(function(a, b) { return nodesX[b].count - nodesX[a].count; }),
-      default: d3.range(m)
-    });
-
-    // The default sort order.
-    x.domain(d3.range(m));
-    y.domain(d3.range(n));
-
-    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return '' + d.z + (d.onClickURL == 'citationDetails' ? ' references' : ' citations'); });
-    svg.call(d3Tip);
-
-    svg.append("rect")
-        .attr("class", "background")
-        .attr("width", width)
-        .attr("height", height);
-
-    var row = svg.selectAll(".row")
-        .data(matrixX)
-      .enter().append("g")
-        .attr("class", "row")
-        .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
-        .each(row);
-
-    row.append("line")
-        .attr("x2", width);
-
-    row.append("text")
-        .attr("x", -6)
-        .attr("y", x.rangeBand() / 2)
-        .attr("dy", ".32em")
-        .attr("text-anchor", "end")
-        .text(function(d, i) { return nodesX[i].text; });
-
-/*
-    row.append("text")
-        .attr("x", -150)
-        .attr("y", x.rangeBand() / 2)
-        .attr("dy", ".32em")
-        .attr("text-anchor", "end")
-        .text(function(d, i) { return nodesX[i].parentText != lastParentText ? (lastParentText = nodesX[i].parentText) : ''; })
-        .attr("transform", function(d, i) { return "translate(-200)rotate(-90)"});
-*/
-
-    var column = svg.selectAll(".column")
-        .data(matrixY)
-      .enter().append("g")
-        .attr("class", "column")
-        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
-
-    column.append("line")
-        .attr("x1", -width);
-
-    column.append("text")
-        .attr("x", 6)
-        .attr("y", x.rangeBand() / 2)
-        .attr("dy", ".32em")
-        .attr("text-anchor", "start")
-        .text(function(d, i) { return nodesY[i].text; });
-
-    function row(row) {
-      var cell = d3.select(this).selectAll(".cell")
-          .data(row.filter(function(d) { return d.z; }))
-          .enter().append("rect")
-          .attr("class", "cell")
-          .attr("x", function(d) { return x(d.x); })
-          .attr("width", x.rangeBand())
-          .attr("height", x.rangeBand())
-          .style("fill-opacity", function(d) { return z(d.z); })
-          .on("mouseover", mouseover)
-          .on("mouseout", mouseout)
-          .on("click", clickCell);
-    }
-
-    function clickCell(p) {
-      var text1 = nodesX[p.y].text;
-      var text2 = nodesY[p.x].text;
-      $.ajax
-         ({
-          type: "POST",
-          //the url where you want to sent the userName and password to
-          url: onClickURL,
-          dataType: 'json',
-          contentType:'application/json',
-          async: true,
-          //json object to sent to the authentication url
-          data: JSON.stringify({text1: text1, text2: text2}),
-          success: function ( citations ) {
-            if (!citations) {
-             handleError('Cannot get papers from DB.');
-             return;
-            }
-            var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
-            if (!!citations.response) {
-              citations.response.forEach ( function ( citation ) {
-                citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
-              });
-            }
-            citationTable += '</tbody></table></div>';
-            BootstrapDialog.show({
-              title: '' + citations.count + ' shared paper' + (citations.count > 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
-              message: citationTable
+  function clickCell(p) {
+    var text1 = nodesX[p.y].text;
+    var text2 = nodesY[p.x].text;
+    $.ajax
+       ({
+        type: "POST",
+        //the url where you want to sent the userName and password to
+        url: onClickURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        //json object to sent to the authentication url
+        data: JSON.stringify({text1: text1, text2: text2}),
+        success: function ( citations ) {
+          if (!citations) {
+           handleError('Cannot get papers from DB.');
+           return;
+          }
+          var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+          if (!!citations.response) {
+            citations.response.forEach ( function ( citation ) {
+              citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
             });
           }
-         });
-    }
+          citationTable += '</tbody></table></div>';
+          BootstrapDialog.show({
+            title: '' + citations.count + ' shared paper' + (citations.count > 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
+            message: citationTable
+          });
+        }
+       });
+  }
 
-    function mouseover(p) {
-      d3.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
-      d3.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
-      d3Tip.show(p);
-      console.log('value: ' + matrixX[p.y][p.x].z + ', src: ' + nodesX[p.y].text + ', dest: ' + nodesY[p.x].text);
-      //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
-    }
-
-    function mouseout(p) {
-      d3.selectAll("text").classed("active", false);
-      d3Tip.hide(p);
-    }
-
-    $('#order').unbind().on("change", function() {
-      order(this.value);
-    });
-/*
-    function order(value) {
-      x.domain(orders[value]);
-
-      var t = svg.transition().duration(2500);
-
-      t.selectAll(".row")
-          .delay(function(d, i) { return x(i) * 4; })
-          .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
-        .selectAll(".cell")
-          .delay(function(d) { return x(d.x) * 4; })
-          .attr("x", function(d) { return x(d.x); });
-
-      t.selectAll(".column")
-          .delay(function(d, i) { return x(i) * 4; })
-          .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
-    }
-*/
-
-    function order(value) {
-      x.domain(orders[0][value]);
-      y.domain(orders[1][value]);
-
-
-      var t = svg.transition().duration(2500);
-
-      t.selectAll(".row")
-          .delay(function(d, i) { return y(i) * 4; })
-          .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
-          .attr("y", function(d) { return y(d.y); }) // TODO remove?
-        .selectAll(".cell")
-          .delay(function(d) { return x(d.x) * 4; })
-          .attr("x", function(d) { return x(d.x); });
-
-      t.selectAll(".column")
-          .delay(function(d, i) { return x(i) * 4; })
-          .attr("x", function(d) { return x(d.x); })
-          .attr("transform", function(d, i) { return "translate(" + x(i) + ",0)rotate(-90)"; });
-    }
-    //setTimeout(function () { order('count'); }, 2000);
-
-    ///////////////////////////////////////////////////////////////////////////
-    ////////////////////////// Color Interactions /////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////
-    //On click transition
-    d3.select("#color").on("change", function() {
-      var currentFill = this.value
-        if(currentFill === "rainbow") {
-          updateRainbow();
-        } else {
-          updateYGB();
-        }//else 
-      });
-
-    //Update the colors to a more light yellow-green-dark blue
-    function updateYGB() {
-      //Fill the legend rectangle
-      svg.select(".cell")
-        .style("fill", "url(#gradient-ygb-colors)");
-      //Transition the hexagon colors
-      svg.selectAll(".cell")
-        .transition().duration(1000)
-        .style("fill", function (d,i) { return colorScaleYGB(colorInterpolateYGB(d.z)); });
-    }//updateYGB
-
-    //Transition the colors to a rainbow
-    function updateRainbow() {
-      //Fill the legend rectangle
-      svg.select(".cell")
-        .style("fill", "url(#gradient-rainbow-colors)");
-      //Transition the hexagon colors
-      svg.selectAll(".cell")
-        .transition().duration(1000)
-        .style("fill", function (d,i) { return colorScaleRainbow(colorInterpolateRainbow(d.z)); })
-    }//updateRainbow
-
-    //Start set-up
-    updateYGB();
-
-    $('#colorTheme').unbind().on('change', function ( e ) {
-      switch(this.value) {
-        case 'YGB': updateYGB(); break;
-        case 'Rainbow': updateRainbow(); break;
-        default: updateYGB();
+  function drawVisualization() {
+    var data = new vis.DataSet();
+    for ( var y = 0; y < m; y++ ) {
+      for ( var x = 0; x < n; x++ ) {
+        if (matrixX[y].values[x].z > 0) {
+          data.add({
+            x: x,
+            y: y,
+            z: matrixX[y].values[x].z,
+            style: matrixX[y].values[x].z
+          });
+        }
       }
-    });
+    }
+
+    // specify options
+    var options = {
+      width:  '1600px',
+      height: '1600px',
+      style: 'bar-color',
+      valueMin: 0,
+      valueMax: maxValue,
+      showPerspective: true,
+      showGrid: true,
+      showShadow: false,
+      keepAspectRatio: true,
+      verticalRatio: 0.5,
+      yLabel: $('#parents1').val() != '' ? $('#parents1').val() : 'All attributes',
+      xLabel: $('#parents2').val() != '' ? $('#parents2').val() : 'All attributes',
+      zLabel: 'Number of citations',
+      keepAspectRatio: true,
+      xStep: 1, // TODO
+      yStep: 1, // TODO
+      xValueLabel: function ( x ) {
+        if (!nodesY[x]) return '';
+        return nodesY[x].text;
+      },
+      yValueLabel: function ( y ) {
+        if (!nodesX[y]) return '';
+        return nodesX[y].text;
+      },
+      zValueLabel: function ( z ) {
+        return '' + z + (onClickURL == 'citationDetails' ? ' references' : ' citations');
+      },
+      tooltip: function ( point ) {
+        return nodesY[point.x].text + ' - ' + nodesX[point.y].text + ': ' + point.z;
+      },
+      onclick: clickCell
+    };
+
+    $('#graph').html('');
+    var container = document.getElementById('graph');
+    graph3d = new vis.Graph3d(container, data, options);
     buildingMatrix = false;
+  }
+
+  drawVisualization();
+  $('#order').unbind().on('change', function ( e ) {
+    if (this.value != 'count') return;
+    buildMatrix(attributesX, attributesY, correlations, maxValue, onClickURL, true);
+  });
+
   }
 
   function showMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {

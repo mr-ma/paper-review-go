@@ -361,6 +361,36 @@
       });
   }
 
+  function removeItem ( ur, selecteds, callback ) {
+    var selected = selecteds[0];
+    var dialog = BootstrapDialog.show({
+      title: 'Remove item',
+      message: '<div><label for="deleteConfirmation">Type: <strong>DELETE "name"</strong> to delete the item. (attributeSrc_attributeDest for edges):</label><input type="text" id="deleteConfirmation"></div>',
+      buttons: [{
+          label: 'Delete',
+          cssClass: 'btn-primary',
+          hotkey: 13, // Enter
+          action: function(data) {
+            var deleteConfirmation = $('#deleteConfirmation').val();
+            if (deleteConfirmation.toLowerCase().trim() != ('delete ' + selected.data('id')).toLowerCase().trim()) {
+              handleError('Type: <strong>DELETE "name"</strong> to delete the item. (attributeSrc_attributeDest for edges).');
+              return;
+            }
+            callback(ur, selecteds);
+            dialog.close();
+          }
+      },{
+          label: 'Cancel',
+          cssClass: 'btn-primary',
+          hotkey: 27, // Esc
+          action: function(data) {
+            dialog.close();
+          }
+      }]
+    });
+    dialog.open();
+  }
+
   function updateEdgeAnnotation ( cy, ele, sourceID, targetID, dimensions, isInterDimensional ) {
     var dialog = BootstrapDialog.show({
       title: 'Enter edge annotation',
@@ -448,7 +478,6 @@
       if (!isNaN(x) && !isNaN(y)) {
         for ( var i = 0; i < citationCounts.length; i++ ) {
           if (citationCounts[i].attribute == attribute.text) {
-            if (attribute.text.split(':').length > 1) console.log('found: ' + attribute.text);
             items.push({ data: { id: attribute.text, table: 'attribute', citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
             break;
           }
@@ -665,14 +694,21 @@
     //document.removeEventListener("keydown");
     document.addEventListener("keydown", function (e) {
       if(e.which === 46) { // delete
-            var selecteds = cy.$("node:selected");
-            if (selecteds.length > 0) {
-              removeNodes(ur, selecteds);
-            }
-            selecteds = cy.$("edge:selected");
-            if (selecteds.length > 0) {
-              removeEdges(ur, selecteds);
-            }
+          var selecteds = cy.$(':selected');
+          if (selecteds.length == 0) return;
+          if (selecteds.length > 1) {
+            handleError('Can only remove one item at a time');
+            return;
+          }
+          var selecteds = cy.$("node:selected");
+          if (selecteds.length > 0) {
+            removeItem(ur, selecteds, removeNodes);
+            return;
+          }
+          selecteds = cy.$("edge:selected");
+          if (selecteds.length > 0) {
+            removeItem(ur, selecteds, removeEdges);
+          }
         }
         else if (e.ctrlKey && e.target.nodeName === 'BODY')
             if (e.which === 90)
@@ -755,7 +791,7 @@
     cy.panzoom();
     //cy.navigator();
     cy.edgehandles({handleNodes: '.child, .parent'});
-    //var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
+    var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
     cy.on('ehcomplete', function (event, sourceNode, targetNode, addedEles) {
       var sourceID = sourceNode.id();
       var targetID = targetNode.id();
