@@ -41,6 +41,10 @@
 
     <script src='cytoscape-snap-to-grid.js'></script>
 
+    <script src="multiselect.min.js"></script>
+
+    <link href="loginForm.css" type="text/css" rel="stylesheet"/>
+
     <!-- promises -->
     <script src="bluebird.min.js"></script>
     <script src="error.js"></script>
@@ -54,6 +58,12 @@
     }
 </style>
 
+<script>
+  function closeButton ( button ) {
+    $(button).parentsUntil('modal').parent().modal('hide');
+  }
+</script>
+
 
 </head>
 <body>
@@ -62,6 +72,36 @@
  <input type="button" id="qtip" value="click" hidden>
  <input type="button" id="merge" value="click" hidden>
 	<div id="cy"></div>
+
+<div class="modal fade" id="multiselect-modal" class="loginmodal" tabindex="-1" role="dialog" aria-labelledby="movePageLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="multiselectTitle">Fork Node</h1><br>
+      <form id="multiselectForm">
+        <div class="row">
+            <div class="col-xs-5">
+                <label for="multiselect">Source node</label>
+                <select name="from[]" id="multiselect" class="multiselect" class="form-control" size="15" multiple="multiple"></select>
+            </div>
+            <div class="col-xs-2">
+            <button type="button" id="multiselect_right_All_1" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>
+            <button type="button" id="multiselect_right_Selected_1" class="btn btn-block"><i class="glyphicon glyphicon-chevron-right"></i></button>
+            <button type="button" id="multiselect_left_Selected_1" class="btn btn-block"><i class="glyphicon glyphicon-chevron-left"></i></button>
+            <button type="button" id="multiselect_left_All_1" class="btn btn-block"><i class="glyphicon glyphicon-backward"></i></button>
+            </div>
+            <div class="col-xs-5">
+              <label for="multiselect_to">Target node</label>
+                <select name="to[]" id="multiselect_to" class="multiselect_to" class="form-control" size="15" multiple="multiple"></select>
+            </div>
+        </div>
+        <div>
+          <input type="submit" id="submitMultiselect" class="btn btn-success" value="Save">
+        </div>
+    </form>
+    </div>
+  </div>
+</div>
 <script>
   const STYLES =       [
         {
@@ -111,7 +151,7 @@
         {
           selector: 'edge',
           style: {
-           'curve-style': 'bezier',
+           'curve-style': 'unbundled-bezier', // bezier, unbundled-bezier, haystack, segments with: 'segment-distances': '10px 30px', 'segment-weights': '0.2 1.2',
            'width': 1,
            'target-arrow-color': 'black', // #ccc
            'line-color': 'black',
@@ -361,16 +401,185 @@
       });
   }
 
+  function loadMultiselect ( data, title, callback ) {
+    $('#multiselectTitle').html(title);
+    $('#multiselect, #multiselect_to').html('');
+    data.forEach ( function ( entry ) {
+      var text = !!entry.text ? entry.text : (!!entry.citation ? entry.citation : '');
+      var id = !!entry.id ? entry.id : text;
+      if (text != '') $('#multiselect').append('<option value="' + id + '" data_relation="' + (!!entry.relation ? entry.relation : '') + '">' + text + '</option>');
+    });
+    $('#multiselectForm').unbind().on('submit', function ( e ) {
+      e.preventDefault();
+      console.log('done');
+      var options = [];
+      $('#multiselect_to option').each ( function ( index, entry ) {
+        var element = {id: entry.value};
+        var relation = $(entry).attr('data_relation');
+        if (!!relation && relation !='') element.relation = relation;
+        options.push(element);
+      });
+      callback(options);
+    });
+  }
+
+  function chooseParentRelations ( data, callback ) {
+    if (!!data && data.length > 0) {
+      loadMultiselect(data, 'Parents of<br>first node', function ( resultTmp ) {
+        loadMultiselect(data, 'Parents of<br>second node', function ( resultTmp2 ) {
+          var result = [];
+          var result2 = [];
+          resultTmp.forEach ( function ( entry ) {
+            result.push({text: entry.id, relation: entry.relation});
+          });
+          resultTmp2.forEach ( function ( entry ) {
+            result2.push({text: entry.id, relation: entry.relation});
+          });
+          callback([result, result2]);
+        });
+      });
+    } else callback([[],[]]);
+  }
+
+  function chooseChildRelations ( data, callback ) {
+    if (!!data && data.length > 0) {
+      loadMultiselect(data, 'Children of<br>first node', function ( resultTmp ) {
+        loadMultiselect(data, 'Children of<br>second node', function ( resultTmp2 ) {
+          var result = [];
+          var result2 = [];
+          resultTmp.forEach ( function ( entry ) {
+            result.push({text: entry.id, relation: entry.relation});
+          });
+          resultTmp2.forEach ( function ( entry ) {
+            result2.push({text: entry.id, relation: entry.relation});
+          });
+          callback([result, result2]);
+        });
+      });
+    } else callback([[],[]]);
+  }
+
+  function chooseCitationMappings ( data, callback ) {
+    if (!!data && data.length > 0) {
+      loadMultiselect(data, 'Citations of<br>first node', function ( resultTmp ) {
+        loadMultiselect(data, 'Citations of<br>second node', function ( resultTmp2 ) {
+          var result = [];
+          var result2 = [];
+          resultTmp.forEach ( function ( entry ) {
+            var idNumber = entry.id - 0;
+            if (!isNaN(idNumber)) result.push({id: idNumber});
+          });
+          resultTmp2.forEach ( function ( entry ) {
+            var idNumber = entry.id - 0;
+            if (!isNaN(idNumber)) result2.push({id: idNumber});
+          });
+          callback([result, result2]);
+        });
+      });
+    } else callback([[],[]]);
+  }
+
+  function forkNode ( node ) {
+    var text = node.data('id');
+    var isMajor = node.data('major');
+    if (isMajor == 1) {
+      handleError('Cannot fork major nodes.');
+      return;
+    }
+    var dimension = node.data('parent');
+    $.ajax
+      ({
+          type: "POST",
+          //the url where you want to sent the userName and password to
+          url: 'childRelationsPerAttribute',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          //json object to sent to the authentication url
+          data: JSON.stringify({'taxonomy_id': 1, text: text, dimension: dimension}),
+          success: function ( childRelations ) {
+            if (!childRelations) {
+              handleError('Error occurred while forking the attribute: ' + text);
+              return;
+            }
+            $.ajax
+              ({
+                  type: "POST",
+                  //the url where you want to sent the userName and password to
+                  url: 'parentRelationsPerAttribute',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  //json object to sent to the authentication url
+                  data: JSON.stringify({'taxonomy_id': 1, text: text, dimension: dimension}),
+                  success: function ( parentRelations ) {
+                    if (!parentRelations) {
+                      handleError('Error occurred while forking the attribute: ' + text);
+                      return;
+                    }
+                    $.ajax
+                      ({
+                          type: "POST",
+                          //the url where you want to sent the userName and password to
+                          url: 'citationsPerAttribute',
+                          dataType: 'json',
+                          contentType:'application/json',
+                          async: true,
+                          //json object to sent to the authentication url
+                          data: JSON.stringify({attribute: text}),
+                          success: function ( attributeCoverage ) {
+                            if (!attributeCoverage) {
+                              handleError('Error occurred while forking the attribute: ' + text);
+                              return;
+                            }
+                            if (!!parentRelations.response || childRelations.response || attributeCoverage.response) $('#multiselect-modal').modal('show');
+                            chooseParentRelations(parentRelations.response, function ( parentResults ) {
+                              chooseChildRelations(childRelations.response, function ( childResults ) {
+                                chooseCitationMappings(attributeCoverage.response, function ( citationResults ) {
+                                  $('#multiselect-modal').modal('hide');
+                                  console.log('parents: ', parentResults);
+                                  console.log('children: ', childResults);
+                                  console.log('citations: ', citationResults);
+                                  $.ajax
+                                    ({
+                                        type: "POST",
+                                        //the url where you want to sent the userName and password to
+                                        url: 'forkAttribute',
+                                        dataType: 'json',
+                                        contentType:'application/json',
+                                        async: true,
+                                        //json object to sent to the authentication url
+                                        data: JSON.stringify({text: text, dimension: dimension, parents1: parentResults[0], parents2: parentResults[1], children1: childResults[0], children2: childResults[1], citations1: citationResults[0], citations2: citationResults[1]}),
+                                        success: function ( result ) {
+                                          if (!result || !result.response || !result.response.success) {
+                                            handleError('Cannot fork attribute "' + text + '".');
+                                            return;
+                                          }
+                                          window.location.reload(false);
+                                        }
+                                    });
+                                });
+                              });
+                            });
+                          }
+                        });
+                  }
+            });
+          }
+      });
+  }
+
   function removeItem ( ur, selecteds, callback ) {
     var selected = selecteds[0];
     var dialog = BootstrapDialog.show({
       title: 'Remove item',
-      message: '<div><label for="deleteConfirmation">Type: <strong>DELETE "name"</strong> to delete the item. (attributeSrc_attributeDest for edges):</label><input type="text" id="deleteConfirmation"></div>',
+      message: '<div><label for="deleteConfirmation">Type: <strong>DELETE "name"</strong> to delete the item. (attributeSrc_attributeDest for edges):</label><input type="text" id="deleteConfirmation"></input></div>',
       buttons: [{
           label: 'Delete',
           cssClass: 'btn-primary',
           hotkey: 13, // Enter
           action: function(data) {
+            // TODO fix modal issue (z-index?) coming from "Interdimensional view"
             var deleteConfirmation = $('#deleteConfirmation').val();
             if (deleteConfirmation.toLowerCase().trim() != ('delete ' + selected.data('id')).toLowerCase().trim()) {
               handleError('Type: <strong>DELETE "name"</strong> to delete the item. (attributeSrc_attributeDest for edges).');
@@ -478,7 +687,8 @@
       if (!isNaN(x) && !isNaN(y)) {
         for ( var i = 0; i < citationCounts.length; i++ ) {
           if (citationCounts[i].attribute == attribute.text) {
-            items.push({ data: { id: attribute.text, table: 'attribute', citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
+            if (attribute.text.split('Reverse engineering').length > 1) console.log(attribute)
+            items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
             break;
           }
         }
@@ -523,6 +733,14 @@
         content: 'Rename', // html/text content to be displayed in the menu
         select: function(ele){ // a function to execute when the command is selected
           renameNode(ele);
+        },
+        enabled: true // whether the command is selectable
+      });
+      nodeCommands.push({
+        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+        content: 'Fork', // html/text content to be displayed in the menu
+        select: function(ele){ // a function to execute when the command is selected
+          forkNode(ele);
         },
         enabled: true // whether the command is selectable
       });
@@ -764,12 +982,15 @@
                         return;
                       }
                       var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+                      var sumOfReferences = 0;
                       if (!!citationsPerAttribute.response) {
                         citationsPerAttribute.response.forEach ( function ( citationPerAttribute ) {
                           citationTable += '<tr><td>' + citationPerAttribute.citation + '</td><td>' + citationPerAttribute.referenceCount + '</td><td>' + citationPerAttribute.bib + '</td></tr>';
+                          sumOfReferences += citationPerAttribute.referenceCount;
                         });
                       }
                       citationTable += '</tbody></table></div>';
+                      if (sumOfReferences > 0) citationTable = '<div><p><b>Sum of references:</b>  ' + sumOfReferences + '</p></div>' + citationTable;
                       cy.elements().trigger('qtiphide');
                       BootstrapDialog.show({
                         title: 'Citations for attribute "' + attribute + '"',
@@ -791,7 +1012,7 @@
     cy.panzoom();
     //cy.navigator();
     cy.edgehandles({handleNodes: '.child, .parent'});
-    var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
+    //var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
     cy.on('ehcomplete', function (event, sourceNode, targetNode, addedEles) {
       var sourceID = sourceNode.id();
       var targetID = targetNode.id();
@@ -863,6 +1084,23 @@
        }
        mergeNodes(selecteds);
     });
+    $('#multiselect-modal').on('shown.bs.modal', function () {
+      console.log('shown')
+      $('.multiselect').multiselect({
+          rightAll: '#multiselect_right_All_1',
+          right: '#multiselect_to',
+          rightSelected: '#multiselect_right_Selected_1',
+          leftSelected: '#multiselect_left_Selected_1',
+          leftAll: '#multiselect_left_All_1',
+          search: {
+              left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+              right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+          },
+          fireSearch: function(value) {
+              return value.length > 3;
+          }
+      });
+    })
     var qtipShown = false;
     $('#qtip').unbind().click ( function () {
       if (!qtipShown) {

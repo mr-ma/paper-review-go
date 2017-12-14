@@ -85,6 +85,10 @@ text.active {
     <input type="button" class="btn btn-default" id="refreshFilter" value="Refresh">
   </div>
 </div>
+<label for="dataType">Data Type: </label><select class="form-control" id="dataType">
+  <option value="citationCount" selected="selected">Citation count</option>
+  <option value="referenceCount">Sum of references</option>
+</select>
 <label for="order">Order by: </label><select class="form-control" id="order">
   <option value="default" selected="selected"></option>
   <option value="count">by Value</option>
@@ -316,12 +320,24 @@ text.active {
       return b.count - a.count;
     });
   }
+  originalMaxValue = maxValue;
 
-  var data = null;
-  var graph = null;
-
-  function custom(x, y) {
-    return (Math.sin(x/50) * Math.cos(y/50) * 50 + 50);
+  var zLabel = 'Number of citations';
+  var zLabelText = onClickURL == 'citationDetails' ? ' references' : ' citations';
+  if (maxValue < 0) {
+    zLabel = 'Sum of references';
+    zLabelText = ' references';
+    maxValue = 0;
+    for ( var i = 0; i < matrixX.length; i++ ) {
+      for ( var j = 0; j < matrixX[i].values.length; j++ ) {
+        if (matrixX[i].values[j].z > maxValue) maxValue = matrixX[i].values[j].z;
+      }
+    }
+    for ( var i = 0; i < matrixY.length; i++ ) {
+      for ( var j = 0; j < matrixY[i].values.length; j++ ) {
+        if (matrixY[i].values[j].z > maxValue) maxValue = matrixY[i].values[j].z;
+      }
+    }
   }
 
   var minValue = 0;
@@ -395,38 +411,41 @@ text.active {
       .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
       .attr("stop-color", function(d) { return d; });
 
-  function clickCell(p) {
-    var text1 = nodesX[p.y].text;
-    var text2 = nodesY[p.x].text;
-    $.ajax
-       ({
-        type: "POST",
-        //the url where you want to sent the userName and password to
-        url: onClickURL,
-        dataType: 'json',
-        contentType:'application/json',
-        async: true,
-        //json object to sent to the authentication url
-        data: JSON.stringify({text1: text1, text2: text2}),
-        success: function ( citations ) {
-          if (!citations) {
-           handleError('Cannot get papers from DB.');
-           return;
-          }
-          var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
-          if (!!citations.response) {
-            citations.response.forEach ( function ( citation ) {
-              citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
+    function clickCell(p) {
+      var text1 = nodesX[p.y].text;
+      var text2 = nodesY[p.x].text;
+      $.ajax
+         ({
+          type: "POST",
+          //the url where you want to sent the userName and password to
+          url: onClickURL,
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          //json object to sent to the authentication url
+          data: JSON.stringify({text1: text1, text2: text2}),
+          success: function ( citations ) {
+            if (!citations) {
+             handleError('Cannot get papers from DB.');
+             return;
+            }
+            var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+            var sumOfReferences = 0;
+            if (!!citations.response) {
+              citations.response.forEach ( function ( citation ) {
+                citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
+                sumOfReferences += citation.referenceCount;
+              });
+            }
+            citationTable += '</tbody></table></div>';
+            if (sumOfReferences > 0) citationTable = '<div><p><b>Sum of references:</b>  ' + sumOfReferences + '</p></div>' + citationTable;
+            BootstrapDialog.show({
+              title: '' + citations.count + ' shared paper' + (citations.count > 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
+              message: citationTable
             });
           }
-          citationTable += '</tbody></table></div>';
-          BootstrapDialog.show({
-            title: '' + citations.count + ' shared paper' + (citations.count > 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
-            message: citationTable
-          });
-        }
-       });
-  }
+         });
+    }
 
   function drawVisualization() {
     var data = new vis.DataSet();
@@ -447,7 +466,7 @@ text.active {
     var options = {
       width:  '1600px',
       height: '1600px',
-      style: 'bar-color',
+      style: 'bar-color', // surface
       valueMin: 0,
       valueMax: maxValue,
       showPerspective: true,
@@ -457,7 +476,7 @@ text.active {
       verticalRatio: 0.5,
       yLabel: $('#parents1').val() != '' ? $('#parents1').val() : 'All attributes',
       xLabel: $('#parents2').val() != '' ? $('#parents2').val() : 'All attributes',
-      zLabel: 'Number of citations',
+      zLabel: zLabel,
       keepAspectRatio: true,
       xStep: 1, // TODO
       yStep: 1, // TODO
@@ -470,7 +489,7 @@ text.active {
         return nodesX[y].text;
       },
       zValueLabel: function ( z ) {
-        return '' + z + (onClickURL == 'citationDetails' ? ' references' : ' citations');
+        return '' + z + zLabelText;
       },
       tooltip: function ( point ) {
         return nodesY[point.x].text + ' - ' + nodesX[point.y].text + ': ' + point.z;
@@ -487,7 +506,7 @@ text.active {
   drawVisualization();
   $('#order').unbind().on('change', function ( e ) {
     if (this.value != 'count') return;
-    buildMatrix(attributesX, attributesY, correlations, maxValue, onClickURL, true);
+    buildMatrix(attributesX, attributesY, correlations, originalMaxValue, onClickURL, true);
   });
 
   }
@@ -591,10 +610,11 @@ function renderMatrixHelper () {
     var ajaxTypeX, ajaxTypeY, attributeUrlX, attributeUrlY;
     var requestX = {'taxonomy_id': 1};
     var requestY = {'taxonomy_id': 1};
-    var correlationURL = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var maxValue = correlationURLObj.maxValue;
     var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
     var showChildAttributes = $('#showChildAttributes').is(':checked');
-    var maxValue = totalNumberOfCitations;
     switch(parent1) {
       case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'attribute'; break;
       case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
@@ -622,6 +642,13 @@ function renderMatrix () {
   if (!buildingMatrix && (!!totalNumberOfCitations || !!maxReferenceCount)) renderMatrixHelper();
 }
 
+function getCorrelationOptions () {
+  var url = $('#includeChildAttributes').is(':checked') ? ($('#dataType')[0].value == 'referenceCount' ? 'allConceptCorrelationsWithReferenceCounts' : 'allConceptCorrelations') : ($('#dataType')[0].value == 'referenceCount' ? 'conceptCorrelationWithReferenceCounts' : 'conceptCorrelation');
+  var maxValue = totalNumberOfCitations;
+  if (url.split('ReferenceCounts').length > 1) maxValue = -1;
+  return {url: url, maxValue: maxValue};
+}
+
 function initPage () {
   $.get('citation', function ( citations ) {
     if (!citations || !citations.response) {
@@ -638,6 +665,8 @@ function initPage () {
         handleError('Cannot get number of papers from DB.');
         return;
       }
+      totalNumberOfCitations = citationCount.response[0].citationCount;
+      maxReferenceCount = citationCount.response[0].maxReferenceCount;
       $.get('dimension', function ( dimensions ) {
         if (!dimensions || !dimensions.response) {
           handleError('Cannot get dimensions From DB.');
@@ -692,19 +721,18 @@ function initPage () {
             $(this).trigger({type: 'keydown', keyCode: 8});
           });
           var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', requestX: {'taxonomy_id': 1}, requestY: {'taxonomy_id': 1}};
-          var correlationURL = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+          var correlationURLObj = getCorrelationOptions();
+          var correlationURL = correlationURLObj.url;
+          var maxValue = correlationURLObj.maxValue;
           var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
           $.get(correlationURL, function ( correlations ) {
             if (!correlations || !correlations.response) {
               handleError('Cannot get correlation data from DB.');
               return;
             }
-            totalNumberOfCitations = citationCount.response[0].citationCount;
-            maxReferenceCount = citationCount.response[0].maxReferenceCount;
-            console.log('max: ' + maxReferenceCount)
-            loadAttributes(true, correlations, options, totalNumberOfCitations, onClickURL, showMatrix);
+            loadAttributes(true, correlations, options, maxValue, onClickURL, showMatrix);
           });
-          $('#showChildAttributes, #includeChildAttributes').unbind().on('change', renderMatrix);
+          $('#showChildAttributes, #includeChildAttributes, #dataType').unbind().on('change', renderMatrix);
         });
       });
     });

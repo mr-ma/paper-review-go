@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Colored Concept Correlations</title>
+<header>
+<style>
+
+@import url(style.css);
+
+.background {
+  fill: #eee;
+}
+
+line {
+  stroke: #fff;
+}
+
+text.active {
+  fill: red;
+}
+
+</style>
+    <script type="text/javascript" src="d3.min.js"></script>
+    <script src="jquery.min.js"></script>
+
+    <link href="vis.min.css" type="text/css" rel="stylesheet"/>
+    <script src="vis.min.js"></script>
+
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap.min.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <link href="selectize.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="selectize.min.js"></script>
+    <link href="selectize.bootstrap3.css" rel="stylesheet" type="text/css">
+
+    <script src="error.js"></script>
+
+</header>
+<body>
+
+<div style="margin-left:20px;margin-top:50px;">
+
+<ul class="nav nav-tabs tabs-up" id="tabsContainer">
+  <li><a href="javascript:void(0)" name="parent" data-target="#parentFrame" class="media_node active span" id="parent" data-toggle="tabajax" rel="tooltip">Parent</a></li>
+  <li><a href="javascript:void(0)" name="Number of children" data-target="#numChildrenFrame" class="media_node active span" id="numChildren" data-toggle="tabajax" rel="tooltip">Number of children</a></li>
+</ul>
+
+<div class="tab-content" style="width:200px;">
+  <div class="tab-pane fade in active" id="parentFrame">
+    <label for="parents1">x property: </label>
+    <select class="form-control" id="parents2" hidden>
+    </select>
+    <label for="parents2">y property: </label>
+    <select class="form-control" id="parents1" hidden>
+    </select>
+    <label for="parents3">z property: </label>
+    <select class="form-control" id="parents3" hidden>
+    </select>
+  </div>
+  <div class="tab-pane fade in" id="numChildrenFrame" hidden>
+    <form>
+      <label for="maxChildren">Min children: </label><input type="text" class="form-control" id="minChildren">
+      <label for="maxChildren">Max children: </label><input type="text" class="form-control" id="maxChildren">
+    </form>
+  </div>
+</div>
+
+<form style="padding:10px;width:200px;">
+
+<div>
+  <label for="showChildAttributes">Show child attributes</label>
+  <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
+  <label for="includeChildAttributes">Include child attributes</label>
+  <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;">
+</div>
+<label for = "filterAttributesButton">Filter</label>
+<div class="input-group class="form-control"">
+  <div class="input-group-btn">
+    <button  class="btn btn-default dropdown-toggle" id="filterAttributesButton" title="Filter Attributes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-placeholder="Please select">
+      <i class="glyphicon glyphicon-th-list" style="color:#4078c0;"></i>
+      <span>Filter</span>
+      <span class="caret" aria-hidden="true"></span>
+    </button>
+    <ul class="dropdown-menu" id="attributeDropdownMenu" style="max-height:500px;overflow-y:auto;">
+    </ul>
+    <input type="button" class="btn btn-default" id="refreshFilter" value="Refresh">
+  </div>
+</div>
+<label for="dataType">Data Type: </label><select class="form-control" id="dataType">
+  <option value="citationCount" selected="selected">Citation count</option>
+  <option value="referenceCount">Sum of references</option>
+</select>
+<label for="order">Order by: </label><select class="form-control" id="order">
+  <option value="default" selected="selected"></option>
+  <option value="count">by Value</option>
+</select>
+</form>
+</div>
+
+<div id="graph"></div>
+
+<script>
+
+  var lastParentText = '';
+  var totalNumberOfCitations, maxReferenceCount;
+  var selectize1, selectize2, selectize3;
+  var buildingMatrix = false;
+
+  function buildMatrix ( attributesX, attributesY, attributesZ, correlations, maxValue, onClickURL, sortValues ) {
+    buildingMatrix = true;
+    var matrixX = [],
+        matrixY = [],
+        matrixZ = [],
+        nodesX = attributesX.response,
+        n = attributesX.response.length,
+        nodesY = attributesY.response,
+        m = attributesY.response.length,
+        nodesZ = attributesZ.response,
+        l = attributesZ.response.length;
+
+    var maxNum = Math.max(Math.max(n, m), l);
+
+    if (n < maxNum) {
+      for ( var i = 0; i < (n - maxNum); i++ ) {
+        nodesX.push({id: -Infinity, text: ''});
+      }
+      n = maxNum;
+    }
+    if (m < maxNum) {
+      for ( var i = 0; i < (m - maxNum); i++ ) {
+        nodesY.push({id: -Infinity, text: ''});
+      }
+      m = maxNum;
+    }
+    if (l < maxNum) {
+      for ( var i = 0; i < (l - maxNum); i++ ) {
+        nodesZ.push({id: -Infinity, text: ''});
+      }
+      l = maxNum;
+    }
+
+    nodesX.forEach ( function (node, i) {
+      node.index = i;
+      if (node.id < 0) node.count = -Infinity;
+      else node.count = 0;
+      matrixX[i] = {index: i, values: []};
+      nodesY.forEach ( function ( node2, i2 ) {
+        matrixX[i].values = d3.range(l).map(function(j) { return {x: i, y: i2, z: j, value: 0}; })
+      });
+    });
+    nodesY.forEach(function(node, i) {
+      node.index = i;
+      if (node.id < 0) node.count = -Infinity;
+      else node.count = 0;
+      matrixY[i] = {index: i, values: []};
+      /*
+      nodesX.forEach ( function ( node2, i2 ) {
+        matrixY[i].values = d3.range(l).map(function(j) { return {x: i2, y: i, z: j, value: 0}; })
+      });
+      */
+    });
+    nodesZ.forEach(function(node, i) {
+      node.index = i;
+      if (node.id < 0) node.count = -Infinity;
+      else node.count = 0;
+      matrixZ[i] = {index: i, values: []};
+      /*
+      nodesX.forEach ( function ( node2, i2 ) {
+        matrixZ[i].values = d3.range(m).map(function(j) { return {x: i2, y: j, z: i, value: 0}; })
+      });
+      */
+    });
+
+    console.log('cor: ', correlations.response.length)
+
+    correlations.response.forEach(function(link) {
+      //if (link.value > 49) console.log('ERROR: More than 49 citations: ', link);
+      //link.id1--;
+      //link.id2--;
+      /*
+      var foundLinks = 0;
+      for ( var i = 0; i < nodesX.length; i++ ) {
+        if (nodesX[i].text == link.text1 || nodesX[i].text == link.text2) {
+          nodesX[i].count += link.value;
+          foundLinks++;
+          if (foundLinks > 1) break;
+        }
+      }
+      foundNodes = 0;
+      for ( var i = 0; i < nodesY.length; i++ ) {
+        if (nodesY[i].text == link.text1 || nodesY[i].text == link.text2) {
+          nodesY[i].count += link.value;
+          foundLinks++;
+          if (foundLinks > 1) break;
+        }
+      }
+      foundLinks = 0;
+      */
+/*
+      var foundLinks = 0;
+      if (link.text1 == link.text2 && link.text1 == link.text3) {
+        for ( var k = 0; k < nodesX.length; k++) {
+          if (nodesX[k].text == link.text1) {
+            for ( var l = 0; l < nodesY.length; l++) {
+              if (nodesY[l].text == link.text2) {
+                for ( var d = 0; d < nodesZ.length; d++ ) {
+                  if (nodesZ[d].text == link.text3) {
+                matrixX[k].values[l].z += link.value;
+                matrixX[k].values[l].src = nodesX[k].text;
+                matrixX[k].values[l].dest = nodesY[l].text;
+                matrixX[k].values[l].onClickURL = onClickURL;
+                matrixY[l].values[k].z += link.value;
+                matrixY[l].values[k].src = nodesX[k].text;
+                matrixY[l].values[k].dest = nodesY[l].text;
+                matrixY[l].values[k].onClickURL = onClickURL;
+                nodesX[k].count += link.value;
+                nodesY[l].count += link.value;
+                foundLinks++;
+                break;
+              }
+            }
+            if (foundLinks > 0) break;
+          }
+        }
+      } else {
+        for ( var k = 0; k < nodesX.length; k++ ) {
+          if (nodesX[k].text == link.text1 || nodesX[k].text == link.text2) {
+            for ( var l = 0; l < nodesY.length; l++) {
+              if (nodesY[l].text == link.text2 && nodesX[k].text != nodesY[l].text) {
+                matrixX[k].values[l].z += link.value;
+                matrixX[k].values[l].src = nodesX[k].text;
+                matrixX[k].values[l].dest = nodesY[l].text;
+                matrixX[k].values[l].onClickURL = onClickURL;
+                matrixY[l].values[k].z += link.value;
+                matrixY[l].values[k].src = nodesX[k].text;
+                matrixY[l].values[k].dest = nodesY[l].text;
+                matrixY[l].values[k].onClickURL = onClickURL;
+                nodesX[k].count += link.value;
+                nodesY[l].count += link.value;
+                foundLinks++;
+                break;
+              } else if (nodesY[l].text == link.text1 && nodesX[k].text != nodesY[l].text) {
+                matrixX[k].values[l].z += link.value;
+                matrixX[k].values[l].src = nodesY[l].text;
+                matrixX[k].values[l].dest = nodesX[k].text;
+                matrixX[k].values[l].onClickURL = onClickURL;
+                matrixY[l].values[k].z += link.value;
+                matrixY[l].values[k].src = nodesY[l].text;
+                matrixY[l].values[k].dest = nodesX[k].text;
+                matrixY[l].values[k].onClickURL = onClickURL;
+                nodesX[k].count += link.value;
+                nodesY[l].count += link.value;
+                foundLinks++;
+                break;
+              }
+            }
+            if (foundLinks > 1) break;
+          }
+        }
+      }
+      /*
+      matrix[link.id1][link.id2].z += link.value;
+      matrix[link.id2][link.id1].z += link.value;
+      nodes[link.id1].count += link.value;
+      nodes[link.id2].count += link.value;
+      */
+      for ( var k = 0; k < nodesX.length; k++ ) {
+        for ( var l = 0; l < nodesY.length; l++ ) {
+          for ( var d = 0; d < nodesZ.length; d++ ) {
+            matrixX[k].values[l].value += link.value;
+            //matrixY[l].values[k].value += link.value;
+            //matrixZ[d].values[k].value += link.value;
+          }
+        }
+      }
+    });
+    /*
+
+            if (nodesX[i].id == link.id1) {
+          for ( var j = 0; j < nodesY.length; j++ ) {
+            if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id2) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesX[i].text;
+              matrixX[i][j].dest = nodesY[j].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesX[i].text;
+              matrixY[j][i].dest = nodesY[j].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesY[j].text;
+              matrixX[i][j].dest = nodesX[i].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesY[j].text;
+              matrixY[j][i].dest = nodesX[i].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            }
+          }
+          if (foundNodes > 1) break;
+        } else if (nodesX[i].id == link.id2) {
+          for ( var j = 0; j < nodesY.length; j++ ) {
+            if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesX[i].text;
+              matrixX[i][j].dest = nodesY[j].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesX[i].text;
+              matrixY[j][i].dest = nodesY[j].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
+              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
+              matrixX[i][j].z += link.value;
+              matrixX[i][j].src = nodesY[j].text;
+              matrixX[i][j].dest = nodesX[i].text;
+              matrixY[j][i].z += link.value;
+              matrixY[j][i].src = nodesY[j].text;
+              matrixY[j][i].dest = nodesX[i].text;
+              nodesX[i].count += link.value;
+              nodesY[j].count += link.value;
+              foundNodes = 2;
+              break;
+            }
+          }
+          if (foundNodes > 1) break;
+        }
+      */
+  if (!!sortValues) {
+    console.log('sorting values...');
+    // TODO sort matrixX, matrixY ? or by a.z, b.z ?
+    matrixY.sort( function ( a, b ) {
+      return nodesY[b.index].count - nodesY[a.index].count;
+    });
+    matrixX.sort( function ( a, b ) {
+      return nodesX[b.index].count - nodesX[a.index].count;
+    });
+    matrixZ.sort( function ( a, b ) {
+      return nodesZ[b.index].count - nodesZ[a.index].count;
+    });
+    for ( var i = 0; i < matrixY.length; i++ ) {
+      matrixY[i].values.sort( function ( a, b ) {
+        return nodesX[b.y].count - nodesX[a.y].count;
+      });
+    }
+    for ( var i = 0; i < matrixX.length; i++ ) {
+      matrixX[i].values.sort( function ( a, b ) {
+        return nodesY[b.x].count - nodesY[a.x].count;
+      });
+    }
+    for ( var i = 0; i < matrixZ.length; i++ ) {
+      matrixZ[i].values.sort( function ( a, b ) {
+        return nodesZ[b.x].count - nodesZ[a.x].count;
+      });
+    }
+    nodesX.sort( function ( a, b ) {
+      return b.count - a.count;
+    });
+    nodesY.sort( function ( a, b ) {
+      return b.count - a.count;
+    });
+    nodesZ.sort( function ( a, b ) {
+      return b.count - a.count;
+    });
+  }
+  originalMaxValue = maxValue;
+
+  var zLabel = 'Number of citations';
+  var zLabelText = onClickURL == 'citationDetails' ? ' references' : ' citations';
+  if (maxValue < 0) {
+    zLabel = 'Sum of references';
+    zLabelText = ' references';
+    maxValue = 0;
+    for ( var i = 0; i < matrixX.length; i++ ) {
+      for ( var j = 0; j < matrixX[i].values.length; j++ ) {
+        for ( var k = 0; k < matrixX[i].values[j].length; k++ ) {
+          if (matrixX[i].values[j].value > maxValue) maxValue = matrixX[i].values[j].value;
+        }
+      }
+    }
+    for ( var i = 0; i < matrixY.length; i++ ) {
+      for ( var j = 0; j < matrixY[i].values.length; j++ ) {
+        for ( var k = 0; k < matrixY[i].values[j].length; k++ ) {
+          if (matrixY[i].values[j].value > maxValue) maxValue = matrixY[i].values[j].value;
+        }
+      }
+    }
+    for ( var i = 0; i < matrixZ.length; i++ ) {
+      for ( var j = 0; j < matrixZ[i].values.length; j++ ) {
+        for ( var k = 0; k < matrixZ[i].values[j].length; k++ ) {
+          if (matrixZ[i].values[j].value > maxValue) maxValue = matrixZ[i].values[j].value;
+        }
+      }
+    }
+  }
+
+  var minValue = 0;
+
+    d3.select("svg").remove();
+    var svg = d3.select("body").append("svg")
+      .attr('style', 'display:none;');
+    var defs = svg.append("defs");
+
+    var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
+    var colourRangeYGB = d3.range(0, 1, 1.0 / (coloursYGB.length - 1));
+    colourRangeYGB.push(1);
+           
+    //Create color gradient
+    var colorScaleYGB = d3.scale.linear()
+      .domain(colourRangeYGB)
+      .range(coloursYGB)
+      .interpolate(d3.interpolateHcl);
+
+    //Needed to map the values of the dataset to the color scale
+    var colorInterpolateYGB = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////// Create the YGB color gradient ///////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Calculate the gradient  
+    defs.append("linearGradient")
+      .attr("id", "gradient-ygb-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(coloursYGB)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(coloursYGB.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+
+    ///////////////////////////////////////////////////////////////////////////
+    //////////// Get continuous color scale for the Rainbow ///////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    var coloursRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
+    var colourRangeRainbow = d3.range(0, 1, 1.0 / (coloursRainbow.length - 1));
+    colourRangeRainbow.push(1);
+           
+    //Create color gradient
+    var colorScaleRainbow = d3.scale.linear()
+      .domain(colourRangeRainbow)
+      .range(coloursRainbow)
+      .interpolate(d3.interpolateHcl);
+
+    //Needed to map the values of the dataset to the color scale
+    var colorInterpolateRainbow = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    ///////////////////////////////////////////////////////////////////////////
+    //////////////////// Create the Rainbow color gradient ////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    //Calculate the gradient  
+    defs.append("linearGradient")
+      .attr("id", "gradient-rainbow-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(coloursRainbow)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+
+    function clickCell(p) {
+      var text1 = nodesX[p.y].text;
+      var text2 = nodesY[p.x].text;
+      $.ajax
+         ({
+          type: "POST",
+          //the url where you want to sent the userName and password to
+          url: onClickURL,
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          //json object to sent to the authentication url
+          data: JSON.stringify({text1: text1, text2: text2}),
+          success: function ( citations ) {
+            if (!citations) {
+             handleError('Cannot get papers from DB.');
+             return;
+            }
+            var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+            var sumOfReferences = 0;
+            if (!!citations.response) {
+              citations.response.forEach ( function ( citation ) {
+                citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
+                sumOfReferences += citation.referenceCount;
+              });
+            }
+            citationTable += '</tbody></table></div>';
+            if (sumOfReferences > 0) citationTable = '<div><p><b>Sum of references:</b>  ' + sumOfReferences + '</p></div>' + citationTable;
+            BootstrapDialog.show({
+              title: '' + citations.count + ' shared paper' + (citations.count > 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
+              message: citationTable
+            });
+          }
+         });
+    }
+
+  function drawVisualization() {
+    var data = new vis.DataSet();
+    for ( var y = 0; y < m; y++ ) {
+      for ( var x = 0; x < n; x++ ) {
+        for ( var z = 0; z < l; z++ ) {
+          if (matrixX[x].values[y].value > 0) {
+            data.add({
+              x: x,
+              y: y,
+              z: z,
+              style: matrixX[x].values[y].value
+            });
+          }
+        }
+      }
+    }
+
+    // specify options
+    var options = {
+      width:  '1600px',
+      height: '1600px',
+      style: 'dot-size', // surface
+      valueMin: 0,
+      valueMax: maxValue,
+      showPerspective: true,
+      showGrid: true,
+      showShadow: false,
+      keepAspectRatio: true,
+      verticalRatio: 0.5,
+      yLabel: $('#parents1').val() != '' ? $('#parents1').val() : 'All attributes',
+      xLabel: $('#parents2').val() != '' ? $('#parents2').val() : 'All attributes',
+      zLabel: $('#parents3').val() != '' ? $('#parents3').val() : 'All attributes',
+      keepAspectRatio: true,
+      xStep: 1, // TODO
+      yStep: 1, // TODO
+      xValueLabel: function ( x ) {
+        if (!nodesY[x]) return '';
+        return nodesY[x].text;
+      },
+      yValueLabel: function ( y ) {
+        if (!nodesX[y]) return '';
+        return nodesX[y].text;
+      },
+      zValueLabel: function ( z ) {
+        if (!nodesZ[z]) return '';
+        return nodesZ[z].text;
+      },
+      tooltip: function ( point ) {
+        return nodesY[point.x].text + ' - ' + nodesX[point.y].text + ' - ' + nodesZ[point.z].text + ': ' + matrix[y].values[x].values[z];
+      },
+      onclick: clickCell
+    };
+
+    $('#graph').html('');
+    var container = document.getElementById('graph');
+    graph3d = new vis.Graph3d(container, data, options);
+    buildingMatrix = false;
+  }
+
+  drawVisualization();
+  $('#order').unbind().on('change', function ( e ) {
+    if (this.value != 'count') return;
+    buildMatrix(attributesX, attributesY, correlations, originalMaxValue, onClickURL, true);
+  });
+
+  }
+
+  function showMatrix ( attributesX, attributesY, attributesZ, correlations, maxValue, onClickURL ) {
+    buildMatrix(attributesX, attributesY, attributesZ, correlations, maxValue, onClickURL);
+  }
+
+  function loadAttributes ( init, correlations, options, maxValue, onClickURL, callback, filter ) {
+    console.log('loading attributes')
+    $.ajax
+      ({
+          type: options.ajaxTypeX,
+          url: options.attributeUrlX, // allChildrenAttributes
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify(options.requestX),
+          success: function ( attributesResultX) {
+            if (!attributesResultX || !attributesResultX.response) {
+              handleError('Cannot get attributes from DB.');
+              return;
+            }
+            $.ajax
+              ({
+                  type: options.ajaxTypeY,
+                  url: options.attributeUrlY, // allChildrenAttributes
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  data: JSON.stringify(options.requestY),
+                  success: function ( attributesResultY) {
+                    if (!attributesResultY || !attributesResultY.response) {
+                      handleError('Cannot get attributes from DB.');
+                      return;
+                    }
+
+                    $.ajax
+                      ({
+                          type: options.ajaxTypeZ,
+                          url: options.attributeUrlZ, // allChildrenAttributes
+                          dataType: 'json',
+                          contentType:'application/json',
+                          async: true,
+                          data: JSON.stringify(options.requestZ),
+                          success: function ( attributesResultZ) {
+                            if (!attributesResultZ || !attributesResultZ.response) {
+                              handleError('Cannot get attributes from DB.');
+                              return;
+                            }
+                            var attributesX = {response: []};
+                            var attributesY = {response: []};
+                            var attributesZ = {response: []};
+
+                            console.log('attrx: ', attributesResultX, 'attry: ', attributesResultY, 'attrz: ', attributesResultZ);
+                            $('#order').val('');
+                            callback(attributesResultX, attributesResultY, attributesResultZ, correlations, maxValue, onClickURL);
+                          }
+                    });
+                  }
+                });
+              }
+      });
+    }
+
+function renderMatrixHelper () {
+    var parent1 = $('#parents1').val();
+    var parent2 = $('#parents2').val();
+    var parent3 = $('#parents3').val();
+    if (parent1 == '') parent1 = 'All attributes';
+    if (parent2 == '') parent2 = 'All attributes';
+    if (parent3 == '') parent3 = 'All attributes';
+    var ajaxTypeX, ajaxTypeY, ajaxTypeZ, attributeUrlX, attributeUrlY, attributeUrlZ;
+    var requestX = {'taxonomy_id': 1};
+    var requestY = {'taxonomy_id': 1};
+    var requestZ = {'taxonomy_id': 1};
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var maxValue = correlationURLObj.maxValue;
+    var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren3D' : 'sharedPapers3D';
+    var showChildAttributes = $('#showChildAttributes').is(':checked');
+    switch(parent1) {
+      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'attribute'; break;
+      case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'attributesPerDimension'; requestX.dimension = parent1; break;
+      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
+    }
+    switch(parent2) {
+      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'attribute'; break;
+      case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'attributesPerDimension'; requestY.dimension = parent2; break;
+      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
+    }
+    switch(parent3) {
+      case 'All attributes': ajaxTypeZ = 'GET'; attributeUrlZ = 'attribute'; break;
+      case 'All citations': ajaxTypeZ = 'GET'; attributeUrlZ = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeZ = 'POST'; attributeUrlZ = 'attributesPerDimension'; requestZ.dimension = parent3; break;
+      default: ajaxTypeZ = 'POST'; if (showChildAttributes) { attributeUrlZ = 'allChildrenAttributes'; requestZ.parent = parent3; } else { attributeUrlZ = 'attributeDetails'; requestZ.text = parent3; }
+    }
+    var options = {ajaxTypeX: ajaxTypeX, ajaxTypeY: ajaxTypeY, ajaxTypeZ: ajaxTypeZ, attributeUrlX: attributeUrlX, attributeUrlY: attributeUrlY, attributeUrlZ: attributeUrlZ, requestX: requestX, requestY: requestY, requestZ: requestZ};
+    $.get(correlationURL, function ( correlations ) {
+      if (!correlations || !correlations.response) {
+        handleError('Cannot get correlation data from DB.');
+        return;
+      }
+      console.log('rendering with max value: ' + maxValue)
+      loadAttributes(false, correlations, options, maxValue, onClickURL, showMatrix);
+    });
+}
+
+function renderMatrix () {
+  if (!buildingMatrix && (!!totalNumberOfCitations || !!maxReferenceCount)) renderMatrixHelper();
+}
+
+function getCorrelationOptions () {
+  var url = $('#includeChildAttributes').is(':checked') ? ($('#dataType')[0].value == 'referenceCount' ? 'allConceptCorrelationsWithReferenceCounts3D' : 'allConceptCorrelations3D') : ($('#dataType')[0].value == 'referenceCount' ? 'conceptCorrelationWithReferenceCounts3D' : 'conceptCorrelation3D');
+  var maxValue = totalNumberOfCitations;
+  if (url.split('ReferenceCounts').length > 1) maxValue = -1;
+  return {url: url, maxValue: maxValue};
+}
+
+function initPage () {
+  $.get('citation', function ( citations ) {
+    if (!citations || !citations.response) {
+      handleError('Cannot get citations from DB.');
+      return;
+    }
+    /*
+    citations.response.forEach ( function ( citation ) {
+      console.log(JSON.parse(citation.bib).title);
+    });
+    */
+    $.get('citationCount', function ( citationCount ) {
+      if (!citationCount || !citationCount.response || citationCount.response.length == 0) {
+        handleError('Cannot get number of papers from DB.');
+        return;
+      }
+      totalNumberOfCitations = citationCount.response[0].citationCount;
+      maxReferenceCount = citationCount.response[0].maxReferenceCount;
+      $.get('dimension', function ( dimensions ) {
+        if (!dimensions || !dimensions.response) {
+          handleError('Cannot get dimensions From DB.');
+          return;
+        }
+        $.get('attribute', function ( allAttributes ) {
+          if (!allAttributes || !allAttributes.response) {
+            handleError('Cannot get attributes from DB.');
+            return;
+          }
+          dimensions.response.sort( function ( a, b ) {
+            return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+          });
+          allAttributes.response.sort( function ( a, b ) {
+            return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+          });
+          $('#parents1, #parents2, #parents3').html('');
+          $('#parents1, #parents2, #parents3').append('<option>All attributes</option>');
+          $('#parents1, #parents2, #parents3').append('<option>All citations</option>');
+          dimensions.response.forEach ( function ( dimension ) {
+            $('#parents1, #parents2, #parents3').append('<option>' + dimension.text + '</option>');
+          });
+          allAttributes.response.forEach ( function ( attribute ) {
+            $('#parents1, #parents2, #parents3').append('<option>' + attribute.text + '</option>');
+          });
+          $('#parents1').val('');
+          if (!!selectize1) selectize1.destroy();
+          selectize1 = $('#parents1').selectize({
+            closeAfterSelect: true,
+            highlight: false,
+            placeholder: 'Search',
+            openOnFocus: true,
+            closeAfterSelect: true,
+            allowEmptyOption: true,
+            onChange: renderMatrix 
+          })[0].selectize;
+          $('#parents1-selectized').off('focus').on('focus', function () {
+            $(this).trigger({type: 'keydown', keyCode: 8});
+          });
+          $('#parents2').val('');
+          if (!!selectize2) selectize2.destroy();
+          selectize2 = $('#parents2').selectize({
+            closeAfterSelect: true,
+            highlight: false,
+            placeholder: 'Search',
+            openOnFocus: true,
+            closeAfterSelect: true,
+            allowEmptyOption: true,
+            onChange: renderMatrix
+          })[0].selectize;
+          $('#parents2-selectized').off('focus').on('focus', function () {
+            $(this).trigger({type: 'keydown', keyCode: 8});
+          });
+          $('#parents3').val('');
+          if (!!selectize3) selectize3.destroy();
+          selectize3 = $('#parents3').selectize({
+            closeAfterSelect: true,
+            highlight: false,
+            placeholder: 'Search',
+            openOnFocus: true,
+            closeAfterSelect: true,
+            allowEmptyOption: true,
+            onChange: renderMatrix
+          })[0].selectize;
+          $('#parents3-selectized').off('focus').on('focus', function () {
+            $(this).trigger({type: 'keydown', keyCode: 8});
+          });
+          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', ajaxTypeZ: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', attributeUrlZ: 'attribute', requestX: {'taxonomy_id': 1}, requestY: {'taxonomy_id': 1}, requestZ: {'taxonomy_id': 1}};
+          var correlationURLObj = getCorrelationOptions();
+          var correlationURL = correlationURLObj.url;
+          var maxValue = correlationURLObj.maxValue;
+          var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
+          $.get(correlationURL, function ( correlations ) {
+            if (!correlations || !correlations.response) {
+              handleError('Cannot get correlation data from DB.');
+              return;
+            }
+            //console.log('correlations: ', correlations.response);
+            loadAttributes(true, correlations, options, maxValue, onClickURL, showMatrix);
+          });
+          $('#showChildAttributes, #includeChildAttributes, #dataType').unbind().on('change', renderMatrix);
+        });
+      });
+    });
+  });
+}
+
+$(document).ready( function () {
+  $('.media_node').unbind().on('click', function ( e ) {
+    var frameID = $(this).attr('id') + 'Frame';
+    $('.tab-pane[id != "' + frameID + '"]').hide();
+    $('#' + frameID).show();
+  });
+  initPage();
+});
+
+</script>
+</body>
+</html>

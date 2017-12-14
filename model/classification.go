@@ -110,6 +110,7 @@ type CitationsPerAttributeRequest struct {
 type SharedPapersRequest struct {
   Text1 string `json:"text1"`
   Text2 string `json:"text2"`
+  Text3 string `json:"text3"`
 }
 
 type AttributeDetailsRequest struct {
@@ -121,6 +122,17 @@ type MergeAttributesRequest struct {
   Text2 string  `json:"text2"`
   Dimension1 string `json:"dimension1"`
   Dimension2 string `json:"dimension2"`
+}
+
+type ForkAttributeRequest struct {
+  Text string `json:"text"`
+  Dimension string `json:"dimension"`
+  Parents1 []AttributeRelation `json:"parents1"`
+  Parents2 []AttributeRelation `json:"parents2"`
+  Children1 []AttributeRelation `json:"children1"`
+  Children2 []AttributeRelation `json:"children2"`
+  Citations1 []Paper `json:"citations1"`
+  Citations2 []Paper `json:"citations2"`
 }
 
 type Relation struct{
@@ -140,10 +152,13 @@ type RelationType struct{
 type ConceptCorrelation struct {
   Attribute1 string `json:"attribute1"`
   Attribute2 string `json:"attribute2"`
+  Attribute3 string `json:"attribute3"`
   Text1 string `json:"text1"`
   Text2 string `json:"text2"`
+  Text3 string `json:"text3"`
   ID1 int `json:"id1"`
   ID2 int `json:"id2"`
+  ID3 int `json:"id3"`
   Value int `json:"value"`
 }
 
@@ -161,6 +176,7 @@ type AttributeRelation struct {
   TaxonomyID int64 `json:"taxonomy_id"`
   AttributeSrc string `json:"attributeSrc"`
   AttributeDest string `json:"attributeDest"`
+  Text string `json:"text"`
   DimensionSrc string `json:"dimensionSrc"`
   DimensionDest string `json:"dimensionDest"`
   Dimension string `json:"dimension"`

@@ -53,7 +53,9 @@ func main() {
 	mux := tigertonic.NewTrieServeMux()
 	mux.Handle("POST", "/correlation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCorrelationHandler), "getCorrelationHandler", nil)))
 	mux.Handle("POST", "/attributesPerDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributesPerDimensionHandler), "getAttributesPerDimensionHandler", nil)))
+	mux.Handle("POST", "/leafAttributesPerDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getLeafAttributesPerDimensionHandler), "getLeafAttributesPerDimensionHandler", nil)))
 	mux.Handle("POST", "/allChildrenAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllChildrenAttributesHandler), "getAllChildrenAttributesHandler", nil)))
+	mux.Handle("POST", "/allChildrenLeafAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllChildrenLeafAttributesHandler), "getAllChildrenLeafAttributesHandler", nil)))
 	mux.Handle("POST", "/attributeRelations", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeRelationsHandler), "getAttributeRelationsHandler", nil)))
 	mux.Handle("POST", "/interdimensionalRelations", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getInterdimensionalRelationsHandler), "getInterdimensionalRelationsHandler", nil)))
 	mux.Handle("POST", "/intermediateAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIntermediateAttributesHandler), "getIntermediateAttributesHandler", nil)))
@@ -73,19 +75,31 @@ func main() {
 	mux.Handle("POST", "/updateTaxonomyRelationType", cors.Build(tigertonic.Timed(tigertonic.Marshaled(updateTaxonomyRelationTypeHandler), "updateTaxonomyRelationTypeHandler", nil)))
 	mux.Handle("POST", "/updateTaxonomyRelationAnnotation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(updateTaxonomyRelationAnnotationHandler), "updateTaxonomyRelationAnnotationHandler", nil)))
 	mux.Handle("GET", "/attribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributesHandler), "getAttributesHandler", nil)))
+	mux.Handle("GET", "/leafAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getLeafAttributesHandler), "getLeafAttributesHandler", nil)))
 	mux.Handle("GET", "/dimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getDimensionsHandler), "getDimensionsHandler", nil)))
 	mux.Handle("GET", "/citation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsHandler), "getCitationsHandler", nil)))
 	mux.Handle("GET", "/citationCount", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountHandler), "getCitationCountHandler", nil)))
 	mux.Handle("GET", "/citationCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsHandler), "getCitationCountsHandler", nil)))
 	mux.Handle("GET", "/citationCountsIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsIncludingChildrenHandler), "getCitationCountsIncludingChildrenHandler", nil)))
 	mux.Handle("GET", "/relationTypes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getRelationTypesHandler), "getRelationTypesHandler", nil)))
-	mux.Handle("GET", "/conceptCorrelation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getConceptCorrelationHandler), "getConceptCorrelationHandler", nil)))
+	mux.Handle("GET", "/conceptCorrelation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getConceptCorrelationsHandler), "getConceptCorrelationsHandler", nil)))
+	mux.Handle("GET", "/conceptCorrelation3D", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getConceptCorrelations3DHandler), "getConceptCorrelations3DHandler", nil)))
+	mux.Handle("GET", "/conceptCorrelationWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getConceptCorrelationsWithReferenceCountsHandler), "getConceptCorrelationsWithReferenceCountsHandler", nil)))
+	mux.Handle("GET", "/conceptCorrelationWithReferenceCounts3D", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getConceptCorrelationsWithReferenceCounts3DHandler), "getConceptCorrelationsWithReferenceCounts3DHandler", nil)))
 	mux.Handle("GET", "/allConceptCorrelations", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllConceptCorrelationsHandler), "getAllConceptCorrelationsHandler", nil)))
+	mux.Handle("GET", "/allConceptCorrelations3D", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllConceptCorrelations3DHandler), "getAllConceptCorrelations3DHandler", nil)))
+	mux.Handle("GET", "/allConceptCorrelationsWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllConceptCorrelationsWithReferenceCountsHandler), "getAllConceptCorrelationsWithReferenceCountsHandler", nil)))
+	mux.Handle("GET", "/allConceptCorrelationsWithReferenceCounts3D", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllConceptCorrelationsWithReferenceCounts3DHandler), "getAllConceptCorrelationsWithReferenceCounts3DHandler", nil)))
+	mux.Handle("POST", "/parentRelationsPerAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(GetParentRelationsPerAttributeHandler), "GetParentRelationsPerAttributeHandler", nil)))
+	mux.Handle("POST", "/childRelationsPerAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(GetChildRelationsPerAttributeHandler), "GetChildRelationsPerAttributeHandler", nil)))
 	mux.Handle("POST", "/sharedPapers", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getSharedPapersHandler), "getSharedPapersHandler", nil)))
+	mux.Handle("POST", "/sharedPapers3D", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getSharedPapers3DHandler), "getSharedPapers3DHandler", nil)))
 	mux.Handle("POST", "/sharedPapersIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getSharedPapersIncludingChildrenHandler), "getSharedPapersIncludingChildrenHandler", nil)))
+	mux.Handle("POST", "/sharedPapersIncludingChildren3D", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getSharedPapersIncludingChildren3DHandler), "getSharedPapersIncludingChildren3DHandler", nil)))
 	mux.Handle("POST", "/attributeDetails", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeDetailsHandler), "getAttributeDetailsHandler", nil)))
 	mux.Handle("POST", "/citationDetails", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationDetailsHandler), "getCitationDetailsHandler", nil)))
-	mux.Handle("POST", "/mergeAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMergeAttributesRequestHandler), "getMergeAttributesRequestHandler", nil)))
+	mux.Handle("POST", "/mergeAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMergeAttributesHandler), "getMergeAttributesHandler", nil)))
+	mux.Handle("POST", "/forkAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getForkAttributeHandler), "getForkAttributeHandler", nil)))
 	mux.Handle("GET", "/attributeCoverage", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandler), "getAttributeCoverageHandler", nil)))
 	mux.HandleFunc("GET", "/error.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/error.js")
@@ -93,6 +107,10 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/bluebird.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/bluebird.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/multiselect.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/multiselect.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/three.min.js", func(w http.ResponseWriter, r *http.Request) {
@@ -157,6 +175,11 @@ func main() {
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/loginForm.css", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/css/loginForm.css")
+		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/selectize.bootstrap3.css", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/css/selectize.bootstrap3.css")
 		w.Header().Add("Content-Type", "text/css")
@@ -168,13 +191,16 @@ func main() {
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/fonts/glyphicons-halflings-regular.woff", func(w http.ResponseWriter, r *http.Request) {
-		loadPage("frontend/src/fonts/glyphicons-halflings-regular.woff")
+		p := loadPage("frontend/src/fonts/glyphicons-halflings-regular.woff")
+		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/fonts/glyphicons-halflings-regular.woff2", func(w http.ResponseWriter, r *http.Request) {
-		loadPage("frontend/src/fonts/glyphicons-halflings-regular.woff2")
+		p := loadPage("frontend/src/fonts/glyphicons-halflings-regular.woff2")
+		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/fonts/glyphicons-halflings-regular.ttf", func(w http.ResponseWriter, r *http.Request) {
-		loadPage("frontend/src/fonts/glyphicons-halflings-regular.ttf")
+		p := loadPage("frontend/src/fonts/glyphicons-halflings-regular.ttf")
+		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bootstrap-dialog.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/bootstrap-dialog.min.js")
@@ -333,6 +359,10 @@ func main() {
 		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_three_dimensional.html")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/conceptCorrelationMatrix3D2", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_three_dimensional2.html")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/attributeCoverageMatrix", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/correlationMap/interactive/attributeCoverage.html")
 		fmt.Fprintf(w, "%s", p)
@@ -465,9 +495,25 @@ func getAttributesPerDimensionHandler(u *url.URL, h http.Header, attributesPerDi
 	return http.StatusOK, nil,
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
+func getLeafAttributesPerDimensionHandler(u *url.URL, h http.Header, attributesPerDimensionRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	attributes, err := driver.GetLeafAttributesPerDimension(
+		attributesPerDimensionRequest.TaxonomyID, attributesPerDimensionRequest.Dimension)
+	checkErr(err)
+	return http.StatusOK, nil,
+		&MyResponse{"0", len(attributes), attributes}, nil
+}
 func getAllChildrenAttributesHandler(u *url.URL, h http.Header, allChildrenAttributesRequest *model.AllChildrenAttributesRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetAllChildrenAttributes(
+		allChildrenAttributesRequest.TaxonomyID, allChildrenAttributesRequest.Parent)
+	checkErr(err)
+	return http.StatusOK, nil,
+		&MyResponse{"0", len(attributes), attributes}, nil
+}
+func getAllChildrenLeafAttributesHandler(u *url.URL, h http.Header, allChildrenAttributesRequest *model.AllChildrenAttributesRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	attributes, err := driver.GetAllChildrenLeafAttributes(
 		allChildrenAttributesRequest.TaxonomyID, allChildrenAttributesRequest.Parent)
 	checkErr(err)
 	return http.StatusOK, nil,
@@ -611,6 +657,12 @@ func getAttributesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.He
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(attributes), attributes}, nil
 }
+func getLeafAttributesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	attributes, err := driver.GetLeafAttributes()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(attributes), attributes}, nil
+}
 func getDimensionsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	dimensions, err := driver.GetAllDimensions()
@@ -647,9 +699,27 @@ func getRelationTypesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(relationTypes), relationTypes}, nil
 }
-func getConceptCorrelationHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+func getConceptCorrelationsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetConceptRelations()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
+}
+func getConceptCorrelations3DHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	conceptRelations, err := driver.GetConceptRelations3D()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
+}
+func getConceptCorrelationsWithReferenceCountsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	conceptRelations, err := driver.GetConceptRelationsWithReferenceCounts()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
+}
+func getConceptCorrelationsWithReferenceCounts3DHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	conceptRelations, err := driver.GetConceptRelationsWithReferenceCounts3D()
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
@@ -659,15 +729,57 @@ func getAllConceptCorrelationsHandler(u *url.URL, h http.Header, r *MyRequest) (
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
+func getAllConceptCorrelations3DHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	conceptRelations, err := driver.GetAllConceptRelations3D()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
+}
+func getAllConceptCorrelationsWithReferenceCountsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	conceptRelations, err := driver.GetAllConceptRelationsWithReferenceCounts()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
+}
+func getAllConceptCorrelationsWithReferenceCounts3DHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	conceptRelations, err := driver.GetAllConceptRelationsWithReferenceCounts3D()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(conceptRelations), conceptRelations}, nil
+}
+func GetParentRelationsPerAttributeHandler(u *url.URL, h http.Header, attributeRelationsRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	relations, err := driver.GetParentRelationsPerAttribute(attributeRelationsRequest.TaxonomyID, attributeRelationsRequest.Text, attributeRelationsRequest.Dimension)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(relations), relations}, nil
+}
+func GetChildRelationsPerAttributeHandler(u *url.URL, h http.Header, attributeRelationsRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	relations, err := driver.GetChildRelationsPerAttribute(attributeRelationsRequest.TaxonomyID, attributeRelationsRequest.Text, attributeRelationsRequest.Dimension)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(relations), relations}, nil
+}
 func getSharedPapersHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	papers, err := driver.GetSharedPapers(sharedPapersRequest.Text1, sharedPapersRequest.Text2)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
 }
+func getSharedPapers3DHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	papers, err := driver.GetSharedPapers3D(sharedPapersRequest.Text1, sharedPapersRequest.Text2, sharedPapersRequest.Text3)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
+}
 func getSharedPapersIncludingChildrenHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	papers, err := driver.GetSharedPapersIncludingChildren(sharedPapersRequest.Text1, sharedPapersRequest.Text2)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
+}
+func getSharedPapersIncludingChildren3DHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	papers, err := driver.GetSharedPapersIncludingChildren3D(sharedPapersRequest.Text1, sharedPapersRequest.Text2, sharedPapersRequest.Text3)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
 }
@@ -683,11 +795,17 @@ func getCitationDetailsHandler(u *url.URL, h http.Header, citationDetailsRequest
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citationDetails), citationDetails}, nil
 }
-func getMergeAttributesRequestHandler(u *url.URL, h http.Header, mergeAttributesRequest *model.MergeAttributesRequest) (int, http.Header, *MyResponse, error) {
+func getMergeAttributesHandler(u *url.URL, h http.Header, mergeAttributesRequest *model.MergeAttributesRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attribute1 := model.Attribute{Text: mergeAttributesRequest.Text1, Dimension: mergeAttributesRequest.Dimension1}
 	attribute2 := model.Attribute{Text: mergeAttributesRequest.Text2, Dimension: mergeAttributesRequest.Dimension2}
 	result, err := driver.MergeAttributes(attribute1, attribute2)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
+}
+func getForkAttributeHandler(u *url.URL, h http.Header, forkAttributeRequest *model.ForkAttributeRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.ForkAttribute(forkAttributeRequest.Text, forkAttributeRequest.Dimension, forkAttributeRequest.Parents1, forkAttributeRequest.Parents2, forkAttributeRequest.Children1, forkAttributeRequest.Children2, forkAttributeRequest.Citations1, forkAttributeRequest.Citations2)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }

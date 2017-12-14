@@ -86,6 +86,10 @@ text.active {
     <input type="button" class="btn btn-default" id="refreshFilter" value="Refresh">
   </div>
 </div>
+<label for="dataType">Data Type: </label><select class="form-control" id="dataType">
+  <option value="citationCount" selected="selected">Citation count</option>
+  <option value="referenceCount">Sum of references</option>
+</select>
 <label for="order">Order by: </label><select class="form-control" id="order">
   <option value="default" selected="selected"></option>
   <option value="name">by Name</option>
@@ -99,14 +103,67 @@ text.active {
 </div>
 
 <script>
-
-  var lastParentText = '';
   var totalNumberOfCitations, maxReferenceCount;
   var selectize1, selectize2;
   var buildingMatrix = false;
 
+  function buildParentTreeHelper ( attributes ) {
+    var roots = [];
+    attributes.forEach ( function ( attribute ) {
+      var foundParent = false;
+      if (!!attribute.parentText) {
+        attributes.forEach ( function ( attribute2 ) {
+          if (attribute2.text == attribute.parentText && attribute.text != attribute2.text) {
+            attribute2.children.push(attribute);
+            foundParent = true;
+          }
+        });
+      }
+      if (!foundParent) roots.push(attribute);
+    });
+    return roots;
+  }
+
+  function buildParentTree ( attributes ) {
+    var results = [];
+    attributes.forEach ( function ( attribute ) {
+      results.push({text: attribute.text, parentText: attribute.parentText, children: []});
+    });
+    return buildParentTreeHelper(results);
+  }
+
+  function getTreeDepth ( nodes ) {
+    var max = 0;
+    nodes.forEach ( function ( node ) {
+      var value = node.parents.length;
+      if (value > 3) console.log(node.parents)
+      if (value > max) max = value;
+    });
+    return max;
+  }
+
+  function checkForOccurrence ( array, value ) {
+    for ( var i = 0; i < array.length; i++ ) {
+      for ( var j = 0; j < array[i].length; j++ ) {
+        if (array[i][j] == value) return j;
+      }
+    }
+    return -1;
+  }
+
+  function getMaxNameLength ( nodes ) {
+    var max = 0;
+    nodes.forEach ( function ( node ) {
+      var value = node.text.length;
+      if (value > max) max = value;
+    });
+    return max;
+  }
+
   function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {
     buildingMatrix = true;
+    var rootsX = buildParentTree(attributesX.response);
+    var rootsY = buildParentTree(attributesY.response);
     var matrixX = [],
         matrixY = [],
         nodesX = attributesX.response,
@@ -114,23 +171,44 @@ text.active {
         nodesY = attributesY.response,
         m = attributesY.response.length;
 
+/*
+    // TODO
+    nodesX.sort( function ( a, b ) {
+      if ((!a.parentText || a.parentText == '') && (!!b.ParentText && b.parentText != '')) return 1;
+      if ((!b.parentText || b.parentText == '') && (!!a.parentText && a.parentText != '')) return -1;
+      if ((!a.parentText || a.parentText == '') && (!b.parentText || b.parentText == '')) return 0;
+      return a.ParentText < b.ParentText ? 1 : (a.parentText == b.ParentText ? 0 : -1);
+    });
+
+    nodesY.sort( function ( a, b ) {
+      if ((!a.parentText || a.parentText == '') && (!!b.ParentText && b.parentText != '')) return 1;
+      if ((!b.parentText || b.parentText == '') && (!!a.parentText && a.parentText != '')) return -1;
+      if ((!a.parentText || a.parentText == '') && (!b.parentText || b.parentText == '')) return 0;
+      return a.ParentText < b.ParentText ? 1 : (a.parentText == b.ParentText ? 0 : -1);
+    });
+*/
     if (n > m) {
       for ( var i = 0; i < (n - m); i++ ) {
-        nodesY.push({id: -Infinity, text: ''});
+        nodesY.push({id: -Infinity, text: '', parentText: ''});
       }
       m = n;
     } else if (n < m) {
       for ( var i = 0; i < (m - n); i++ ) {
-        nodesX.push({id: -Infinity, text: ''});
+        nodesX.push({id: -Infinity, text: '', parentText: ''});
       }
       n = m;
     }
+
+    var maxWidth = 0;
+    var maxHeight = 0;
 
     nodesX.forEach ( function (node, i) {
       node.index = i;
       if (node.id < 0) node.count = -Infinity;
       else node.count = 0;
-      matrixX[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0}; });;
+      matrixX[i] = d3.range(m).map(function(j) { return {x: j, y: i+1, z: 0}; });
+      maxHeight += node.text.length;
+      node.parents = (!!node.parentText && node.parentText != '') ? node.parentText.split(',') : [];
     });
 
     // Compute index per node.
@@ -138,9 +216,49 @@ text.active {
       node.index = i;
       if (node.id < 0) node.count = -Infinity;
       else node.count = 0;
-      matrixY[i] = d3.range(n).map(function(j) { return {x: i, y: j, z: 0}; });
+      matrixY[i] = d3.range(n).map(function(j) { return {x: i+1, y: j, z: 0}; });
+      maxWidth += node.text.length;
+      node.parents = (!!node.parentText && node.parentText != '') ? node.parentText.split(',') : [];
+    });
+/*
+    nodesX.sort ( function ( a, b ) {
+      return a.parents.length < b.parents.length ? 1 : (a.parents.length > b.parents.length ? -1 : (a.text < b.text ? -1 : (a.text == b.text ? 0 : 1)));
     });
 
+    nodesY.sort ( function ( a, b ) {
+      return a.parents.length < b.parents.length ? 1 : (a.parents.length > b.parents.length ? -1 : (a.text < b.text ? -1 : (a.text == b.text ? 0 : 1)));
+    });
+*/
+    nodesX.sort ( function ( a, b ) {
+      var i = a.parents.length - 1;
+      var j = b.parents.length - 1;
+      while (i >= 0 && j >= 0) {
+        if (a.parents[i] < b.parents[j]) return -1;
+        if (b.parents[j] < a.parents[i]) return 1;
+        i--;
+        j--;
+      }
+      if (i >= 0) return -1;
+      if (j >= 0) return 1;
+      return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+    });
+
+    nodesY.sort ( function ( a, b ) {
+      var i = a.parents.length - 1;
+      var j = b.parents.length - 1;
+      while (i >= 0 && j >= 0) {
+        if (a.parents[i] < b.parents[j]) return -1;
+        if (b.parents[j] < a.parents[i]) return 1;
+        i--;
+        j--;
+      }
+      if (i >= 0) return -1;
+      if (j >= 0) return 1;
+      if (a.text != '' && b.text == '') return -1;
+      if (a.text == '' && b.text != '') return 1;
+      if (a.text == '' && b.text == '') return 0;
+      return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+    });
 
     correlations.response.forEach(function(link) {
       //if (link.value > 49) console.log('ERROR: More than 49 citations: ', link);
@@ -293,24 +411,62 @@ text.active {
           if (foundNodes > 1) break;
         }
       */
-      console.log('x: ', nodesX);
-      console.log('y: ', nodesY);
+
+    var labelText = onClickURL == 'citationDetails' ? ' references' : ' citations';
+    if (maxValue < 0) {
+      labelText = ' references';
+      maxValue = 0;
+      for ( var i = 0; i < matrixX.length; i++ ) {
+        for ( var j = 0; j < matrixX[i].length; j++ ) {
+          if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
+        }
+      }
+      for ( var i = 0; i < matrixY.length; i++ ) {
+        for ( var j = 0; j < matrixY[i].length; j++ ) {
+          if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
+        }
+      }
+    }
+
     var minValue = 0;
-    var margin = {top: 200, right: 0, bottom: 30, left: 150}, // left/top: 240
-        width = 1440, // 1440
-        height = 1440; // 1440
+    var margin = {top: 200, right: 0, bottom: 30, left: 200}, // left/top: 240
+        width =  Math.max(maxWidth * 10, 1440), // 1440 or 4500
+        height = Math.max(maxHeight * 10, 1440); // 1440 or 4500
+
+    function getXPosition ( d ) {
+      var sum = 0;
+      for ( var i = 0; i < d.x; i++ ) {
+        sum += nodesY[i].text.length / maxWidth * width;
+      }
+      return sum;
+    }
+
+    function getYPosition ( d ) {
+      var sum = 0;
+      for ( var i = 0; i < d.y; i++ ) {
+        sum += nodesX[i].text.length / maxHeight * height;
+      }
+      return sum;
+    }
+
+    for ( var i = 0; i < nodesX.length; i++ ) {
+      nodesX[i].yPosition = getYPosition({y: i});
+    }
+    for ( var i = 0; i < nodesY.length; i++ ) {
+      nodesY[i].xPosition = getXPosition({x: i});
+    }
 
     d3.select("svg").remove();
     var svg = d3.select("body").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .style("margin-left", margin.left + "px")
-      .append("g")
+        .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      var defs = svg.append("defs");
+    var defs = svg.append("defs");
 
-      var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
+    var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
     var colourRangeYGB = d3.range(0, 1, 1.0 / (coloursYGB.length - 1));
     colourRangeYGB.push(1);
            
@@ -395,13 +551,111 @@ text.active {
     x.domain(d3.range(m));
     y.domain(d3.range(n));
 
-    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return '' + d.z + (d.onClickURL == 'citationDetails' ? ' references' : ' citations'); });
+    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return '' + d.z + labelText; });
     svg.call(d3Tip);
+
+    var treeDepthX = getTreeDepth(nodesX);
+    var treeDepthY = getTreeDepth(nodesY);
+    console.log('y depth: ' + treeDepthY + ', x depth: ' + treeDepthX);
+/*
+    for ( var i = 0; i < 1; i++ ) {
+      var marginLeft = margin.left / (i+1) - 10;
+      var marginTop = margin.top / (i+1) - 10;
+      svg.append("rect")
+          .attr("class", "background")
+          .style("background-color", "white")
+          .style("fill", "none")
+          .style("stroke", "black")
+          //.style("stroke-dasharray", "" + (width - margin.left) + ",0")
+          .attr("width", width + marginLeft)
+          .attr("height", height + marginTop)
+          .attr("transform", "translate(-" + marginLeft + ",-" + marginTop + ")");
+    }
+*/
+
+    var marginLeft = getMaxNameLength(nodesX) * 6;
+    var marginTop = getMaxNameLength(nodesY) * 6 + 5;
+
+    svg.append("line")
+      .attr("x1", -marginLeft - 30)
+      .attr("x2", 0)
+      .attr("y1", height)
+      .attr("y2", height)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    svg.append("line")
+      .attr("x1", -marginLeft)
+      .attr("x2", -marginLeft)
+      .attr("y1", 0)
+      .attr("y2", height)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    for ( var i = 0; i < 1; i++ ) {
+      svg.append("line")
+        .attr("x1", -marginLeft - 30)
+        .attr("x2", -marginLeft - 30)
+        .attr("y1", 0)
+        .attr("y2", height)
+        .attr("stroke-width", "1")
+        .style("stroke", "black");
+    }
+
+    svg.append("line")
+      .attr("x1", width)
+      .attr("x2", width)
+      .attr("y1", -marginTop - 25)
+      .attr("y2", 0)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    svg.append("line")
+      .attr("x1", 0)
+      .attr("x2", width)
+      .attr("y1", -marginTop)
+      .attr("y2", -marginTop)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    for ( var i = 0; i < 1; i++ ) {
+      svg.append("line")
+        .attr("x1", 0)
+        .attr("x2", width)
+        .attr("y1", -marginTop - 25)
+        .attr("y2", -marginTop - 25)
+        .attr("stroke-width", "1")
+        .style("stroke", "black");
+    }
+    /*
+    svg.append("rect")
+        .attr("class", "background")
+        .style("background-color", "white")
+        .style("fill", "none")
+        .style("stroke", "black")
+        //.style("stroke-dasharray", "" + (width - margin.left) + ",0")
+        .attr("width", width + marginLeft)
+        .attr("height", height + marginTop)
+        .attr("transform", "translate(-" + marginLeft + ",-" + marginTop + ")");
+    */
+
+/*
+
+    d3.selectAll(".row")
+      .data(matrixX)
+      .enter().append("g")
+      .attr("class", "row")
+      .attr("transform", function(d, i) { return "translate(0," + nodesX[i].yPosition + ")"; })
+      .each(row);
+*/
 
     svg.append("rect")
         .attr("class", "background")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height)
+        .attr("stroke-width", "1")
+        .style("stroke", "black");
+
 
     var row = svg.selectAll(".row")
         .data(matrixX)
@@ -410,25 +664,47 @@ text.active {
         .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
         .each(row);
 
-    row.append("line")
-        .attr("x2", width);
-
     row.append("text")
         .attr("x", -6)
         .attr("y", x.rangeBand() / 2)
         .attr("dy", ".32em")
-        .attr("text-anchor", "end")
-        .text(function(d, i) { return nodesX[i].text; });
+        .attr("text-anchor", "start")
+        .attr("font-size", "8pt")
+        .text(function(d, i) { return nodesX[i].text; })
+        .attr("transform", function (d, i) { return "translate(-120,-10)"; });
 
-/*
-    row.append("text")
-        .attr("x", -150)
-        .attr("y", x.rangeBand() / 2)
-        .attr("dy", ".32em")
-        .attr("text-anchor", "end")
-        .text(function(d, i) { return nodesX[i].parentText != lastParentText ? (lastParentText = nodesX[i].parentText) : ''; })
-        .attr("transform", function(d, i) { return "translate(-200)rotate(-90)"});
-*/
+    function addRowParentText () {
+      var parentsX = [];
+      for ( var l = 0; l < treeDepthX; l++ ) {
+        parentsX.push([]);
+      }
+      for ( var k = 0; k < treeDepthX; k++ ) {
+        var lastValueX = '|';
+        row.append("text")
+            .attr("class", "rowParentText")
+            .attr("x", -6)
+            .attr("y", function ( d ) { return nodesY[d[0].x].xPosition + 50 * (k+1) })
+            .attr("dy", ".32em")
+            .attr("text-anchor", "start")
+            .attr("font-size", "8pt")
+            .text(function(d, i) { if (nodesX[i].parents.length == 0) { if (lastValueX == '|') return ''; lastValueX = '|'; return '|'; } if (nodesX[i].parents.length <= k) var value = nodesX[i].parents[nodesX[i].parents.length-1]; else var value = nodesX[i].parents[k]; if (lastValueX == value) return ''; if (checkForOccurrence(parentsX, value) > k || nodesX[i].parents.indexOf(value) < k) { if (lastValueX == '|') return ''; lastValueX = '|'; return '|'; } for ( var l = 0; l < nodesX[i].parents.length; l++ ) { parentsX[k].push(nodesX[i].parents[l]); } lastValueX = value; return value; })
+            .attr("transform", function(d, i) { return "translate(-120,10)rotate(90)"; });
+      }
+    }
+    addRowParentText();
+
+    row.append("line")
+        .attr("x1", function ( a, i ) {
+          if (i == 0) return -margin.left + 10;
+          for ( var k = 0; k < 1; k++ ) {
+            if (nodesX[i].parents.length <= k || nodesX[i-1].parents.length <= k) return Math.min(-marginLeft, -margin.left / (1-k) + 10);
+            if (nodesX[i].parents[k] != nodesX[i-1].parents[k]) return Math.min(-marginLeft, -margin.left / (1-k) + 10);
+          }
+          return -marginLeft;
+        })
+        .attr("stroke-width", "1")
+        .style("stroke", "black");
+
 
     var column = svg.selectAll(".column")
         .data(matrixY)
@@ -436,15 +712,46 @@ text.active {
         .attr("class", "column")
         .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
 
-    column.append("line")
-        .attr("x1", -width);
-
     column.append("text")
-        .attr("x", 6)
+        .attr("x", 6) // 0
         .attr("y", x.rangeBand() / 2)
         .attr("dy", ".32em")
-        .attr("text-anchor", "start")
-        .text(function(d, i) { return nodesY[i].text; });
+        .attr("text-anchor", "end")
+        .attr("font-size", "8pt")
+        .text(function(d, i) { return nodesY[i].text; })
+        .attr("transform", function (d, i) { return "translate(120)"; }); // (-30,5)
+
+    function addColumnParentText () {
+      var parentsY = [];
+      for ( var l = 0; l < treeDepthY; l++ ) {
+        parentsY.push([]);
+      }
+      for ( var k = 0; k < treeDepthY; k++ ) {
+        var lastValueY = '|';
+        column.append("text")
+            .attr("class", "columnParentText")
+            .attr("x", 6)
+            .attr("y", function ( d ) { return nodesX[d[0].y].yPosition - 50 * (k+1) })
+            .attr("dy", ".32em")
+            .attr("text-anchor", "start")
+            .attr("font-size", "8pt")
+            .text(function(d, i) { if (nodesY[i].parents.length == 0) { if (lastValueY == '|') return ''; lastValueY = '|'; return '|'; } if (nodesY[i].parents.length <= k) { var value = nodesY[i].parents[nodesY[i].parents.length-1]; } else var value = nodesY[i].parents[k]; if (lastValueY == value) return ''; if (checkForOccurrence(parentsY, value) > k || nodesY[i].parents.indexOf(value) < k) { if (lastValueY == '|') return ''; lastValueY = '|'; return '|'; } for ( var l = 0; l < nodesY[i].parents.length; l++ ) { parentsY[k].push(nodesY[i].parents[l]) } lastValueY = value; return value; })
+            .attr("transform", function(d, i) { return "translate(130,0)rotate(90)"; });
+      }
+    }
+    addColumnParentText();
+
+    column.append("line")
+        .attr("x1", function ( a, i ) {
+          if (i == 0) return margin.top - 10;
+          for ( var k = 0; k < 1; k++ ) {
+            if (nodesY[i].parents.length <= k || nodesY[i-1].parents.length <= k) return Math.max(marginTop, margin.top / (1-k) - 10);
+            if (nodesY[i].parents[k] != nodesY[i-1].parents[k]) return Math.max(marginTop, margin.top / (1-k) - 10);
+          }
+          return marginTop;
+        })
+        .attr("stroke-width", "1")
+        .style("stroke", "black");
 
     function row(row) {
       var cell = d3.select(this).selectAll(".cell")
@@ -460,8 +767,22 @@ text.active {
           .on("click", clickCell);
     }
 
+    function headerRow(row) {
+      var cell = d3.select(this).selectAll(".cell")
+          .data(row)
+          .enter().append("rect")
+          .attr("class", "cell")
+          .attr("x", function(d) { return x(d.x); })
+          .attr("width", x.rangeBand())
+          .attr("height", 10)
+          .style("fill-opacity", function(d) { return z(d.z); })
+          .on("mouseover", mouseover)
+          .on("mouseout", mouseout)
+          .on("click", clickCell);
+    }
+
     function clickCell(p) {
-      var text1 = nodesX[p.y].text;
+      var text1 = nodesX[p.y-1].text;
       var text2 = nodesY[p.x].text;
       $.ajax
          ({
@@ -479,12 +800,15 @@ text.active {
              return;
             }
             var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+            var sumOfReferences = 0;
             if (!!citations.response) {
               citations.response.forEach ( function ( citation ) {
                 citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
+                sumOfReferences += citation.referenceCount;
               });
             }
             citationTable += '</tbody></table></div>';
+            if (sumOfReferences > 0) citationTable = '<div><p><b>Sum of references:</b>  ' + sumOfReferences + '</p></div>' + citationTable;
             BootstrapDialog.show({
               title: '' + citations.count + ' shared paper' + (citations.count > 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
               message: citationTable
@@ -494,10 +818,10 @@ text.active {
     }
 
     function mouseover(p) {
-      d3.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
-      d3.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
+      d3.selectAll(".row text").classed("active", function(d, i) { return d[0].y == p.y; });
+      d3.selectAll(".column text").classed("active", function(d, i) { return d[0].x == p.x+1; });
       d3Tip.show(p);
-      console.log('value: ' + matrixX[p.y][p.x].z + ', src: ' + nodesX[p.y].text + ', dest: ' + nodesY[p.x].text);
+      console.log('value: ' + matrixX[p.y-1][p.x].z + ', src: ' + nodesX[p.y-1].text + ', dest: ' + nodesY[p.x].text);
       //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
     }
 
@@ -532,13 +856,15 @@ text.active {
       x.domain(orders[0][value]);
       y.domain(orders[1][value]);
 
-
       var t = svg.transition().duration(2500);
 
+      svg.selectAll(".rowParentText").remove();
+      svg.selectAll(".columnParentText").remove();
+
       t.selectAll(".row")
-          .delay(function(d, i) { return y(i) * 4; })
-          .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
-          .attr("y", function(d) { return y(d.y); }) // TODO remove?
+          .delay(function(d, i) { return y(i+1) * 4; })
+          .attr("transform", function(d, i) { return "translate(0," + y(i+1) + ")"; })
+          .attr("y", function(d) { return y(d.y+1); }) // TODO remove?
         .selectAll(".cell")
           .delay(function(d) { return x(d.x) * 4; })
           .attr("x", function(d) { return x(d.x); });
@@ -547,6 +873,22 @@ text.active {
           .delay(function(d, i) { return x(i) * 4; })
           .attr("x", function(d) { return x(d.x); })
           .attr("transform", function(d, i) { return "translate(" + x(i) + ",0)rotate(-90)"; });
+
+      // TODO
+
+      if (value == 'name' && false) {
+        nodesX.sort (function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); });
+        nodesY.sort (function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); });
+      } else if (value == 'count' && false) {
+        nodesX.sort (function (a, b) { return b.count - a.count; });
+        nodesY.sort (function (a, b) { return b.count - a.count; });
+      }
+
+      setTimeout ( function () {
+        addRowParentText();
+        addColumnParentText();
+      }, 20000);
+
     }
     //setTimeout(function () { order('count'); }, 2000);
 
@@ -697,21 +1039,22 @@ function renderMatrixHelper () {
     var ajaxTypeX, ajaxTypeY, attributeUrlX, attributeUrlY;
     var requestX = {'taxonomy_id': 1};
     var requestY = {'taxonomy_id': 1};
-    var correlationURL = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var maxValue = correlationURLObj.maxValue;
     var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
     var showChildAttributes = $('#showChildAttributes').is(':checked');
-    var maxValue = totalNumberOfCitations;
     switch(parent1) {
-      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'attribute'; break;
+      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'leafAttribute'; break;
       case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'attributesPerDimension'; requestX.dimension = parent1; break;
-      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent1; break;
+      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
     }
     switch(parent2) {
-      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'attribute'; break;
+      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'leafAttribute'; break;
       case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'attributesPerDimension'; requestY.dimension = parent2; break;
-      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent2; break;
+      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
     }
     var options = {ajaxTypeX: ajaxTypeX, ajaxTypeY: ajaxTypeY, attributeUrlX: attributeUrlX, attributeUrlY: attributeUrlY, requestX: requestX, requestY: requestY};
     $.get(correlationURL, function ( correlations ) {
@@ -719,6 +1062,7 @@ function renderMatrixHelper () {
         handleError('Cannot get correlation data from DB.');
         return;
       }
+      console.log('correlations: ', correlations.response)
       console.log('rendering with max value: ' + maxValue)
       loadAttributes(false, correlations, options, maxValue, onClickURL, showMatrix);
     });
@@ -726,6 +1070,13 @@ function renderMatrixHelper () {
 
 function renderMatrix () {
   if (!buildingMatrix && (!!totalNumberOfCitations || !!maxReferenceCount)) renderMatrixHelper();
+}
+
+function getCorrelationOptions () {
+  var url = $('#includeChildAttributes').is(':checked') ? ($('#dataType')[0].value == 'referenceCount' ? 'allConceptCorrelationsWithReferenceCounts' : 'allConceptCorrelations') : ($('#dataType')[0].value == 'referenceCount' ? 'conceptCorrelationWithReferenceCounts' : 'conceptCorrelation');
+  var maxValue = totalNumberOfCitations;
+  if (url.split('ReferenceCounts').length > 1) maxValue = -1;
+  return {url: url, maxValue: maxValue};
 }
 
 function initPage () {
@@ -744,6 +1095,8 @@ function initPage () {
         handleError('Cannot get number of papers from DB.');
         return;
       }
+      totalNumberOfCitations = citationCount.response[0].citationCount;
+      maxReferenceCount = citationCount.response[0].maxReferenceCount;
       $.get('dimension', function ( dimensions ) {
         if (!dimensions || !dimensions.response) {
           handleError('Cannot get dimensions From DB.');
@@ -797,20 +1150,19 @@ function initPage () {
           $('#parents2-selectized').off('focus').on('focus', function () {
             $(this).trigger({type: 'keydown', keyCode: 8});
           });
-          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', requestX: {'taxonomy_id': 1}, requestY: {'taxonomy_id': 1}};
-          var correlationURL = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'leafAttribute', attributeUrlY: 'leafAttribute', requestX: {'taxonomy_id': 1}, requestY: {'taxonomy_id': 1}};
+          var correlationURLObj = getCorrelationOptions();
+          var correlationURL = correlationURLObj.url;
+          var maxValue = correlationURLObj.maxValue;
           var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
           $.get(correlationURL, function ( correlations ) {
             if (!correlations || !correlations.response) {
               handleError('Cannot get correlation data from DB.');
               return;
             }
-            totalNumberOfCitations = citationCount.response[0].citationCount;
-            maxReferenceCount = citationCount.response[0].maxReferenceCount;
-            console.log('max: ' + maxReferenceCount)
-            loadAttributes(true, correlations, options, totalNumberOfCitations, onClickURL, showMatrix);
+            loadAttributes(true, correlations, options, maxValue, onClickURL, showMatrix);
           });
-          $('#showChildAttributes, #includeChildAttributes').unbind().on('change', renderMatrix);
+          $('#showChildAttributes, #includeChildAttributes, #dataType').unbind().on('change', renderMatrix);
         });
       });
     });
