@@ -1,19 +1,19 @@
 USE classification;
 
-ALTER TABLE attribute ADD COLUMN x varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN y varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN xMajor varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN yMajor varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN x3D varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN y3D varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN z3D varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN xMajor3D varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN yMajor3D varchar(50) DEFAULT NULL;
-ALTER TABLE attribute ADD COLUMN zMajor3D varchar(50) DEFAULT NULL;
-ALTER TABLE dimension ADD COLUMN x varchar(50) DEFAULT NULL;
-ALTER TABLE dimension ADD COLUMN y varchar(50) DEFAULT NULL;
-ALTER TABLE dimension ADD COLUMN xMajor varchar(50) DEFAULT NULL;
-ALTER TABLE dimension ADD COLUMN yMajor varchar(50) DEFAULT NULL;
+ALTER TABLE attribute ADD COLUMN x varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN y varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN xMajor varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN yMajor varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN x3D varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN y3D varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN z3D varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN xMajor3D varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN yMajor3D varchar(50) DEFAULT "";
+ALTER TABLE attribute ADD COLUMN zMajor3D varchar(50) DEFAULT "";
+ALTER TABLE dimension ADD COLUMN x varchar(50) DEFAULT "";
+ALTER TABLE dimension ADD COLUMN y varchar(50) DEFAULT "";
+ALTER TABLE dimension ADD COLUMN xMajor varchar(50) DEFAULT "";
+ALTER TABLE dimension ADD COLUMN yMajor varchar(50) DEFAULT "";
 ALTER TABLE attribute ADD COLUMN major tinyint(1) DEFAULT "0";
 
 INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (1, 5, 1);
@@ -65,76 +65,6 @@ UPDATE attribute SET major = 1 WHERE text = "Asset";
 UPDATE attribute SET major = 1 WHERE text = "Lifecycle activity";
 UPDATE attribute SET major = 1 WHERE text = "Representation";
 UPDATE attribute SET major = 1 WHERE text = "Granularity";
-
-/* store all children per attribute in a table */
-
-DROP TABLE IF EXISTS allChildrenPerAttribute;
-CREATE TABLE allChildrenPerAttribute (
-  id_attribute int(10) unsigned NOT NULL,
-  text varchar(50) NOT NULL,
-  children longtext,
-  PRIMARY KEY (id_attribute),
-  UNIQUE KEY allChildrenPerAttribute_id_attribute_UNIQUE (id_attribute)
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
-
-/* procedure creation + call has to be run after every db import/recreation: */
-
-DROP PROCEDURE IF EXISTS insertAllChildrenPerAttribute;
-DELIMITER ;;
-
-CREATE PROCEDURE insertAllChildrenPerAttribute()
-BEGIN
-  DECLARE cursor_id_attribute INT(10);
-  DECLARE cursor_text VARCHAR(50);
-  DECLARE done INT DEFAULT FALSE;
-  DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute;
-  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-  DELETE FROM allChildrenPerAttribute;
-  OPEN cursor_i;
-  read_loop: LOOP
-    FETCH cursor_i INTO cursor_id_attribute, cursor_text;
-    IF done THEN
-      LEAVE read_loop;
-    END IF;
-    INSERT INTO allChildrenPerAttribute(id_attribute, text, children) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.children IS NULL THEN CAST(cursor_id_attribute AS CHAR(50)) ELSE CONCAT(CAST(cursor_id_attribute AS CHAR(50)), ",", b.children) END) AS children FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=cursor_id_attribute) tmp) a) b));
-  END LOOP;
-  CLOSE cursor_i;
-END;
-;;
-CALL insertAllChildrenPerAttribute();
-
-DROP TABLE IF EXISTS allParentsPerAttribute;
-CREATE TABLE allParentsPerAttribute (
-  id_attribute int(10) unsigned NOT NULL,
-  text varchar(50) NOT NULL,
-  parents longtext,
-  PRIMARY KEY (id_attribute),
-  UNIQUE KEY allParentsPerAttribute_id_attribute_UNIQUE (id_attribute)
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
-
-DROP PROCEDURE IF EXISTS insertAllParentsPerAttribute;
-DELIMITER ;;
-
-CREATE PROCEDURE insertAllParentsPerAttribute()
-BEGIN
-  DECLARE cursor_id_attribute INT(10);
-  DECLARE cursor_text VARCHAR(50);
-  DECLARE done INT DEFAULT FALSE;
-  DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute;
-  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-  DELETE FROM allParentsPerAttribute;
-  OPEN cursor_i;
-  read_loop: LOOP
-    FETCH cursor_i INTO cursor_id_attribute, cursor_text;
-    IF done THEN
-      LEAVE read_loop;
-    END IF;
-    INSERT INTO allParentsPerAttribute(id_attribute, text, parents) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.parents IS NULL THEN "" ELSE b.parents END) AS parents FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS parents FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT parent.text SEPARATOR ',') FROM taxonomy_relation AS relation1 INNER JOIN attribute as parent ON (relation1.id_dest_attribute = parent.id_attribute) WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET((SELECT DISTINCT text FROM attribute WHERE id_attribute = relation1.id_src_attribute), @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=text FROM attribute WHERE id_attribute = cursor_id_attribute) tmp) a) b));
-  END LOOP;
-  CLOSE cursor_i;
-END;
-;;
-CALL insertAllParentsPerAttribute();
 
 DROP TABLE IF EXISTS taxonomy_relation_annotation;
 CREATE TABLE taxonomy_relation_annotation (
@@ -188,6 +118,78 @@ UPDATE paper SET referenceCount = id_paper;
 
 /* update taxonomy_relation.id_dimension */
 UPDATE taxonomy_relation as relation SET id_dimension = (SELECT DISTINCT id_dimension from taxonomy_dimension WHERE taxonomy_dimension.id_attribute = relation.id_src_attribute) WHERE relation.id_dimension = 0;
+
+/* store all children per attribute in a table */
+
+DROP TABLE IF EXISTS allChildrenPerAttribute;
+CREATE TABLE allChildrenPerAttribute (
+  id_attribute int(10) unsigned NOT NULL,
+  text varchar(50) NOT NULL,
+  children longtext,
+  PRIMARY KEY (id_attribute),
+  UNIQUE KEY allChildrenPerAttribute_id_attribute_UNIQUE (id_attribute)
+) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
+
+/* procedure creation + call has to be run after every db import/recreation: */
+
+DROP PROCEDURE IF EXISTS insertAllChildrenPerAttribute;
+DELIMITER ;;
+
+CREATE PROCEDURE insertAllChildrenPerAttribute()
+BEGIN
+  DECLARE cursor_id_attribute INT(10);
+  DECLARE cursor_text VARCHAR(50);
+  DECLARE done INT DEFAULT FALSE;
+  DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+  DELETE FROM allChildrenPerAttribute;
+  OPEN cursor_i;
+  read_loop: LOOP
+    FETCH cursor_i INTO cursor_id_attribute, cursor_text;
+    IF done THEN
+      LEAVE read_loop;
+    END IF;
+    INSERT INTO allChildrenPerAttribute(id_attribute, text, children) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.children IS NULL THEN CAST(cursor_id_attribute AS CHAR(50)) ELSE CONCAT(CAST(cursor_id_attribute AS CHAR(50)), ",", b.children) END) AS children FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=cursor_id_attribute) tmp) a) b));
+  END LOOP;
+  CLOSE cursor_i;
+END;
+;;
+
+/* CALL insertAllChildrenPerAttribute(); */
+
+DROP TABLE IF EXISTS allParentsPerAttribute;
+CREATE TABLE allParentsPerAttribute (
+  id_attribute int(10) unsigned NOT NULL,
+  text varchar(50) NOT NULL,
+  parents longtext,
+  PRIMARY KEY (id_attribute),
+  UNIQUE KEY allParentsPerAttribute_id_attribute_UNIQUE (id_attribute)
+) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS insertAllParentsPerAttribute;
+DELIMITER ;;
+
+CREATE PROCEDURE insertAllParentsPerAttribute()
+BEGIN
+  DECLARE cursor_id_attribute INT(10);
+  DECLARE cursor_text VARCHAR(50);
+  DECLARE done INT DEFAULT FALSE;
+  DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+  DELETE FROM allParentsPerAttribute;
+  OPEN cursor_i;
+  read_loop: LOOP
+    FETCH cursor_i INTO cursor_id_attribute, cursor_text;
+    IF done THEN
+      LEAVE read_loop;
+    END IF;
+    INSERT INTO allParentsPerAttribute(id_attribute, text, parents) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.parents IS NULL THEN "" ELSE b.parents END) AS parents FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS parents FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT parent.text SEPARATOR ',') FROM taxonomy_relation AS relation1 INNER JOIN attribute as parent ON (relation1.id_dest_attribute = parent.id_attribute) WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET((SELECT DISTINCT text FROM attribute WHERE id_attribute = relation1.id_src_attribute), @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=text FROM attribute WHERE id_attribute = cursor_id_attribute) tmp) a) b));
+  END LOOP;
+  CLOSE cursor_i;
+END;
+;;
+
+/* CALL insertAllParentsPerAttribute(); */
 
 /* dummy taxonomy coordinates */
 /*
