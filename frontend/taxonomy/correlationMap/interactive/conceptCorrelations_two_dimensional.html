@@ -172,8 +172,7 @@ text.active {
 
     if (n == 0 || m == 0) return;
 
-/*
-    // TODO
+  /*
     nodesX.sort( function ( a, b ) {
       if ((!a.parentText || a.parentText == '') && (!!b.ParentText && b.parentText != '')) return 1;
       if ((!b.parentText || b.parentText == '') && (!!a.parentText && a.parentText != '')) return -1;
@@ -187,7 +186,8 @@ text.active {
       if ((!a.parentText || a.parentText == '') && (!b.parentText || b.parentText == '')) return 0;
       return a.ParentText < b.ParentText ? 1 : (a.parentText == b.ParentText ? 0 : -1);
     });
-*/
+  */
+
     if (n > m) {
       for ( var i = 0; i < (n - m); i++ ) {
         nodesY.push({id: -Infinity, text: '', parentText: ''});
@@ -232,39 +232,44 @@ text.active {
       return a.parents.length < b.parents.length ? 1 : (a.parents.length > b.parents.length ? -1 : (a.text < b.text ? -1 : (a.text == b.text ? 0 : 1)));
     });
 */
-    nodesX.sort ( function ( a, b ) {
-      var i = a.parents.length - 1;
-      var j = b.parents.length - 1;
-      while (i >= 0 && j >= 0) {
-        if (a.parents[i] < b.parents[j]) return -1;
-        if (b.parents[j] < a.parents[i]) return 1;
-        i--;
-        j--;
-      }
-      if (i >= 0) return -1;
-      if (j >= 0) return 1;
-      if (a.text != '' && b.text == '') return -1;
-      if (a.text == '' && b.text != '') return 1;
-      if (a.text == '' && b.text == '') return 0;
-      return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
-    });
 
-    nodesY.sort ( function ( a, b ) {
-      var i = a.parents.length - 1;
-      var j = b.parents.length - 1;
-      while (i >= 0 && j >= 0) {
-        if (a.parents[i] < b.parents[j]) return -1;
-        if (b.parents[j] < a.parents[i]) return 1;
-        i--;
-        j--;
-      }
-      if (i >= 0) return -1;
-      if (j >= 0) return 1;
-      if (a.text != '' && b.text == '') return -1;
-      if (a.text == '' && b.text != '') return 1;
-      if (a.text == '' && b.text == '') return 0;
-      return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
-    });
+    // TODO
+    var selectedOrder = $('#order').val();
+    if (!selectedOrder || selectedOrder == 'default') {
+      nodesX.sort ( function ( a, b ) {
+        var i = a.parents.length - 1;
+        var j = b.parents.length - 1;
+        while (i >= 0 && j >= 0) {
+          if (a.parents[i] < b.parents[j]) return -1;
+          if (b.parents[j] < a.parents[i]) return 1;
+          i--;
+          j--;
+        }
+        if (i >= 0) return -1;
+        if (j >= 0) return 1;
+        if (a.text != '' && b.text == '') return -1;
+        if (a.text == '' && b.text != '') return 1;
+        if (a.text == '' && b.text == '') return 0;
+        return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+      });
+
+      nodesY.sort ( function ( a, b ) {
+        var i = a.parents.length - 1;
+        var j = b.parents.length - 1;
+        while (i >= 0 && j >= 0) {
+          if (a.parents[i] < b.parents[j]) return -1;
+          if (b.parents[j] < a.parents[i]) return 1;
+          i--;
+          j--;
+        }
+        if (i >= 0) return -1;
+        if (j >= 0) return 1;
+        if (a.text != '' && b.text == '') return -1;
+        if (a.text == '' && b.text != '') return 1;
+        if (a.text == '' && b.text == '') return 0;
+        return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+      });
+    }
 
     correlations.response.forEach(function(link) {
       //if (link.value > 49) console.log('ERROR: More than 49 citations: ', link);
@@ -688,11 +693,12 @@ text.active {
 
     // TODO fix and copy to columns
 
-    function addRowParentText () {
+    function addRowParentText ( row ) {
       var lastTextRef;
-      var counter = 0;
+      var selectedOrder = $('#order').val();
       for ( var k = 0; k < treeDepthX; k++ ) {
         var lastValueX = '';
+        var counter = 0;
         var parentsX = [];
         for ( var l = 0; l < treeDepthX; l++ ) {
           parentsX.push([]);
@@ -707,43 +713,84 @@ text.active {
             .text(function(d, i) {
               counter++;
               if (nodesX[i].parents.length == 0) {
+                if (!!selectedOrder && selectedOrder != 'default') {
+                  parentsX = [];
+                  for ( var l = 0; l < treeDepthX; l++ ) {
+                    parentsX.push([]);
+                  }
+                  if (!!lastTextRef) {
+                    if (heightPerCell*counter < lastValueX.length * 12) {
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                    } else {
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
+                    }
+                    lastTextRef = null;
+                  }
+                  lastValueX = '';
+                  counter = 0;
+                }
+              }
+              if (nodesX[i].parents.length <= k) var value = nodesX[i].parents[nodesX[i].parents.length-1];
+              else var value = nodesX[i].parents[k];
+              if (value != '' && (checkForOccurrence(parentsX, value) > k || nodesX[i].parents.indexOf(value) < 0)) {
+                if (!!selectedOrder && selectedOrder != 'default') {
+                  if (!!lastTextRef) {
+                    if (heightPerCell*counter < lastValueX.length * 12) {
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                    } else {
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
+                    }
+                    lastTextRef = null;
+                  }
+                  lastValueX = '';
+                  counter = 0;
+                }
+                return '';
+              }
+              if (value != '' && nodesX[i].parents.indexOf(value) < k) {
+                if (!!selectedOrder && selectedOrder != 'default') {
+                  if (!!lastTextRef) {
+                    if (heightPerCell*counter < lastValueX.length * 12) {
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                    } else {
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
+                    }
+                    lastTextRef = null;
+                    //lastValueX = '';
+                    //counter = 0;
+                  }
+                }
+                return '';
+              }
+              if (!!selectedOrder && selectedOrder != 'default') {
                 parentsX = [];
                 for ( var l = 0; l < treeDepthX; l++ ) {
                   parentsX.push([]);
                 }
               }
-              if (nodesX[i].parents.length <= k) var value = nodesX[i].parents[nodesX[i].parents.length-1];
-              else var value = nodesX[i].parents[k];
-              if (lastValueX == value) return '';
-              var selectedOrder = $('#order').val();
-              if (((!selectedOrder || selectedOrder == 'default') && checkForOccurrence(parentsX, value) > k) || nodesX[i].parents.indexOf(value) < k) return '';
-              parentsX = [];
-              for ( var l = 0; l < treeDepthX; l++ ) {
-                parentsX.push([]);
-              }
               for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
                 parentsX[k].push(nodesX[i].parents[l]);
               }
-              lastValueX = value;
-              if (lastValueX != '') {
-                if (!!lastTextRef && heightPerCell*counter < lastValueX.length * 12) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10) + ",12)"});
-                  //lastTextRef.attr("transform", function(d, i) { return "translate(" + (-marginLeft - 10) + ",10)rotate(90)"; });
-                  lastTextRef = null;
-                } else if (!!lastTextRef) {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10) + ",12)rotate(90)"; });
-                  lastTextRef = null;
+              if (!!lastTextRef) {
+                if (heightPerCell*counter < lastValueX.length * 12) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                 }
-                lastTextRef = $(this);
-                counter = 0;
-              } else if (!!lastTextRef) {
-                lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10) + ",12)rotate(90)"; });
-                lastTextRef = null;
               }
+              if (lastValueX == value) return '';
+              lastTextRef = $(this);
+              counter = 0;
+              lastValueX = value;
               return value;
             });
         if (!!lastTextRef) {
-          lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
+              if (k == treeDepthX-2) console.log('lastVal: ' + lastValueX + ', count: ' + counter + ', result: ' + (heightPerCell*counter < lastValueX.length * 12) + ', reference: ', lastTextRef)
+          if (heightPerCell*counter < lastValueX.length * 12) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
+          }
           lastTextRef = null;
           parentsX = [];
           for ( var l = 0; l < treeDepthX; l++ ) {
@@ -785,8 +832,18 @@ text.active {
               } else sameParents.push(lastParentsX[k]);
               counter++;
             }
+            var parentCounter = 0;
+            if (!!selectedOrder && selectedOrder != 'default' && i > 1) {
+              for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
+                var index = nodesX[i].parents.indexOf(lastParentsX[k]);
+                var previousIndex = nodesX[i-2].parents.indexOf(lastParentsX[k]);
+                if (index > k && previousIndex < k) parentCounter++;
+                else break;
+              }
+              if (parentCounter > 0) parentCounter++;
+            }
             lastParentsX = nodesX[i].parents;
-            return -margin.left + (treeDepthX)*(margin.left-marginLeft)/(treeDepthX+1);
+            return -margin.left + (treeDepthX - parentCounter)*(margin.left-marginLeft)/(treeDepthX+1) + ((treeDepthX - parentCounter) == 0 ? 10 : 0);
             /*
             for ( var k = 0; k < treeDepthX; k++ ) {
               if (nodesX[i].parents.length <= k || nodesX[i-1].parents.length <= k) {
@@ -804,7 +861,7 @@ text.active {
           .attr("stroke-width", "1")
           .style("stroke", "black");
     }
-    addRowParentText();
+    addRowParentText(row);
 
 
     var column = svg.selectAll(".column")
@@ -822,11 +879,12 @@ text.active {
         .text(function(d, i) { return nodesY[i].text; })
         .attr("transform", function (d, i) { return "translate(120)"; }); // (-30,5)
 
-    function addColumnParentText () {
+    function addColumnParentText ( column ) {
       var lastTextRef;
-      var counter = 0;
+      var selectedOrder = $('#order').val();
       for ( var k = 0; k < treeDepthY; k++ ) {
         var lastValueY = '';
+        var counter = 0;
         var parentsY = [];
         for ( var l = 0; l < treeDepthY; l++ ) {
           parentsY.push([]);
@@ -840,35 +898,89 @@ text.active {
             .attr("font-size", "8pt")
             .text(function(d, i) {
               counter++;
-              if (nodesY[i].parents.length == 0) return '';
+              if (nodesY[i].parents.length == 0) {
+                if (!!selectedOrder && selectedOrder != 'default') {
+                  parentsY = [];
+                  for ( var l = 0; l < treeDepthY; l++ ) {
+                    parentsY.push([]);
+                  }
+                  if (!!lastTextRef) {
+                    if (widthPerCell*counter < lastValueY.length * 12) {
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                    } else {
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+                    }
+                    lastTextRef = null;
+                  }
+                  lastValueY = '';
+                  counter = 0;
+                }
+              }
               if (nodesY[i].parents.length <= k) var value = nodesY[i].parents[nodesY[i].parents.length-1];
               else var value = nodesY[i].parents[k];
-              if (lastValueY == value) return '';
-              if (checkForOccurrence(parentsY, value) > k || nodesY[i].parents.indexOf(value) < k) return '';
+              if (value != '' && (checkForOccurrence(parentsY, value) > k || nodesY[i].parents.indexOf(value) < 0)) {
+                if (!!selectedOrder && selectedOrder != 'default') {
+                  if (!!lastTextRef) {
+                    if (widthPerCell*counter < lastValueY.length * 12) {
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                    } else {
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+                    }
+                    lastTextRef = null;
+                  }
+                  lastValueY = '';
+                  counter = 0;
+                }
+                return '';
+              }
+              if (value != '' && nodesY[i].parents.indexOf(value) < k) {
+                if (!!selectedOrder && selectedOrder != 'default') {
+                  if (!!lastTextRef) {
+                    if (widthPerCell*counter < lastValueY.length * 12) {
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                    } else {
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+                    }
+                    lastTextRef = null;
+                    //lastValueX = '';
+                    //counter = 0;
+                  }
+                }
+                return '';
+              }
+              if (!!selectedOrder && selectedOrder != 'default') {
+                parentsY = [];
+                for ( var l = 0; l < treeDepthY; l++ ) {
+                  parentsY.push([]);
+                }
+              }
               for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
                 parentsY[k].push(nodesY[i].parents[l]);
               }
-              lastValueY = value;
-              if (lastValueY != '') {
-                if (!!lastTextRef && widthPerCell*counter < lastValueY.length * 12) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
-                  //lastTextRef.attr("transform", function(d, i) { return "translate(" + (-marginLeft - 10) + ",10)rotate(90)"; });
-                  lastTextRef = null;
-                } else if (!!lastTextRef) {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 73) + ",10)rotate(90)"; });
-                  lastTextRef = null;
+              if (!!lastTextRef) {
+                if (widthPerCell*counter < lastValueY.length * 12) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
                 }
-                lastTextRef = $(this);
-                counter = 0;
-              } else if (!!lastTextRef) {
-                lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 73) + ",10)rotate(90)"; });
-                lastTextRef = null;
               }
+              if (lastValueY == value) return '';
+              lastTextRef = $(this);
+              counter = 0;
+              lastValueY = value;
               return value;
             });
         if (!!lastTextRef) {
-          lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 73) + ",10)rotate(90)"; });
+          if (widthPerCell*counter < lastValueY.length * 12) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+          }
           lastTextRef = null;
+          parentsY = [];
+          for ( var l = 0; l < treeDepthY; l++ ) {
+            parentsY.push([]);
+          }
         }
       }
       var lastParentsY = nodesY[0].parents;
@@ -905,8 +1017,18 @@ text.active {
               } else sameParents.push(lastParentsY[k]);
               counter++;
             }
+            var parentCounter = 0;
+            if (!!selectedOrder && selectedOrder != 'default' && i > 1) {
+              for ( var k = lastParentsY.length-1; k >= 0; k-- ) {
+                var index = nodesY[i].parents.indexOf(lastParentsY[k]);
+                var previousIndex = nodesY[i-2].parents.indexOf(lastParentsY[k]);
+                if (index > k && previousIndex < k) parentCounter++;
+                else break;
+              }
+              if (parentCounter > 0) parentCounter++;
+            }
             lastParentsY = nodesY[i].parents;
-            return margin.top - (treeDepthY)*(margin.top-marginTop)/(treeDepthY+1);
+            return margin.top - (treeDepthY - parentCounter)*(margin.top-marginTop)/(treeDepthY+1) - ((treeDepthY - parentCounter) == 0 ? 10 : 0);
           /*
             if (i == 0) return margin.top - 10;
             for ( var k = 0; k < treeDepthY; k++ ) {
@@ -928,7 +1050,7 @@ text.active {
           .attr("stroke-width", "1")
           .style("stroke", "black");
     }
-    addColumnParentText();
+    addColumnParentText(column);
 
 /*
     column.append("line")
@@ -1030,6 +1152,7 @@ text.active {
 */
 
     function order(value) {
+    /*
       x.domain(orders[0][value]);
       y.domain(orders[1][value]);
 
@@ -1040,7 +1163,8 @@ text.active {
 
       svg.selectAll(".rowParentLine").remove();
       svg.selectAll(".columnParentLine").remove();
-
+    */
+    /* 
       t.selectAll(".row")
           .delay(function(d, i) { return y(i) * 1; }) // * 4
           .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
@@ -1053,22 +1177,30 @@ text.active {
           .delay(function(d, i) { return x(i) * 1; })
           .attr("x", function(d) { return x(d.x); })
           .attr("transform", function(d, i) { return "translate(" + x(i) + ",0)rotate(-90)"; });
-
+    */
       // TODO
+      if (!!buildingMatrix) return;
+      var sortX, sortY;
+      if (value == 'name') {
+        sortX = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); };
+        sortY = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); };
+      } else if (value == 'count') {
+        sortX = function (a, b) { return b.count - a.count; };
+        sortY = function (a, b) { return b.count - a.count; };
+      } else return;
+      nodesX.sort(sortX);
+      nodesY.sort(sortY);
+      buildMatrix({response: nodesX}, {response: nodesY}, correlations, maxValue, onClickURL);
 
-      if (value == 'name' && false) {
-        nodesX.sort (function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); });
-        nodesY.sort (function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); });
-      } else if (value == 'count' && false) {
-        nodesX.sort (function (a, b) { return b.count - a.count; });
-        nodesY.sort (function (a, b) { return b.count - a.count; });
-      }
-
+      /*
       setTimeout ( function () {
-        addRowParentText();
-        addColumnParentText();
+        //var row = svg.selectAll(".row").sort(function ( a, b ) { return sortX(nodesX[a[0].y-1], nodesX[b[0].y-1]); });
+        //var column = svg.selectAll(".column").sort(function ( a, b ) { return sortY(nodesY[a[0].x-1], nodesY[b[0].x-1]); });
+        //addRowParentText(row);
+        //addColumnParentText(column);
+        buildMatrix({response: nodesX}, {response: nodesY}, correlations, maxValue, onClickURL);
       }, 10000);
-
+      */
     }
     //setTimeout(function () { order('count'); }, 2000);
 

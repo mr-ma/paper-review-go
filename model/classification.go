@@ -181,8 +181,8 @@ type AttributeRelation struct {
   DimensionDest string `json:"dimensionDest"`
   Dimension string `json:"dimension"`
   Relation string `json:"relation"`
-  Annotation string `json:"annotation"`
   EdgeBendPoints string `json:"edgeBendPoints"`
+  Annotation string `json:"annotation"`
 }
 
 type CitationCount struct {

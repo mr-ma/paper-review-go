@@ -151,7 +151,11 @@
         {
           selector: 'edge',
           style: {
-           'curve-style': 'unbundled-bezier', // bezier, unbundled-bezier, haystack, segments with: 'segment-distances': '10px 30px', 'segment-weights': '0.2 1.2',
+           'curve-style': 'segments', // bezier, unbundled-bezier, haystack, segments with: 'segment-distances': '10px 30px', 'segment-weights': '0.2 1.2',
+           'segment-distances': '0px', //'segment-weights': '0.2 1.2'
+           //'edge-distances': '5px',
+           //'source-distance-from-node': '10px',
+           //'target-distance-from-node': '10px',
            'width': 1,
            'target-arrow-color': 'black', // #ccc
            'line-color': 'black',
@@ -189,7 +193,7 @@
           style: {
             'target-arrow-shape': 'diamond',
             'target-arrow-fill': 'hollow',
-            'arrow-scale': 2.5,
+            'arrow-scale': 2.5
           }
         },
         {
@@ -197,7 +201,7 @@
           style: {
             'target-arrow-shape': 'diamond',
             'target-arrow-fill': 'filled',
-            'arrow-scale': 2.5,
+            'arrow-scale': 2.5
           }
         }
       ];
@@ -687,7 +691,6 @@
       if (!isNaN(x) && !isNaN(y)) {
         for ( var i = 0; i < citationCounts.length; i++ ) {
           if (citationCounts[i].attribute == attribute.text) {
-            if (attribute.text.split('Reverse engineering').length > 1) console.log(attribute)
             items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
             break;
           }
@@ -696,8 +699,15 @@
     });
     relations.forEach ( function ( relation ) {
       var relationObj = { data: { id: relation.attributeSrc + '_' + relation.attributeDest, source: relation.attributeSrc, target: relation.attributeDest, annotation: !!relation.annotation ? relation.annotation : '', dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), relation: relation.relation }, classes: relation.relation };
-      if (!!relation.edgeBendPoints) relationObj.data.bendPointPositions = JSON.parse('[' + relation.edgeBendPoints + ']');
-      //else relationObj.data.bendPointPositions = [];
+      if (!!relation.edgeBendPoints) var edgePoints = JSON.parse('[' + relation.edgeBendPoints + ']');
+      else var edgePoints = [];
+      var x, y;
+      var points = [];
+      for ( var i = 0; i < edgePoints.length; i++ ) {
+        if (i % 2 == 0) x = edgePoints[i];
+        else points.push({x: x, y: edgePoints[i]});
+      }
+      if (points.length > 0) relationObj.data.bendPointPositions = points;
       items.push(relationObj);
     });
 
@@ -1012,7 +1022,7 @@
     cy.panzoom();
     //cy.navigator();
     cy.edgehandles({handleNodes: '.child, .parent'});
-    //var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
+    var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
     cy.on('ehcomplete', function (event, sourceNode, targetNode, addedEles) {
       var sourceID = sourceNode.id();
       var targetID = targetNode.id();
@@ -1152,7 +1162,7 @@
               //json object to sent to the authentication url
               data: JSON.stringify(request),
               success: function ( attributes ) {
-                if (!attributes || !attributes.response) {
+                if (!attributes) {
                   console.log('Cannot get attributes from DB.');
                   return;
                 }
@@ -1168,21 +1178,21 @@
                       //json object to sent to the authentication url
                       data: JSON.stringify(request),
                       success: function ( relations ) {
-                        if (!relations || !relations.response) {
+                        if (!relations) {
                           console.log('Cannot get attribute relations from DB.');
                           return;
                         }
                         $.get('relationTypes', function ( relationTypes ) {
-                          if (!relationTypes || !relationTypes.response) {
+                          if (!relationTypes) {
                             console.log('Cannot get relation types from DB.');
                             return;
                           }
                           $.get('citationCountsIncludingChildren', function ( citationCounts ) {
-                              if (!citationCounts || !citationCounts.response) {
+                              if (!citationCounts) {
                                 console.log('Cannot get citation counts from DB.');
                                 return;
                               }
-                            createJSON(dimensions, attributes.response, relations.response, relationTypes.response, citationCounts.response);
+                            createJSON(dimensions, !!attributes.response ? attributes.response : [], !!relations.response ? relations.response : [], !!relationTypes.response ? relationTypes.response : [], !!citationCounts.response ? citationCounts.response : []);
                           });
                         });
                       }
