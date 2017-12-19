@@ -206,10 +206,17 @@
         }
       ];
   function savePositions ( cy, dimensions ) {
-    if (dimensions.length > 1) var saveURL = 'saveMajorPositions';
+    //if (dimensions.length > 1) var saveURL = 'saveMajorPositions';
+    //else var saveURL = 'savePositions';
+    if (!displayedDimension) {
+      handleError('No dimension selected.');
+      return;
+    }
+    var dimension = displayedDimension;
+    if (displayedDimension == 'Interdimensional view') var saveURL = 'saveMajorPositions';
     else var saveURL = 'savePositions';
     var positions = [];
-    cy.nodes().forEach ( function ( node ) {
+    cy.$('.child').forEach ( function ( node ) {
       var table = node.data('table');
       var position = node.position();
       positions.push({id: node.id(), table: table, x: '' + position.x, y: '' + position.y});
@@ -223,7 +230,7 @@
           contentType:'application/json',
           async: true,
           //json object to sent to the authentication url
-          data: JSON.stringify({positions: positions}),
+          data: JSON.stringify({'taxonomy_id': 1, positions: positions, dimension: dimension}),
           success: function ( ) {
             console.log('Saved positions successfully.');
           }
@@ -675,6 +682,7 @@
 
   var cy;
   var isInterDimensional = true;
+  var displayedDimension;
 
   function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts ) {
     console.log('creating json, sttr: ', attributes);
@@ -1052,14 +1060,29 @@
     });
     cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
       cy.destroy();
-      if (isInterDimensional) showDimension(1, this.id());
-      else showDimension(1, 'Interdimensional view');
+      if (isInterDimensional) {
+        var dimText = this.id();
+        showDimension(1, dimText);
+        displayedDimension = dimText;
+      } else {
+        var dimText = 'Interdimensional view';
+        showDimension(1, dimText);
+        displayedDimension = dimText;
+      }
+    });
+    cy.$('.dimension').on('expandcollapse.beforeexpand', function ( e ) {
+      displayedDimension = 'Interdimensional view';
     });
     //var instance = cy.contextMenus( options );
     $('#clickMe').unbind().click ( function () {
       savePositions(cy, dimensions);
     });
     $('#getEdges').unbind().click ( function () {
+      if (!displayedDimension) {
+        handleError('No dimension selected.');
+        return;
+      }
+      var dimension = displayedDimension;
       cy.edges().forEach ( function ( entry ) {
         var segments = edgeBendEditingApi.getSegmentPoints(entry);
         if (!!segments) {
@@ -1075,8 +1098,9 @@
                 contentType:'application/json',
                 async: true,
                 //json object to sent to the authentication url
-                data: JSON.stringify({attributeSrc: attributeSrc, attributeDest: attributeDest, edgeBendPoints: segments.toString()}),
+                data: JSON.stringify({'taxonomy_id': 1, attributeSrc: attributeSrc, attributeDest: attributeDest, edgeBendPoints: segments.toString(), dimension: dimension}),
                 success: function ( result ) {
+                  $('#clickMe').click();
                   console.log('Saved edge bend points successfully.');
                 }
             });
@@ -1192,7 +1216,8 @@
                                 console.log('Cannot get citation counts from DB.');
                                 return;
                               }
-                            createJSON(dimensions, !!attributes.response ? attributes.response : [], !!relations.response ? relations.response : [], !!relationTypes.response ? relationTypes.response : [], !!citationCounts.response ? citationCounts.response : []);
+                              createJSON(dimensions, !!attributes.response ? attributes.response : [], !!relations.response ? relations.response : [], !!relationTypes.response ? relationTypes.response : [], !!citationCounts.response ? citationCounts.response : []);
+                              displayedDimension = dimension;
                           });
                         });
                       }

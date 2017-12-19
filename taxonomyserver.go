@@ -586,7 +586,7 @@ func saveMajor3DPositionsHandler(u *url.URL, h http.Header, saveMajor3DPositions
 func saveEdgeBendPointsHandler(u *url.URL, h http.Header, saveEdgeBendPointsRequest *model.SaveEdgeBendPointsRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.SaveEdgeBendPoints(
-		saveEdgeBendPointsRequest.AttributeSrc, saveEdgeBendPointsRequest.AttributeDest, saveEdgeBendPointsRequest.EdgeBendPoints)
+		saveEdgeBendPointsRequest.TaxonomyID, saveEdgeBendPointsRequest.AttributeSrc, saveEdgeBendPointsRequest.AttributeDest, saveEdgeBendPointsRequest.EdgeBendPoints, saveEdgeBendPointsRequest.Dimension)
 	checkErr(err)
 	return http.StatusOK, nil,
 		&MyResponse{"0", 1, result}, nil // TODO

@@ -28,7 +28,7 @@ type ClassificationDriver interface {
 	SaveMajorPositions([]model.Position) (error)
 	Save3DPositions([]model.Position) (error)
 	SaveMajor3DPositions([]model.Position) (error)
-	SaveEdgeBendPoints(string, string, string) (model.Result, error)
+	SaveEdgeBendPoints(int64, string, string, string, string) (model.Result, error)
 	GetAllAttributes() ([]model.Attribute, error)
 	GetLeafAttributes() ([]model.Attribute, error)
 	GetAllDimensions() ([]model.Dimension, error)
@@ -734,10 +734,10 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
     	for _, elem := range positions {
 			db, stmt, err := d.Query("update " + elem.Table + " set x = \"" + elem.X + "\", y = \"" + elem.Y + "\" where text = \"" + elem.ID + "\";");
-			defer stmt.Close()
-			defer db.Close()
 			rows, err := stmt.Query()
-			defer rows.Close()
+			stmt.Close()
+			db.Close()
+			rows.Close()
 			checkErr(err)
 		}
 		defer dbRef.Close()
@@ -749,25 +749,26 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
     	for _, elem := range positions {
 			db, stmt, err := d.Query("update " + elem.Table + " set xMajor = \"" + elem.X + "\", yMajor = \"" + elem.Y + "\" where text = \"" + elem.ID + "\";");
-			defer stmt.Close()
-			defer db.Close()
 			rows, err := stmt.Query()
-			defer rows.Close()
+			stmt.Close()
+			db.Close()
+			rows.Close()
 			checkErr(err)
 		}
 		defer dbRef.Close()
 		return err
 		}
 
+	// TODO taxonomyId + dimension
 	func (d MySQLDriver) Save3DPositions(positions []model.Position) (err error){
 	  	dbRef, err := d.OpenDB()
 		checkErr(err)
     	for _, elem := range positions {
 			db, stmt, err := d.Query("update " + elem.Table + " set x3D = \"" + elem.X + "\", y3D = \"" + elem.Y + "\", z3D = \"" + elem.Z + "\" where text = \"" + elem.ID + "\";");
-			defer stmt.Close()
-			defer db.Close()
 			rows, err := stmt.Query()
-			defer rows.Close()
+			stmt.Close()
+			db.Close()
+			rows.Close()
 			checkErr(err)
 		}
 		defer dbRef.Close()
@@ -778,23 +779,23 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	  	dbRef, err := d.OpenDB()
 		checkErr(err)
     	for _, elem := range positions {
-
 			db, stmt, err := d.Query("update " + elem.Table + " set xMajor3D = \"" + elem.X + "\", yMajor3D = \"" + elem.Y + "\", zMajor3D = \"" + elem.Z + "\" where text = \"" + elem.ID + "\";");
-			defer stmt.Close()
-			defer db.Close()
 			rows, err := stmt.Query()
-			defer rows.Close()
+			stmt.Close()
+			db.Close()
+			rows.Close()
 			checkErr(err)
 		}
 		defer dbRef.Close()
 		return err
 		}
 
-	func (d MySQLDriver) SaveEdgeBendPoints(attributeSrc string, attributeDest string, edgeBendPoints string) (result model.Result, err error){
+	func (d MySQLDriver) SaveEdgeBendPoints(taxonomyId int64, attributeSrc string, attributeDest string, edgeBendPoints string, dimension string) (result model.Result, err error){
 	  	dbRef, err := d.OpenDB()
 		checkErr(err)
-		fmt.Sprintf("edgepoints: " + edgeBendPoints)
-		db, stmt, err := d.Query("update taxonomy_relation set edgeBendPoints = \"" + edgeBendPoints + "\" where id_src_attribute = (select distinct id_attribute from attribute where text = \"" + attributeSrc + "\") and id_dest_attribute = (select distinct id_attribute from attribute where text = \"" + attributeDest + "\");")
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		//fmt.Sprintf("edgepoints: " + edgeBendPoints)
+		db, stmt, err := d.Query("update taxonomy_relation set edgeBendPoints = \"" + edgeBendPoints + "\" where id_taxonomy = " + taxonomyIdStr + " and id_src_attribute = (select distinct id_attribute from attribute where text = \"" + attributeSrc + "\") and id_dest_attribute = (select distinct id_attribute from attribute where text = \"" + attributeDest + "\") and id_dimension = (select distinct id_dimension from dimension where text = \"" + dimension + "\");")
 		defer stmt.Close()
 		defer db.Close()
 		stmt.Query()
@@ -977,9 +978,9 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		for ok := true; ok; ok = (input != 2) {
 			newAttributeName = attribute + ":" + strconv.Itoa(counter)
 			db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE text = \"" + newAttributeName + "\";")
-			defer stmt.Close()
-			defer db.Close()
 			rows, err := stmt.Query()
+			stmt.Close()
+			db.Close()
 			checkErr(err)
 			var rowCount int
 			for rows.Next() {
@@ -995,9 +996,9 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		for ok := true; ok; ok = (input2 != 2) {
 			newAttributeName2 = attribute + ":" + strconv.Itoa(counter)
 			db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE text = \"" + newAttributeName + "\";")
-			defer stmt.Close()
-			defer db.Close()
 			rows, err := stmt.Query()
+			stmt.Close()
+			db.Close()
 			checkErr(err)
 			var rowCount int
 			for rows.Next() {
@@ -1033,44 +1034,44 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	    for _, parent := range parents1 {
 	        db, stmt, err := d.Query("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (1, (select distinct id_attribute from attribute where text = \"" + newAttributeName + "\"), (select distinct id_attribute from attribute where text = \"" + parent.Text + "\"), (select distinct id_relation from relation where text = \"" + parent.Relation + "\"), (select distinct id_dimension from dimension where text = \"" + dimension + "\"));")
 	    	checkErr(err)
-	    	defer stmt.Close()
-	    	defer db.Close()
 	    	stmt.Query()
+	    	stmt.Close()
+	    	db.Close()
 	    }
 	    for _, parent := range parents2 {
 	        db, stmt, err := d.Query("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (1, (select distinct id_attribute from attribute where text = \"" + newAttributeName2 + "\"), (select distinct id_attribute from attribute where text = \"" + parent.Text + "\"), (select distinct id_relation from relation where text = \"" + parent.Relation + "\"), (select distinct id_dimension from dimension where text = \"" + dimension + "\"));")
 	    	checkErr(err)
-	    	defer stmt.Close()
-	    	defer db.Close()
 	    	stmt.Query()
+	    	stmt.Close()
+	    	db.Close()
 	    }
 	    for _, child := range children1 {
 	        db, stmt, err := d.Query("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_dest_attribute, id_src_attribute, id_relation, id_dimension) VALUES (1, (select distinct id_attribute from attribute where text = \"" + newAttributeName + "\"), (select distinct id_attribute from attribute where text = \"" + child.Text + "\"), (select distinct id_relation from relation where text = \"" + child.Relation + "\"), (select distinct id_dimension from dimension where text = \"" + dimension + "\"));")
 	    	checkErr(err)
-	    	defer stmt.Close()
-	    	defer db.Close()
 	    	stmt.Query()
+	    	stmt.Close()
+	    	db.Close()
 	    }
 	    for _, child := range children2 {
 	        db, stmt, err := d.Query("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_dest_attribute, id_src_attribute, id_relation, id_dimension) VALUES (1, (select distinct id_attribute from attribute where text = \"" + newAttributeName2 + "\"), (select distinct id_attribute from attribute where text = \"" + child.Text + "\"), (select distinct id_relation from relation where text = \"" + child.Relation + "\"), (select distinct id_dimension from dimension where text = \"" + dimension + "\"));")
 	    	checkErr(err)
-	    	defer stmt.Close()
-	    	defer db.Close()
 	    	stmt.Query()
+	    	stmt.Close()
+	    	db.Close()
 	    }
 	    for _, citation := range citations1 {
 	        db, stmt, err := d.Query("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (" + strconv.Itoa(int(citation.ID)) + ", (select distinct id_attribute from attribute where text = \"" + newAttributeName + "\"));")
 	    	checkErr(err)
-	    	defer stmt.Close()
-	    	defer db.Close()
 	    	stmt.Query()
+	    	stmt.Close()
+	    	db.Close()
 	    }
 	    for _, citation := range citations2 {
 	        db, stmt, err := d.Query("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (" + strconv.Itoa(int(citation.ID)) + ", (select distinct id_attribute from attribute where text = \"" + newAttributeName2 + "\"));")
 	    	checkErr(err)
-	    	defer stmt.Close()
-	    	defer db.Close()
 	    	stmt.Query()
+	    	stmt.Close()
+	    	db.Close()
 	    }
 		db6, stmt6, err6 := d.Query("DELETE FROM attribute WHERE text = \"" + attribute + "\";")
 		db7, stmt7, err7 := d.Query("DELETE FROM allChildrenPerAttribute;")

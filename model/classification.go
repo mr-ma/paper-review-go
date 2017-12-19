@@ -98,9 +98,11 @@ type SavePositionsRequest struct {
 }
 
 type SaveEdgeBendPointsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   AttributeSrc string `json:"attributeSrc"`
   AttributeDest string `json:"attributeDest"`
   EdgeBendPoints string `json:"edgeBendPoints"`
+  Dimension string `json:"dimension"`
 }
 
 type CitationsPerAttributeRequest struct {
