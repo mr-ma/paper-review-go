@@ -187,7 +187,6 @@ text.active {
       return a.ParentText < b.ParentText ? 1 : (a.parentText == b.ParentText ? 0 : -1);
     });
   */
-
     if (n > m) {
       for ( var i = 0; i < (n - m); i++ ) {
         nodesY.push({id: -Infinity, text: '', parentText: ''});
@@ -441,8 +440,8 @@ text.active {
 
     var minValue = 0;
     var margin = {top: 500, right: 0, bottom: 30, left: 500}, // left/top: 240
-        width =  2500, // 1440 or 4500
-        height = 2500; // 1440 or 4500
+        width =  Math.min(2000, nodesY.length * 25), // 1440 or 4500
+        height = Math.min(2000, nodesX.length * 25); // 1440 or 4500
 
     function getXPosition ( d ) {
       var sum = 0;
@@ -471,7 +470,7 @@ text.active {
     var svg = d3.select("body").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
-        .style("margin-left", margin.left + "px")
+        //.style("margin-left", margin.left + "px")
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -590,7 +589,7 @@ text.active {
     var marginTop = getMaxNameLength(nodesY) * 6 + 5;
 
     svg.append("line")
-      .attr("x1", -marginLeft - 30)
+      .attr("x1", -margin.left + 10)
       .attr("x2", 0)
       .attr("y1", height)
       .attr("y2", height)
@@ -618,7 +617,7 @@ text.active {
     svg.append("line")
       .attr("x1", width)
       .attr("x2", width)
-      .attr("y1", -marginTop - 25)
+      .attr("y1", -margin.top + 10)
       .attr("y2", 0)
       .attr("stroke-width", "1")
       .style("stroke", "black");
@@ -698,6 +697,7 @@ text.active {
       var selectedOrder = $('#order').val();
       for ( var k = 0; k < treeDepthX; k++ ) {
         var lastValueX = '';
+        var rowIndex = -1;
         var counter = 0;
         var parentsX = [];
         for ( var l = 0; l < treeDepthX; l++ ) {
@@ -711,6 +711,8 @@ text.active {
             .attr("text-anchor", "start")
             .attr("font-size", "8pt")
             .text(function(d, i) {
+              if (!nodesX[d[0].y-1].indices) nodesX[d[0].y-1].indices = [];
+              if (nodesX[d[0].y-1].indices.length < k) nodesX[d[0].y-1].indices[k] = -1;
               counter++;
               if (nodesX[i].parents.length == 0) {
                 if (!!selectedOrder && selectedOrder != 'default') {
@@ -727,6 +729,7 @@ text.active {
                     lastTextRef = null;
                   }
                   lastValueX = '';
+                  rowIndex = -1;
                   counter = 0;
                 }
               }
@@ -745,6 +748,7 @@ text.active {
                   lastValueX = '';
                   counter = 0;
                 }
+                nodesX[d[0].y-1].indices[k] = rowIndex;
                 return '';
               }
               if (value != '' && nodesX[i].parents.indexOf(value) < k) {
@@ -760,6 +764,7 @@ text.active {
                     //counter = 0;
                   }
                 }
+                nodesX[d[0].y-1].indices[k] = rowIndex;
                 return '';
               }
               if (!!selectedOrder && selectedOrder != 'default') {
@@ -778,10 +783,15 @@ text.active {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                 }
               }
-              if (lastValueX == value) return '';
+              if (lastValueX == value) {
+                nodesX[d[0].y-1].indices[k] = rowIndex;
+                return '';
+              }
               lastTextRef = $(this);
               counter = 0;
               lastValueX = value;
+              rowIndex = d[0].y;
+              nodesX[d[0].y-1].indices[k] = rowIndex;
               return value;
             });
         if (!!lastTextRef) {
@@ -884,6 +894,7 @@ text.active {
       var selectedOrder = $('#order').val();
       for ( var k = 0; k < treeDepthY; k++ ) {
         var lastValueY = '';
+        var columnIndex = -1;
         var counter = 0;
         var parentsY = [];
         for ( var l = 0; l < treeDepthY; l++ ) {
@@ -897,6 +908,8 @@ text.active {
             .attr("text-anchor", "start")
             .attr("font-size", "8pt")
             .text(function(d, i) {
+              if (!nodesY[d[0].x-1].indices) nodesY[d[0].x-1].indices = [];
+              if (nodesY[d[0].x-1].indices.length < k) nodesY[d[0].x-1].indices[k] = -1;
               counter++;
               if (nodesY[i].parents.length == 0) {
                 if (!!selectedOrder && selectedOrder != 'default') {
@@ -906,13 +919,14 @@ text.active {
                   }
                   if (!!lastTextRef) {
                     if (widthPerCell*counter < lastValueY.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
                     } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
                     }
                     lastTextRef = null;
                   }
                   lastValueY = '';
+                  columnIndex = -1;
                   counter = 0;
                 }
               }
@@ -922,30 +936,32 @@ text.active {
                 if (!!selectedOrder && selectedOrder != 'default') {
                   if (!!lastTextRef) {
                     if (widthPerCell*counter < lastValueY.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
                     } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
                     }
                     lastTextRef = null;
                   }
                   lastValueY = '';
                   counter = 0;
                 }
+                nodesY[d[0].x-1].indices[k] = columnIndex;
                 return '';
               }
               if (value != '' && nodesY[i].parents.indexOf(value) < k) {
                 if (!!selectedOrder && selectedOrder != 'default') {
                   if (!!lastTextRef) {
                     if (widthPerCell*counter < lastValueY.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
                     } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
                     }
                     lastTextRef = null;
                     //lastValueX = '';
                     //counter = 0;
                   }
                 }
+                nodesY[d[0].x-1].indices[k] = columnIndex;
                 return '';
               }
               if (!!selectedOrder && selectedOrder != 'default') {
@@ -959,22 +975,27 @@ text.active {
               }
               if (!!lastTextRef) {
                 if (widthPerCell*counter < lastValueY.length * 12) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
                 } else {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
                 }
               }
-              if (lastValueY == value) return '';
+              if (lastValueY == value) {
+                nodesY[d[0].x-1].indices[k] = columnIndex;
+                return '';
+              }
               lastTextRef = $(this);
               counter = 0;
               lastValueY = value;
+              columnIndex = d[0].x;
+              nodesY[d[0].x-1].indices[k] = columnIndex;
               return value;
             });
         if (!!lastTextRef) {
           if (widthPerCell*counter < lastValueY.length * 12) {
-            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 92) + ",10)"});
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
           } else {
-            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 80) + ",-2)rotate(90)"; });
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
           }
           lastTextRef = null;
           parentsY = [];
@@ -1117,8 +1138,8 @@ text.active {
     }
 
     function mouseover(p) {
-      d3.selectAll(".row text").classed("active", function(d, i) { return d[0].y == p.y; });
-      d3.selectAll(".column text").classed("active", function(d, i) { return d[0].x == p.x+1; });
+      d3.selectAll(".row").selectAll("text").classed("active", function(d, i) { return d[0].y == p.y || nodesX[p.y].indices[i-1] == d[0].y; });
+      d3.selectAll(".column").selectAll("text").classed("active", function(d, i) { return d[0].x == p.x+1 || nodesY[p.x].indices[i-1] == d[0].x; });
       d3Tip.show(p);
       console.log('value: ' + matrixX[p.y-1][p.x].z + ', src: ' + nodesX[p.y-1].text + ', dest: ' + nodesY[p.x].text);
       //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
