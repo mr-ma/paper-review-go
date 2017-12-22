@@ -21,6 +21,7 @@ type ClassificationDriver interface {
 	GetCitationCount() ([]model.CitationCount, error)
 	GetCitationCounts() ([]model.CitationCount, error)
 	GetCitationCountsIncludingChildren() ([]model.CitationCount, error)
+	UpdateCitationReferenceCounts([]model.ReferenceCount) (model.Result, error)
 	GetRelationTypes() ([]model.RelationType, error)
 	GetCitationsPerAttribute(string) ([]model.Paper, error)
 	GetCitationsPerAttributeIncludingChildren(string) ([]model.Paper, error)
@@ -232,6 +233,22 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		}
 		defer dbRef.Close()
 		return citationCounts, err
+		}
+
+	func (d MySQLDriver) UpdateCitationReferenceCounts(referenceCounts []model.ReferenceCount) (result model.Result, err error){
+	  	dbRef, err := d.OpenDB()
+		checkErr(err)
+    	for _, elem := range referenceCounts {
+    		referenceCountStr := strconv.Itoa(elem.ReferenceCount)
+			db, stmt, err := d.Query("update paper set referenceCount = " + referenceCountStr + " where citation = \"" + elem.Citation + "\";");
+			checkErr(err)
+			stmt.Query()
+			stmt.Close()
+			db.Close()
+		}
+		result.Success = true
+		defer dbRef.Close()
+		return result, err
 		}
 
 	func (d MySQLDriver) GetRelationTypes() (relationTypes []model.RelationType, err error){
@@ -734,11 +751,10 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
     	for _, elem := range positions {
 			db, stmt, err := d.Query("update " + elem.Table + " set x = \"" + elem.X + "\", y = \"" + elem.Y + "\" where text = \"" + elem.ID + "\";");
-			rows, err := stmt.Query()
+			checkErr(err)
+			stmt.Query()
 			stmt.Close()
 			db.Close()
-			rows.Close()
-			checkErr(err)
 		}
 		defer dbRef.Close()
 		return err
@@ -749,11 +765,10 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
     	for _, elem := range positions {
 			db, stmt, err := d.Query("update " + elem.Table + " set xMajor = \"" + elem.X + "\", yMajor = \"" + elem.Y + "\" where text = \"" + elem.ID + "\";");
-			rows, err := stmt.Query()
+			checkErr(err)
+			stmt.Query()
 			stmt.Close()
 			db.Close()
-			rows.Close()
-			checkErr(err)
 		}
 		defer dbRef.Close()
 		return err
@@ -765,11 +780,10 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
     	for _, elem := range positions {
 			db, stmt, err := d.Query("update " + elem.Table + " set x3D = \"" + elem.X + "\", y3D = \"" + elem.Y + "\", z3D = \"" + elem.Z + "\" where text = \"" + elem.ID + "\";");
-			rows, err := stmt.Query()
+			checkErr(err)
+			stmt.Query()
 			stmt.Close()
 			db.Close()
-			rows.Close()
-			checkErr(err)
 		}
 		defer dbRef.Close()
 		return err
@@ -780,11 +794,10 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
     	for _, elem := range positions {
 			db, stmt, err := d.Query("update " + elem.Table + " set xMajor3D = \"" + elem.X + "\", yMajor3D = \"" + elem.Y + "\", zMajor3D = \"" + elem.Z + "\" where text = \"" + elem.ID + "\";");
-			rows, err := stmt.Query()
+			checkErr(err)
+			stmt.Query()
 			stmt.Close()
 			db.Close()
-			rows.Close()
-			checkErr(err)
 		}
 		defer dbRef.Close()
 		return err

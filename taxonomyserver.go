@@ -80,6 +80,7 @@ func main() {
 	mux.Handle("GET", "/citation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsHandler), "getCitationsHandler", nil)))
 	mux.Handle("GET", "/citationCount", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountHandler), "getCitationCountHandler", nil)))
 	mux.Handle("GET", "/citationCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsHandler), "getCitationCountsHandler", nil)))
+	mux.Handle("POST", "/updateCitationReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateCitationReferenceCountsHandler), "getUpdateCitationReferenceCountsHandler", nil)))
 	mux.Handle("GET", "/citationCountsIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsIncludingChildrenHandler), "getCitationCountsIncludingChildrenHandler", nil)))
 	mux.Handle("GET", "/relationTypes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getRelationTypesHandler), "getRelationTypesHandler", nil)))
 	mux.Handle("GET", "/conceptCorrelation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getConceptCorrelationsHandler), "getConceptCorrelationsHandler", nil)))
@@ -399,6 +400,10 @@ func main() {
 		p := loadPage("frontend/taxonomy/cytoscape/taxonomyRelations.html")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/scopus", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/scopus/scopusAPI.html")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/pdf/{file}", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("handling pdf")
 		fp := filepath.Clean(r.URL.Path)
@@ -686,6 +691,12 @@ func getCitationCountsHandler(u *url.URL, h http.Header, r *MyRequest) (int, htt
 	citationCounts, err := driver.GetCitationCounts()
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citationCounts), citationCounts}, nil
+}
+func getUpdateCitationReferenceCountsHandler(u *url.URL, h http.Header, updateReferenceCountsRequest *model.UpdateReferenceCountsRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.UpdateCitationReferenceCounts(updateReferenceCountsRequest.ReferenceCounts)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }
 func getCitationCountsIncludingChildrenHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)

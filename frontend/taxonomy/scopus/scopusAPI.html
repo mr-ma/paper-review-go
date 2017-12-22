@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+    <title>Scopus Import</title>
+    <script src="jquery.min.js"></script>
+
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap.min.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <link href="loginForm.css" type="text/css" rel="stylesheet"/>
+
+    <!-- promises -->
+    <script src="bluebird.min.js"></script>
+    <script src="error.js"></script>
+
+<script>
+  function closeButton ( button ) {
+    $(button).parentsUntil('modal').parent().modal('hide');
+  }
+</script>
+
+</head>
+<body>
+  <p>Hello</p>
+<script>
+  $(document).ready( function () {
+    $.get('citation', function ( citations ) {
+      if (!citations || !citations.response) {
+        handleError('Cannot get citations from DB.');
+        return;
+      }
+      var promises = [];
+      citations.response.forEach ( function ( citation ) {
+        if (!!citation.bib) {
+          try {
+            var bibObj = JSON.parse(citation.bib);
+            if (!!bibObj.title) {
+              var getScopusDataPromise = new Promise ( function ( resolve, reject ) {
+                $.ajax
+                  ({
+                    type: "GET",
+                    //the url where you want to sent the userName and password to
+                    url: 'https://api.elsevier.com/content/search/scopus?query=TITLE(' + bibObj.title.replace(/\s/g, '+') + ')&content=core',
+                    //dataType: 'json',
+                    contentType:'application/json',
+                    async: true,
+                    headers: {'Accept':'application/json', 'X-ELS-APIKey': '90c6191fcbabf8d9969eb9c750cc898e'},
+                    //data: JSON.stringify({'query': 'KEY(test)', 'field': 'All', 'content': 'core'}),
+                    success: function ( result ) {
+                      if (!result || !result['search-results'] || !result['search-results'].entry) return;
+                      var entry = result['search-results'].entry;
+                      for ( var i = 0; i < entry.length; i++ ) {
+                        if (!!entry[i]['dc:title'] && (entry[i]['dc:title'].split(bibObj.title).length > 1 || bibObj.title.split(entry[i]['dc:title']).length > 1)) {
+                          var referenceCount = entry[i]['citedby-count'] - 0;
+                          if (!isNaN(referenceCount) && referenceCount >= 0) resolve({citation: citation.citation, referenceCount: referenceCount, success: true});
+                          break;
+                        }
+                      }
+                      resolve({citation: citation.citation, title: bibObj.title, success: false});
+                    },
+                    error: function () {
+                      resolve({citation: citation.citation, title: bibObj.title, success: false});
+                    }
+                  });
+                });
+                promises.push(getScopusDataPromise);
+              }
+            } catch ( err ) {
+              console.log('Error occurred parsing bib of citation: ' + citation.citation);
+            }
+          }
+        });
+        Promise.all(promises)
+          .then ( function ( results ) {
+            var counter = 0;
+            var updateArray = [];
+            results.forEach ( function ( result ) {
+              if (!!result.success) {
+                counter++;
+                updateArray.push({citation: result.citation, referenceCount: result.referenceCount});
+              }
+            });
+            console.log('success for ' + counter + ' elements, promise len: ' + promises.length);
+            $.ajax
+              ({
+                  type: "POST",
+                  //the url where you want to sent the userName and password to
+                  url: 'updateCitationReferenceCounts',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  data: JSON.stringify({referenceCounts: updateArray}),
+                  success: function ( result ) {
+                    if (!result || !result.response || !result.response.success) handleError('Citation reference count update failed.');
+                    else console.log('Citation reference counts have been updated successfully.');
+                  }
+              });
+          }).catch ( function ( citation ) {
+            handleError('Scopus API request failed for citation: "' + citation.citation + '" with title: "' + citation.title + '".');
+          });
+      });
+  });
+</script>
+</body>
+</html>
+

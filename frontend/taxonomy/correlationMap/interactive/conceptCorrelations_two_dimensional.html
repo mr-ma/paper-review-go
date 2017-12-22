@@ -736,33 +736,29 @@ text.active {
               if (nodesX[i].parents.length <= k) var value = nodesX[i].parents[nodesX[i].parents.length-1];
               else var value = nodesX[i].parents[k];
               if (value != '' && (checkForOccurrence(parentsX, value) > k || nodesX[i].parents.indexOf(value) < 0)) {
-                if (!!selectedOrder && selectedOrder != 'default') {
-                  if (!!lastTextRef) {
-                    if (heightPerCell*counter < lastValueX.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                    } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                    }
-                    lastTextRef = null;
+                if (!!lastTextRef) {
+                  if (heightPerCell*counter < lastValueX.length * 12) {
+                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                  } else {
+                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                   }
-                  lastValueX = '';
-                  counter = 0;
+                  lastTextRef = null;
                 }
+                lastValueX = '';
+                counter = 0;
                 nodesX[d[0].y-1].indices[k] = rowIndex;
                 return '';
               }
               if (value != '' && nodesX[i].parents.indexOf(value) < k) {
-                if (!!selectedOrder && selectedOrder != 'default') {
-                  if (!!lastTextRef) {
-                    if (heightPerCell*counter < lastValueX.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                    } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                    }
-                    lastTextRef = null;
-                    //lastValueX = '';
-                    //counter = 0;
+                if (!!lastTextRef) {
+                  if (heightPerCell*counter < lastValueX.length * 12) {
+                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                  } else {
+                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                   }
+                  //lastTextRef = null;
+                  //lastValueX = '';
+                  //counter = 0;
                 }
                 nodesX[d[0].y-1].indices[k] = rowIndex;
                 return '';
@@ -795,7 +791,6 @@ text.active {
               return value;
             });
         if (!!lastTextRef) {
-              if (k == treeDepthX-2) console.log('lastVal: ' + lastValueX + ', count: ' + counter + ', result: ' + (heightPerCell*counter < lastValueX.length * 12) + ', reference: ', lastTextRef)
           if (heightPerCell*counter < lastValueX.length * 12) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
           } else {
@@ -1138,8 +1133,8 @@ text.active {
     }
 
     function mouseover(p) {
-      d3.selectAll(".row").selectAll("text").classed("active", function(d, i) { return d[0].y == p.y || nodesX[p.y].indices[i-1] == d[0].y; });
-      d3.selectAll(".column").selectAll("text").classed("active", function(d, i) { return d[0].x == p.x+1 || nodesY[p.x].indices[i-1] == d[0].x; });
+      d3.selectAll(".row").selectAll("text").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y].indices && nodesX[p.y].indices.length > (i-1) && nodesX[p.y].indices[i-1] == d[0].y); });
+      d3.selectAll(".column").selectAll("text").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesY[p.x].indices && nodesY[p.x].indices.length > (i-1) && nodesY[p.x].indices[i-1] == d[0].x); });
       d3Tip.show(p);
       console.log('value: ' + matrixX[p.y-1][p.x].z + ', src: ' + nodesX[p.y-1].text + ', dest: ' + nodesY[p.x].text);
       //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
@@ -1211,7 +1206,7 @@ text.active {
       } else return;
       nodesX.sort(sortX);
       nodesY.sort(sortY);
-      buildMatrix({response: nodesX}, {response: nodesY}, correlations, maxValue, onClickURL);
+      buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL);
 
       /*
       setTimeout ( function () {

@@ -110,7 +110,7 @@ text.active {
 
   function buildMatrix ( attributesX, attributesY, attributesZ, correlations, maxValue, onClickURL, sortValues ) {
     buildingMatrix = true;
-    var matrixX = [],
+    var matrix = [],
         matrixY = [],
         matrixZ = [],
         nodesX = attributesX.response,
@@ -121,7 +121,7 @@ text.active {
         l = attributesZ.response.length;
 
     var maxNum = Math.max(Math.max(n, m), l);
-
+/*
     if (n < maxNum) {
       for ( var i = 0; i < (n - maxNum); i++ ) {
         nodesX.push({id: -Infinity, text: ''});
@@ -140,22 +140,23 @@ text.active {
       }
       l = maxNum;
     }
+*/
 
     nodesX.forEach ( function (node, i) {
       node.index = i;
       if (node.id < 0) node.count = -Infinity;
       else node.count = 0;
-      matrixX[i] = {index: i, values: []};
+      matrix[i] = {index: i, values: []};
       nodesY.forEach ( function ( node2, i2 ) {
-        matrixX[i].values = d3.range(l).map(function(j) { return {x: i, y: i2, z: j, value: 0}; })
+        matrix[i].values = d3.range(m).map(function(j) { return {index: i2, values: d3.range(l).map(function(j) { return {x: i, y: i2, z: j, value: 0}; })}; })
       });
     });
     nodesY.forEach(function(node, i) {
       node.index = i;
       if (node.id < 0) node.count = -Infinity;
       else node.count = 0;
-      matrixY[i] = {index: i, values: []};
       /*
+      matrixY[i] = {index: i, values: []};
       nodesX.forEach ( function ( node2, i2 ) {
         matrixY[i].values = d3.range(l).map(function(j) { return {x: i2, y: i, z: j, value: 0}; })
       });
@@ -165,8 +166,8 @@ text.active {
       node.index = i;
       if (node.id < 0) node.count = -Infinity;
       else node.count = 0;
-      matrixZ[i] = {index: i, values: []};
       /*
+      matrixZ[i] = {index: i, values: []};
       nodesX.forEach ( function ( node2, i2 ) {
         matrixZ[i].values = d3.range(m).map(function(j) { return {x: i2, y: j, z: i, value: 0}; })
       });
@@ -175,6 +176,8 @@ text.active {
 
     console.log('cor: ', correlations.response.length)
 
+    var linkCounter = 0;
+    maxValue = 0;
     correlations.response.forEach(function(link) {
       //if (link.value > 49) console.log('ERROR: More than 49 citations: ', link);
       //link.id1--;
@@ -207,10 +210,10 @@ text.active {
               if (nodesY[l].text == link.text2) {
                 for ( var d = 0; d < nodesZ.length; d++ ) {
                   if (nodesZ[d].text == link.text3) {
-                matrixX[k].values[l].z += link.value;
-                matrixX[k].values[l].src = nodesX[k].text;
-                matrixX[k].values[l].dest = nodesY[l].text;
-                matrixX[k].values[l].onClickURL = onClickURL;
+                matrix[k].values[l].z += link.value;
+                matrix[k].values[l].src = nodesX[k].text;
+                matrix[k].values[l].dest = nodesY[l].text;
+                matrix[k].values[l].onClickURL = onClickURL;
                 matrixY[l].values[k].z += link.value;
                 matrixY[l].values[k].src = nodesX[k].text;
                 matrixY[l].values[k].dest = nodesY[l].text;
@@ -229,10 +232,10 @@ text.active {
           if (nodesX[k].text == link.text1 || nodesX[k].text == link.text2) {
             for ( var l = 0; l < nodesY.length; l++) {
               if (nodesY[l].text == link.text2 && nodesX[k].text != nodesY[l].text) {
-                matrixX[k].values[l].z += link.value;
-                matrixX[k].values[l].src = nodesX[k].text;
-                matrixX[k].values[l].dest = nodesY[l].text;
-                matrixX[k].values[l].onClickURL = onClickURL;
+                matrix[k].values[l].z += link.value;
+                matrix[k].values[l].src = nodesX[k].text;
+                matrix[k].values[l].dest = nodesY[l].text;
+                matrix[k].values[l].onClickURL = onClickURL;
                 matrixY[l].values[k].z += link.value;
                 matrixY[l].values[k].src = nodesX[k].text;
                 matrixY[l].values[k].dest = nodesY[l].text;
@@ -242,10 +245,10 @@ text.active {
                 foundLinks++;
                 break;
               } else if (nodesY[l].text == link.text1 && nodesX[k].text != nodesY[l].text) {
-                matrixX[k].values[l].z += link.value;
-                matrixX[k].values[l].src = nodesY[l].text;
-                matrixX[k].values[l].dest = nodesX[k].text;
-                matrixX[k].values[l].onClickURL = onClickURL;
+                matrix[k].values[l].z += link.value;
+                matrix[k].values[l].src = nodesY[l].text;
+                matrix[k].values[l].dest = nodesX[k].text;
+                matrix[k].values[l].onClickURL = onClickURL;
                 matrixY[l].values[k].z += link.value;
                 matrixY[l].values[k].src = nodesY[l].text;
                 matrixY[l].values[k].dest = nodesX[k].text;
@@ -267,24 +270,63 @@ text.active {
       nodes[link.id2].count += link.value;
       */
       for ( var k = 0; k < nodesX.length; k++ ) {
-        for ( var l = 0; l < nodesY.length; l++ ) {
-          for ( var d = 0; d < nodesZ.length; d++ ) {
-            matrixX[k].values[l].value += link.value;
-            //matrixY[l].values[k].value += link.value;
-            //matrixZ[d].values[k].value += link.value;
+        var indexX = -1;
+        switch(nodesX[k].text) {
+          case link.text1: indexX = 1; break;
+          case link.text2: indexX = 2; break;
+          case link.text3: indexX = 3; break;
+          default:
+        }
+        if (indexX > -1) {
+          for ( var l = 0; l < nodesY.length; l++ ) {
+            var indexY = -1;
+            switch(nodesY[l].text) {
+              case link.text1: indexY = 1; break;
+              case link.text2: indexY = 2; break;
+              case link.text3: indexY = 3; break;
+              default:
+            }
+            if (indexY > -1 && indexY != indexX) {
+              for ( var d = 0; d < nodesZ.length; d++ ) {
+                var indexZ = -1;
+                switch(nodesZ[d].text) {
+                  case link.text1: indexZ = 1; break;
+                  case link.text2: indexZ = 2; break;
+                  case link.text3: indexZ = 3; break;
+                  default:
+                }
+                if (indexZ > -1 && indexZ != indexX && indexZ != indexY) {
+                  matrix[k].values[l].values[d].value += link.value;
+                  nodesX[k].count += link.value;
+                  nodesY[l].count += link.value;
+                  nodesZ[d].count += link.value;
+                  if (link.value > maxValue) maxValue = link.value;
+                  linkCounter++;
+                  //matrixY[l].values[k].value += link.value;
+                  //matrixZ[d].values[k].value += link.value;
+                  break;
+                }
+              }
+              break;
+            }
           }
+          break;
         }
       }
     });
+    if (linkCounter == 0) {
+      handleError('No links found.');
+      return;
+    }
     /*
 
             if (nodesX[i].id == link.id1) {
           for ( var j = 0; j < nodesY.length; j++ ) {
             if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id2) {
               if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesX[i].text;
-              matrixX[i][j].dest = nodesY[j].text;
+              matrix[i][j].z += link.value;
+              matrix[i][j].src = nodesX[i].text;
+              matrix[i][j].dest = nodesY[j].text;
               matrixY[j][i].z += link.value;
               matrixY[j][i].src = nodesX[i].text;
               matrixY[j][i].dest = nodesY[j].text;
@@ -294,9 +336,9 @@ text.active {
               break;
             } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
               if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesY[j].text;
-              matrixX[i][j].dest = nodesX[i].text;
+              matrix[i][j].z += link.value;
+              matrix[i][j].src = nodesY[j].text;
+              matrix[i][j].dest = nodesX[i].text;
               matrixY[j][i].z += link.value;
               matrixY[j][i].src = nodesY[j].text;
               matrixY[j][i].dest = nodesX[i].text;
@@ -311,9 +353,9 @@ text.active {
           for ( var j = 0; j < nodesY.length; j++ ) {
             if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
               if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesX[i].text;
-              matrixX[i][j].dest = nodesY[j].text;
+              matrix[i][j].z += link.value;
+              matrix[i][j].src = nodesX[i].text;
+              matrix[i][j].dest = nodesY[j].text;
               matrixY[j][i].z += link.value;
               matrixY[j][i].src = nodesX[i].text;
               matrixY[j][i].dest = nodesY[j].text;
@@ -323,9 +365,9 @@ text.active {
               break;
             } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
               if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesY[j].text;
-              matrixX[i][j].dest = nodesX[i].text;
+              matrix[i][j].z += link.value;
+              matrix[i][j].src = nodesY[j].text;
+              matrix[i][j].dest = nodesX[i].text;
               matrixY[j][i].z += link.value;
               matrixY[j][i].src = nodesY[j].text;
               matrixY[j][i].dest = nodesX[i].text;
@@ -340,30 +382,27 @@ text.active {
       */
   if (!!sortValues) {
     console.log('sorting values...');
-    // TODO sort matrixX, matrixY ? or by a.z, b.z ?
-    matrixY.sort( function ( a, b ) {
-      return nodesY[b.index].count - nodesY[a.index].count;
-    });
-    matrixX.sort( function ( a, b ) {
+    console.log(matrix)
+    // TODO sort matrix, matrixY ? or by a.z, b.z ?
+    matrix.sort( function ( a, b ) {
       return nodesX[b.index].count - nodesX[a.index].count;
     });
-    matrixZ.sort( function ( a, b ) {
-      return nodesZ[b.index].count - nodesZ[a.index].count;
-    });
-    for ( var i = 0; i < matrixY.length; i++ ) {
-      matrixY[i].values.sort( function ( a, b ) {
-        return nodesX[b.y].count - nodesX[a.y].count;
+    for ( var i = 0; i < matrix.length; i++ ) {
+      matrix[i].index = i;
+      matrix[i].values.sort( function ( a, b ) {
+        return nodesY[b.index].count - nodesY[a.index].count;
       });
-    }
-    for ( var i = 0; i < matrixX.length; i++ ) {
-      matrixX[i].values.sort( function ( a, b ) {
-        return nodesY[b.x].count - nodesY[a.x].count;
-      });
-    }
-    for ( var i = 0; i < matrixZ.length; i++ ) {
-      matrixZ[i].values.sort( function ( a, b ) {
-        return nodesZ[b.x].count - nodesZ[a.x].count;
-      });
+      for ( var j = 0; j < matrix[i].length; j++ ) {
+        matrix[i].index = j;
+        matrix[i].values[j].sort ( function ( a, b ) {
+          return nodesZ[b.z].count - nodesZ[a.z].count;
+        });
+        for ( var k = 0; k < matrix[i].values[j].length; k++ ) {
+          matrix[i].values[j].x = i;
+          matrix[i].values[j].y = j;
+          matrix[i].values[j].z = k;
+        }
+      }
     }
     nodesX.sort( function ( a, b ) {
       return b.count - a.count;
@@ -383,10 +422,10 @@ text.active {
     zLabel = 'Sum of references';
     zLabelText = ' references';
     maxValue = 0;
-    for ( var i = 0; i < matrixX.length; i++ ) {
-      for ( var j = 0; j < matrixX[i].values.length; j++ ) {
-        for ( var k = 0; k < matrixX[i].values[j].length; k++ ) {
-          if (matrixX[i].values[j].value > maxValue) maxValue = matrixX[i].values[j].value;
+    for ( var i = 0; i < matrix.length; i++ ) {
+      for ( var j = 0; j < matrix[i].values.length; j++ ) {
+        for ( var k = 0; k < matrix[i].values[j].length; k++ ) {
+          if (matrix[i].values[j].value > maxValue) maxValue = matrix[i].values[j].value;
         }
       }
     }
@@ -518,23 +557,24 @@ text.active {
     for ( var y = 0; y < m; y++ ) {
       for ( var x = 0; x < n; x++ ) {
         for ( var z = 0; z < l; z++ ) {
-          if (matrixX[x].values[y].value > 0) {
+          if (matrix[x].values[y].values[z].value > 0) {
             data.add({
               x: x,
               y: y,
               z: z,
-              style: matrixX[x].values[y].value
+              style: matrix[x].values[y].values[z].value
             });
           }
         }
       }
     }
+    console.log('drawing...');
 
     // specify options
     var options = {
       width:  '1600px',
       height: '1600px',
-      style: 'dot-size', // surface
+      style: 'dot-color', // surface
       valueMin: 0,
       valueMax: maxValue,
       showPerspective: true,
@@ -549,19 +589,20 @@ text.active {
       xStep: 1, // TODO
       yStep: 1, // TODO
       xValueLabel: function ( x ) {
-        if (!nodesY[x]) return '';
-        return nodesY[x].text;
+        if (!nodesX[x]) return '';
+        return nodesX[x].text;
       },
       yValueLabel: function ( y ) {
-        if (!nodesX[y]) return '';
-        return nodesX[y].text;
+        if (!nodesY[y]) return '';
+        return nodesY[y].text;
       },
       zValueLabel: function ( z ) {
         if (!nodesZ[z]) return '';
         return nodesZ[z].text;
       },
       tooltip: function ( point ) {
-        return nodesY[point.x].text + ' - ' + nodesX[point.y].text + ' - ' + nodesZ[point.z].text + ': ' + matrix[y].values[x].values[z];
+
+        return nodesX[point.x].text + ' - ' + nodesY[point.y].text + ' - ' + nodesZ[point.z].text + ': ' + matrix[point.x].values[point.y].values[point.z].value;
       },
       onclick: clickCell
     };
@@ -574,8 +615,8 @@ text.active {
 
   drawVisualization();
   $('#order').unbind().on('change', function ( e ) {
-    if (this.value != 'count') return;
-    buildMatrix(attributesX, attributesY, correlations, originalMaxValue, onClickURL, true);
+    if (this.value != 'count') return; // !!buildingMatrix || // TODO
+    buildMatrix(attributesX, attributesY, attributesZ, correlations, originalMaxValue, onClickURL, true);
   });
 
   }
@@ -629,8 +670,6 @@ text.active {
                             var attributesX = {response: []};
                             var attributesY = {response: []};
                             var attributesZ = {response: []};
-
-                            console.log('attrx: ', attributesResultX, 'attry: ', attributesResultY, 'attrz: ', attributesResultZ);
                             $('#order').val('');
                             callback(attributesResultX, attributesResultY, attributesResultZ, correlations, maxValue, onClickURL);
                           }
@@ -782,7 +821,7 @@ function initPage () {
           $('#parents3-selectized').off('focus').on('focus', function () {
             $(this).trigger({type: 'keydown', keyCode: 8});
           });
-          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', ajaxTypeZ: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', attributeUrlZ: 'attribute', requestX: {'taxonomy_id': 1}, requestY: {'taxonomy_id': 1}, requestZ: {'taxonomy_id': 1}};
+          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', ajaxTypeZ: 'GET', attributeUrlX: 'leafAttribute', attributeUrlY: 'leafAttribute', attributeUrlZ: 'leafAttribute', requestX: {'taxonomy_id': 1, dimension: 'System view'}, requestY: {'taxonomy_id': 1, dimension: 'System view'}, requestZ: {'taxonomy_id': 1, dimension: 'System view'}};
           var correlationURLObj = getCorrelationOptions();
           var correlationURL = correlationURLObj.url;
           var maxValue = correlationURLObj.maxValue;

@@ -137,6 +137,15 @@ type ForkAttributeRequest struct {
   Citations2 []Paper `json:"citations2"`
 }
 
+type ReferenceCount struct {
+  Citation string `json:"citation"`
+  ReferenceCount int `json:"referenceCount"`
+}
+
+type UpdateReferenceCountsRequest struct {
+  ReferenceCounts []ReferenceCount `json:"referenceCounts"`
+}
+
 type Relation struct{
   ID int `json:"id"`
   Text string  `json:"text"`
