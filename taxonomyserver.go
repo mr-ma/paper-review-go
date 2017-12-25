@@ -158,6 +158,15 @@ func main() {
 		p := loadPage("frontend/src/js/d3.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/d3-context-menu.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/d3-context-menu.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/d3-context-menu.css", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/css/d3-context-menu.css")
+		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/bootstrap.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/bootstrap.min.js")
 		fmt.Fprintf(w, "%s", p)

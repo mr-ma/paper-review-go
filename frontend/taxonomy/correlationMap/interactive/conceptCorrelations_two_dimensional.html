@@ -33,7 +33,10 @@ text.active {
     <script type="text/javascript" src="selectize.min.js"></script>
     <link href="selectize.bootstrap3.css" rel="stylesheet" type="text/css">
 
-     <link href="d3-tip.css" type="text/css" rel="stylesheet"/>
+    <link href="d3-context-menu.css" type="text/css" rel="stylesheet"/>
+    <script src="d3-context-menu.js"></script>
+
+    <link href="d3-tip.css" type="text/css" rel="stylesheet"/>
     <script src='d3-tip.js'></script>
 
     <script src="error.js"></script>
@@ -106,6 +109,16 @@ text.active {
   var totalNumberOfCitations, maxReferenceCount;
   var selectize1, selectize2;
   var buildingMatrix = false;
+
+  var menu = [
+    {
+      title: 'Hide',
+      action: function(elm, d, i) {
+        //filterItems(); // TODO
+      },
+      disabled: false // optional, defaults to false
+    },
+  ];
 
   function buildParentTreeHelper ( attributes ) {
     var roots = [];
@@ -821,31 +834,20 @@ text.active {
               }
               if (parentCounter > 0) parentCounter++;
             }
+            var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
             lastParentsX = nodesX[i].parents;
-            return -margin.left + (treeDepthX - parentCounter)*(margin.left-marginLeft)/(treeDepthX+1) + ((treeDepthX - parentCounter) == 0 ? 10 : 0);
-            /*
-            for ( var k = 0; k < treeDepthX; k++ ) {
-              if (nodesX[i].parents.length <= k || nodesX[i-1].parents.length <= k) {
-                if (nodesX[i].parents.length == 0 || nodesX[i-1].parents.length == 0) return -margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + (k == treeDepthX-1 ? 10 : 0);
-                if (nodesX[i].parents.length > k || nodesX[i-1].parents.length > k) return -margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + (k == treeDepthX-1 ? 10 : 0);
-              }
-              if (nodesX[i].parents[index1] != nodesX[i-1].parents[index2]) {
-                return -margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + (k == treeDepthX-1 ? 10 : 0);
-              }
-            }
-            return -margin.left + (treeDepthX)*(margin.left-marginLeft)/(treeDepthX+1);
-            */
+            return -margin.left + (treeDepthX - parentCounter - (parentsDiff > 0 ? parentsDiff : 0))*(margin.left-marginLeft)/(treeDepthX+1) + ((treeDepthX - parentCounter) == 0 ? 10 : 0);
           })
           .attr("class", "rowParentLine")
           .attr("stroke-width", "1")
           .style("stroke", "black");
     }
-    function addDimensionText ( row ) {
+    function addRowDimensionText ( row ) {
       var lastDimension = '';
       var lastTextRef;
       var counter = 0;
       row.append("text")
-          .attr("class", "dimensionText")
+          .attr("class", "rowDimensionText")
           .attr("x", -6)
           .attr("y", function ( d ) { return nodesY[d[0].x].xPosition; })
           .attr("dy", ".32em")
@@ -915,7 +917,7 @@ text.active {
           .style("stroke", "black");        
     }
     addRowParentText(row);
-    addDimensionText(row);
+    addRowDimensionText(row);
     row.selectAll('text')
       .on ("mouseover", function ( p, j ) {
         if (j > treeDepthX) {
@@ -931,7 +933,8 @@ text.active {
         if (!selectize1) return;
         if (i > treeDepthX) text += ' view';
         selectize1.setValue(text, false);
-      });
+      })
+      .on("contextmenu", d3.contextMenu(menu));
 
     var column = svg.selectAll(".column")
         .data(matrixY)
@@ -948,20 +951,20 @@ text.active {
         .text(function(d, i) { return nodesY[i].text; })
         .attr("transform", function (d, i) { return "translate(120)"; }); // (-30,5)
 
-    function addColumnParentText ( column ) {
+   function addColumnParentText ( column ) {
       var lastTextRef;
       var selectedOrder = $('#order').val();
       for ( var k = 0; k < treeDepthY; k++ ) {
         var lastValueY = '';
-        var columnIndex = -1;
+        var rowIndex = -1;
         var counter = 0;
-        var parentsY = [];
-        for ( var l = 0; l < treeDepthY; l++ ) {
-          parentsY.push([]);
-        }
+          var parentsY = [];
+          for ( var l = 0; l < treeDepthY; l++ ) {
+            parentsY.push([]);
+          }
         column.append("text")
             .attr("class", "columnParentText")
-            .attr("x", 6)
+            .attr("x", -6)
             .attr("y", function ( d ) { return nodesX[d[0].y].yPosition; })
             .attr("dy", ".32em")
             .attr("text-anchor", "start")
@@ -970,57 +973,31 @@ text.active {
               if (!nodesY[d[0].x-1].indices) nodesY[d[0].x-1].indices = [];
               if (nodesY[d[0].x-1].indices.length < k) nodesY[d[0].x-1].indices[k] = -1;
               counter++;
-              if (nodesY[i].parents.length == 0) {
-                if (!!selectedOrder && selectedOrder != 'default') {
-                  parentsY = [];
-                  for ( var l = 0; l < treeDepthY; l++ ) {
-                    parentsY.push([]);
-                  }
-                  if (!!lastTextRef) {
-                    if (widthPerCell*counter < lastValueY.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
-                    } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
-                    }
-                    lastTextRef = null;
-                  }
-                  lastValueY = '';
-                  columnIndex = -1;
-                  counter = 0;
-                }
-              }
-              if (nodesY[i].parents.length <= k) var value = nodesY[i].parents[nodesY[i].parents.length-1];
-              else var value = nodesY[i].parents[k];
-              if (value != '' && (checkForOccurrence(parentsY, value) > k || nodesY[i].parents.indexOf(value) < 0)) {
-                if (!!selectedOrder && selectedOrder != 'default') {
-                  if (!!lastTextRef) {
-                    if (widthPerCell*counter < lastValueY.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
-                    } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
-                    }
-                    lastTextRef = null;
-                  }
-                  lastValueY = '';
-                  counter = 0;
-                }
-                nodesY[d[0].x-1].indices[k] = columnIndex;
+              var index = (!!lastValueY && lastValueY != '') ? nodesY[i].parents.indexOf(lastValueY) : -1;
+              if ((index > -1 && index < (treeDepthY-k+1))) {
+                nodesY[d[0].x-1].indices[k] = rowIndex;
                 return '';
               }
-              if (value != '' && nodesY[i].parents.indexOf(value) < k) {
-                if (!!selectedOrder && selectedOrder != 'default') {
-                  if (!!lastTextRef) {
-                    if (widthPerCell*counter < lastValueY.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
-                    } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
-                    }
-                    lastTextRef = null;
-                    //lastValueX = '';
-                    //counter = 0;
+              if (index < 0) {
+                if (!!lastTextRef && lastValueY != '') {
+                  if (widthPerCell*counter < lastValueY.length * 8) {
+                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+                  } else {
+                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
                   }
                 }
-                nodesY[d[0].x-1].indices[k] = columnIndex;
+                lastTextRef = null;
+                counter = 0;
+                lastValueY = '';
+                rowIndex = -1;
+              }
+              if (nodesY[i].parents.length > k) var value = nodesY[i].parents[k];
+              else if (nodesY[i].parents.length > 0) var value = nodesY[i].parents[nodesY[i].parents.length-1];
+              else var value = '';
+              if (!value || value == '') return '';
+              value = nodesY[i].parents[k];
+              if (!value || value == '' || checkForOccurrence(parentsY, value) > k) {
+                nodesY[d[0].x-1].indices[k] = rowIndex;
                 return '';
               }
               if (!!selectedOrder && selectedOrder != 'default') {
@@ -1032,35 +1009,27 @@ text.active {
               for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
                 parentsY[k].push(nodesY[i].parents[l]);
               }
-              if (!!lastTextRef) {
+              if (!!lastTextRef && lastValueY != '') {
                 if (widthPerCell*counter < lastValueY.length * 12) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
                 } else {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
                 }
-              }
-              if (lastValueY == value) {
-                nodesY[d[0].x-1].indices[k] = columnIndex;
-                return '';
               }
               lastTextRef = $(this);
               counter = 0;
               lastValueY = value;
-              columnIndex = d[0].x;
-              nodesY[d[0].x-1].indices[k] = columnIndex;
+              rowIndex = d[0].x;
+              nodesY[d[0].x-1].indices[k] = rowIndex;
               return value;
             });
         if (!!lastTextRef) {
           if (widthPerCell*counter < lastValueY.length * 12) {
-            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 85) + ",10)"});
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
           } else {
-            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - 75) + ",-2)rotate(90)"; });
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
           }
           lastTextRef = null;
-          parentsY = [];
-          for ( var l = 0; l < treeDepthY; l++ ) {
-            parentsY.push([]);
-          }
         }
       }
       var lastParentsY = nodesY[0].parents;
@@ -1070,7 +1039,7 @@ text.active {
             if (i == 0 || lastParentsY.length == 0 || nodesY[i].parents.length == 0) {
               lastParentsY = nodesY[i].parents;
               shownTextsY = lastParentsY;
-              return margin.top - 10;
+              return margin.top - (margin.top-marginTop)/(treeDepthY+1);
             }
             var counter = 0;
             var sameParents = [];
@@ -1080,7 +1049,7 @@ text.active {
                 if (counter == 0) {
                   lastParentsY = nodesY[i].parents;
                   shownTextsY = lastParentsY;
-                  return margin.top - 10;
+                  return margin.top - (margin.top-marginTop)/(treeDepthY+1);
                 }
                 var maxIndex = -1;
                 if (k < lastParentsY.length-1 && sameParents.length > 0) {
@@ -1098,7 +1067,7 @@ text.active {
               counter++;
             }
             var parentCounter = 0;
-            if (!!selectedOrder && selectedOrder != 'default' && i > 1) {
+            if (i > 1) {
               for ( var k = lastParentsY.length-1; k >= 0; k-- ) {
                 var index = nodesY[i].parents.indexOf(lastParentsY[k]);
                 var previousIndex = nodesY[i-2].parents.indexOf(lastParentsY[k]);
@@ -1107,30 +1076,107 @@ text.active {
               }
               if (parentCounter > 0) parentCounter++;
             }
+            var parentsDiff = nodesY[i].parents.length - lastParentsY.length;
             lastParentsY = nodesY[i].parents;
-            return margin.top - (treeDepthY - parentCounter)*(margin.top-marginTop)/(treeDepthY+1) - ((treeDepthY - parentCounter) == 0 ? 10 : 0);
-          /*
-            if (i == 0) return margin.top - 10;
-            for ( var k = 0; k < treeDepthY; k++ ) {
-              var index1 = k;
-              var index2 = k;
-              if (nodesY[i].parents.length <= k || nodesY[i-1].parents.length <= k) {
-                if (nodesY[i].parents.length == 0 || nodesY[i-1].parents.length == 0) return margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - (k == treeDepthY-1 ? 10 : 0);
-                if (nodesY[i].parents.length <= k) index1 = nodesY[i].parents.length-1;
-                if (nodesY[i+1].parents.length <= k) index2 = nodesY[i-1].parents.length-1 
-              }
-              if (nodesY[i].parents[index1] != nodesY[i-1].parents[index2]) {
-                return margin.top - (treeDepthY-k-1)*(margin.top-marginTop)/(treeDepthY+1) - (k == treeDepthY-1 ? 10 : 0);
-              }
-            }
-            return margin.top - (treeDepthY)*(margin.top-marginTop)/(treeDepthY+1);
-          */
+            return margin.top - (treeDepthY - parentCounter - (parentsDiff > 0 ? parentsDiff : 0))*(margin.top-marginTop)/(treeDepthY+1) - ((treeDepthY - parentCounter) == 0 ? 10 : 0);
           })
           .attr("class", "columnParentLine")
           .attr("stroke-width", "1")
           .style("stroke", "black");
     }
+    function addColumnDimensionText ( column ) {
+      var lastDimension = '';
+      var lastTextRef;
+      var counter = 0;
+      column.append("text")
+          .attr("class", "columnDimensionText")
+          .attr("x", -6)
+          .attr("y", function ( d ) { return nodesX[d[0].y].yPosition; })
+          .attr("dy", ".32em")
+          .attr("text-anchor", "start")
+          .attr("font-size", "8pt")
+          .text(function(d, i) {
+            counter++;
+            if (nodesY[i].dimension == lastDimension) {
+              return '';
+            } else {
+              if (!!lastTextRef && lastDimension != '') {
+                if (widthPerCell*counter < lastDimension.length * 8) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
+                }
+              }
+              lastTextRef = null;
+              counter = 0;
+              lastDimension = '';
+            }
+            var value = nodesY[i].dimension;
+            if (!value || value == '') return '';
+            if (!!lastTextRef && lastDimension != '') {
+              if (widthPerCell*counter < lastDimension.length * 12) {
+                lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+              } else {
+                lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
+              }
+            }
+            lastTextRef = $(this);
+            counter = 0;
+            lastDimension = value;
+            return value.split(' ').shift();
+          });
+        if (!!lastTextRef) {
+          if (widthPerCell*counter < lastDimension.length * 12) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
+          }
+          lastTextRef = null;
+        }
+      var counter = 0;
+      lastDimension = '';
+      column.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0) {
+              lastDimension = nodesY[0].dimension;
+              return margin.top - 10;
+            }
+            if (!nodesY[i].dimension || nodesY[i].dimension == '') {
+              counter = 0;
+              return margin.top - 10;
+            }
+            counter++;
+            if (nodesY[i].dimension == lastDimension) {
+              return margin.top - (margin.top-marginTop)/(treeDepthY+1);
+            }
+            lastDimension = nodesY[i].dimension;
+            counter = 0;
+            return margin.top - 10;
+          })
+          .attr("x2", margin.top - (margin.top-marginTop)/(treeDepthY+1))
+          .attr("class", "columnParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");        
+    }
     addColumnParentText(column);
+    addColumnDimensionText(column);
+
+    column.selectAll('text')
+      .on ("mouseover", function ( p, j ) {
+        if (j > treeDepthY) {
+          var text = d3.select(this).text().trim();
+          d3.selectAll('.column').selectAll('text').classed("active", function(d, i) { return nodesY[d[0].x-1].dimension == text + ' view'; });
+        } else d3.selectAll('.column').selectAll('text').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesY[d[0].x-1].indices && nodesY[d[0].x-1].indices[j-1] == p[0].x); });
+      })
+      .on("mouseout", mouseout)
+      .style("cursor", "pointer")
+      .on('click', function ( e, i ) {
+        var text = d3.select(this).text().trim();
+        if (!text || text == '') return;
+        if (!selectize2) return;
+        if (i > treeDepthY) text += ' view';
+        selectize2.setValue(text, false);
+      });
 
 /*
     column.append("line")
@@ -1197,8 +1243,12 @@ text.active {
     }
 
     function mouseover(p) {
-      d3.selectAll(".row").selectAll("text").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y].indices && nodesX[p.y].indices.length > (i-1) && nodesX[p.y].indices[i-1] == d[0].y); });
+      d3.selectAll(".row").selectAll("text").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y-1].indices && nodesX[p.y-1].indices.length > (i-1) && nodesX[p.y-1].indices[i-1] == d[0].y); });
+      var dimensionX = nodesX[p.y-1].dimension;
+      var dimensionY = nodesY[p.x].dimension;
+      if (!!dimensionX && dimensionX != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionX; });
       d3.selectAll(".column").selectAll("text").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesY[p.x].indices && nodesY[p.x].indices.length > (i-1) && nodesY[p.x].indices[i-1] == d[0].x); });
+      if (!!dimensionY && dimensionY != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionY; });
       d3Tip.show(p);
       console.log('value: ' + matrixX[p.y-1][p.x].z + ', src: ' + nodesX[p.y-1].text + ', dest: ' + nodesY[p.x].text);
       //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
