@@ -27,6 +27,8 @@
   <p>Hello</p>
 <script>
   $(document).ready( function () {
+    const API_KEY_LOCAL = 'c4ddcf695994bcc8b4a1c6d4a593a974';
+    const API_KEY = '90c6191fcbabf8d9969eb9c750cc898e';
     $.get('citation', function ( citations ) {
       if (!citations || !citations.response) {
         handleError('Cannot get citations from DB.');
@@ -42,12 +44,12 @@
                 $.ajax
                   ({
                     type: "GET",
-                    //the url where you want to sent the userName and password to
+                    // TODO replace other letters like (), : etc
                     url: 'https://api.elsevier.com/content/search/scopus?query=TITLE(' + bibObj.title.replace(/\s/g, '+') + ')&content=core',
                     //dataType: 'json',
                     contentType:'application/json',
                     async: true,
-                    headers: {'Accept':'application/json', 'X-ELS-APIKey': '90c6191fcbabf8d9969eb9c750cc898e'},
+                    headers: {'Accept':'application/json', 'X-ELS-APIKey': API_KEY_LOCAL},
                     //data: JSON.stringify({'query': 'KEY(test)', 'field': 'All', 'content': 'core'}),
                     success: function ( result ) {
                       if (!result || !result['search-results'] || !result['search-results'].entry) return;

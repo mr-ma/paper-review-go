@@ -112,15 +112,15 @@ func (d MySQLDriver) GetAllAttributes() (attributes []model.Attribute,
 	err error){
 	dbRef, err := d.OpenDB()
 	checkErr(err)
-	db, stmt, err := d.Query(`select distinct attribute.id_attribute as id, attribute.text, allparentsperattribute.parents as parentText
-		from attribute inner join allparentsperattribute on (attribute.id_attribute = allparentsperattribute.id_attribute) order by attribute.id_attribute;`)
+	db, stmt, err := d.Query(`select distinct attribute.id_attribute as id, attribute.text, allparentsperattribute.parents as parentText, dimension.text as dimensionText
+		from attribute inner join allparentsperattribute on (attribute.id_attribute = allparentsperattribute.id_attribute) left outer join taxonomy_dimension on (attribute.id_attribute = taxonomy_dimension.id_attribute) left outer join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attribute.id_attribute;`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query()
 	checkErr(err)
 	for rows.Next() {
 		a := model.Attribute{}
-		rows.Scan(&a.ID,&a.Text,&a.ParentText)
+		rows.Scan(&a.ID,&a.Text,&a.ParentText,&a.Dimension)
 		attributes = append(attributes, a)
 	}
 	defer dbRef.Close()
@@ -131,15 +131,15 @@ func (d MySQLDriver) GetLeafAttributes() (attributes []model.Attribute,
 	err error){
 	dbRef, err := d.OpenDB()
 	checkErr(err)
-	db, stmt, err := d.Query(`select distinct attr.id_attribute as id1, attr.text as attr1, allparentsperattribute.parents as parentText
-		from (select distinct attribute.id_attribute, attribute.text from attribute left outer join taxonomy_relation on (attribute.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) order by attr.id_attribute;`)
+	db, stmt, err := d.Query(`select distinct attr.id_attribute as id1, attr.text as attr1, allparentsperattribute.parents as parentText, dimension.text as dimensionText
+		from (select distinct attribute.id_attribute, attribute.text from attribute left outer join taxonomy_relation on (attribute.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) left outer join taxonomy_dimension on (attr.id_attribute = taxonomy_dimension.id_attribute) left outer join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attr.id_attribute;`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query()
 	checkErr(err)
 	for rows.Next() {
 		a := model.Attribute{}
-		rows.Scan(&a.ID,&a.Text,&a.ParentText)
+		rows.Scan(&a.ID,&a.Text,&a.ParentText,&a.Dimension)
 		attributes = append(attributes, a)
 	}
 	defer dbRef.Close()
@@ -634,7 +634,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		dbRef, err := d.OpenDB()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT DISTINCT attributeSrc.id_attribute, attributeSrc.text, allparentsperattribute.parents AS parentText FROM attribute AS attributeSrc INNER JOIN (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = " + taxonomyIdStr + " AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=attributeDest.id_attribute from attribute as attributeDest where attributeDest.text = \"" + parent + "\") tmp) a) AS tmpTable on (attributeSrc.text = \"" + parent + "\" OR FIND_IN_SET(attributeSrc.id_attribute, tmpTable.children)) inner join allparentsperattribute on (attributeSrc.id_attribute = allparentsperattribute.id_attribute) order by attributeSrc.id_attribute;")
+		db, stmt, err := d.Query("SELECT DISTINCT attributeSrc.id_attribute, attributeSrc.text, allparentsperattribute.parents AS parentText, dimension.text as dimensionText FROM attribute AS attributeSrc INNER JOIN (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = " + taxonomyIdStr + " AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=attributeDest.id_attribute from attribute as attributeDest where attributeDest.text = \"" + parent + "\") tmp) a) AS tmpTable on (attributeSrc.text = \"" + parent + "\" OR FIND_IN_SET(attributeSrc.id_attribute, tmpTable.children)) inner join allparentsperattribute on (attributeSrc.id_attribute = allparentsperattribute.id_attribute) left outer join taxonomy_dimension on (attributeSrc.id_attribute = taxonomy_dimension.id_attribute) left outer join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attributeSrc.id_attribute;")
 		defer stmt.Close()
 		defer stmt.Close()	
 		defer db.Close()
@@ -653,7 +653,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		dbRef, err := d.OpenDB()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT DISTINCT attr.id_attribute, attr.text, allparentsperattribute.parents AS parentText FROM (SELECT DISTINCT attributeSrc.id_attribute, attributeSrc.text FROM attribute AS attributeSrc INNER JOIN (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = " + taxonomyIdStr + " AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=attributeDest.id_attribute from attribute as attributeDest where attributeDest.text = \"" + parent + "\") tmp) a) AS tmpTable on (attributeSrc.text = \"" + parent + "\" OR FIND_IN_SET(attributeSrc.id_attribute, tmpTable.children)) left outer join taxonomy_relation on (attributeSrc.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) order by attr.id_attribute;")
+		db, stmt, err := d.Query("SELECT DISTINCT attr.id_attribute, attr.text, allparentsperattribute.parents AS parentText, dimension.text as dimensionText FROM (SELECT DISTINCT attributeSrc.id_attribute, attributeSrc.text FROM attribute AS attributeSrc INNER JOIN (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = " + taxonomyIdStr + " AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=attributeDest.id_attribute from attribute as attributeDest where attributeDest.text = \"" + parent + "\") tmp) a) AS tmpTable on (attributeSrc.text = \"" + parent + "\" OR FIND_IN_SET(attributeSrc.id_attribute, tmpTable.children)) left outer join taxonomy_relation on (attributeSrc.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) left outer join taxonomy_dimension on (attr.id_attribute = taxonomy_dimension.id_attribute) left outer join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attr.id_attribute;")
 		defer stmt.Close()
 		defer stmt.Close()	
 		defer db.Close()
@@ -661,7 +661,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
 		for rows.Next() {
 			a := model.Attribute{}
-			rows.Scan(&a.ID,&a.Text,&a.ParentText)
+			rows.Scan(&a.ID,&a.Text,&a.ParentText,&a.Dimension)
 			attributes = append(attributes, a)
 		}
 		defer dbRef.Close()

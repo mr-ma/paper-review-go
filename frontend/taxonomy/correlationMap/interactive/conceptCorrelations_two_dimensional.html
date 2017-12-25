@@ -236,6 +236,8 @@ text.active {
     var selectedOrder = $('#order').val();
     if (!selectedOrder || selectedOrder == 'default') {
       nodesX.sort ( function ( a, b ) {
+        if (a.dimension < b.dimension) return -1;
+        else if (a.dimension > b.dimension) return 1;
         var i = a.parents.length - 1;
         var j = b.parents.length - 1;
         while (i >= 0 && j >= 0) {
@@ -253,6 +255,8 @@ text.active {
       });
 
       nodesY.sort ( function ( a, b ) {
+        if (a.dimension < b.dimension) return -1;
+        else if (a.dimension > b.dimension) return 1;
         var i = a.parents.length - 1;
         var j = b.parents.length - 1;
         while (i >= 0 && j >= 0) {
@@ -566,8 +570,8 @@ text.active {
     var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return '' + d.z + labelText; });
     svg.call(d3Tip);
 
-    var treeDepthX = getTreeDepth(nodesX);
-    var treeDepthY = getTreeDepth(nodesY);
+    var treeDepthX = getTreeDepth(nodesX)+1;
+    var treeDepthY = getTreeDepth(nodesY)+1;
     console.log('y depth: ' + treeDepthY + ', x depth: ' + treeDepthX);
 /*
     for ( var i = 0; i < 1; i++ ) {
@@ -699,10 +703,10 @@ text.active {
         var lastValueX = '';
         var rowIndex = -1;
         var counter = 0;
-        var parentsX = [];
-        for ( var l = 0; l < treeDepthX; l++ ) {
-          parentsX.push([]);
-        }
+          var parentsX = [];
+          for ( var l = 0; l < treeDepthX; l++ ) {
+            parentsX.push([]);
+          }
         row.append("text")
             .attr("class", "rowParentText")
             .attr("x", -6)
@@ -714,52 +718,30 @@ text.active {
               if (!nodesX[d[0].y-1].indices) nodesX[d[0].y-1].indices = [];
               if (nodesX[d[0].y-1].indices.length < k) nodesX[d[0].y-1].indices[k] = -1;
               counter++;
-              if (nodesX[i].parents.length == 0) {
-                if (!!selectedOrder && selectedOrder != 'default') {
-                  parentsX = [];
-                  for ( var l = 0; l < treeDepthX; l++ ) {
-                    parentsX.push([]);
-                  }
-                  if (!!lastTextRef) {
-                    if (heightPerCell*counter < lastValueX.length * 12) {
-                      lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                    } else {
-                      lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                    }
-                    lastTextRef = null;
-                  }
-                  lastValueX = '';
-                  rowIndex = -1;
-                  counter = 0;
-                }
-              }
-              if (nodesX[i].parents.length <= k) var value = nodesX[i].parents[nodesX[i].parents.length-1];
-              else var value = nodesX[i].parents[k];
-              if (value != '' && (checkForOccurrence(parentsX, value) > k || nodesX[i].parents.indexOf(value) < 0)) {
-                if (!!lastTextRef) {
-                  if (heightPerCell*counter < lastValueX.length * 12) {
-                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                  } else {
-                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                  }
-                  lastTextRef = null;
-                }
-                lastValueX = '';
-                counter = 0;
+              var index = (!!lastValueX && lastValueX != '') ? nodesX[i].parents.indexOf(lastValueX) : -1;
+              if ((index > -1 && index < (treeDepthX-k+1))) {
                 nodesX[d[0].y-1].indices[k] = rowIndex;
                 return '';
               }
-              if (value != '' && nodesX[i].parents.indexOf(value) < k) {
-                if (!!lastTextRef) {
-                  if (heightPerCell*counter < lastValueX.length * 12) {
+              if (index < 0) {
+                if (!!lastTextRef && lastValueX != '') {
+                  if (heightPerCell*counter < lastValueX.length * 8) {
                     lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
                   } else {
                     lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                   }
-                  //lastTextRef = null;
-                  //lastValueX = '';
-                  //counter = 0;
                 }
+                lastTextRef = null;
+                counter = 0;
+                lastValueX = '';
+                rowIndex = -1;
+              }
+              if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
+              else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
+              else var value = '';
+              if (!value || value == '') return '';
+              value = nodesX[i].parents[k];
+              if (!value || value == '' || checkForOccurrence(parentsX, value) > k) {
                 nodesX[d[0].y-1].indices[k] = rowIndex;
                 return '';
               }
@@ -772,16 +754,12 @@ text.active {
               for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
                 parentsX[k].push(nodesX[i].parents[l]);
               }
-              if (!!lastTextRef) {
+              if (!!lastTextRef && lastValueX != '') {
                 if (heightPerCell*counter < lastValueX.length * 12) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                 }
-              }
-              if (lastValueX == value) {
-                nodesX[d[0].y-1].indices[k] = rowIndex;
-                return '';
               }
               lastTextRef = $(this);
               counter = 0;
@@ -797,10 +775,6 @@ text.active {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
           }
           lastTextRef = null;
-          parentsX = [];
-          for ( var l = 0; l < treeDepthX; l++ ) {
-            parentsX.push([]);
-          }
         }
       }
       var lastParentsX = nodesX[0].parents;
@@ -810,7 +784,7 @@ text.active {
             if (i == 0 || lastParentsX.length == 0 || nodesX[i].parents.length == 0) {
               lastParentsX = nodesX[i].parents;
               shownTextsX = lastParentsX;
-              return -margin.left + 10;
+              return -margin.left + (margin.left-marginLeft)/(treeDepthX+1);
             }
             var counter = 0;
             var sameParents = [];
@@ -820,7 +794,7 @@ text.active {
                 if (counter == 0) {
                   lastParentsX = nodesX[i].parents;
                   shownTextsX = lastParentsX;
-                  return -margin.left + 10;
+                  return -margin.left + (margin.left-marginLeft)/(treeDepthX+1);
                 }
                 var maxIndex = -1;
                 if (k < lastParentsX.length-1 && sameParents.length > 0) {
@@ -866,8 +840,98 @@ text.active {
           .attr("stroke-width", "1")
           .style("stroke", "black");
     }
+    function addDimensionText ( row ) {
+      var lastDimension = '';
+      var lastTextRef;
+      var counter = 0;
+      row.append("text")
+          .attr("class", "dimensionText")
+          .attr("x", -6)
+          .attr("y", function ( d ) { return nodesY[d[0].x].xPosition; })
+          .attr("dy", ".32em")
+          .attr("text-anchor", "start")
+          .attr("font-size", "8pt")
+          .text(function(d, i) {
+            counter++;
+            if (nodesX[i].dimension == lastDimension) {
+              return '';
+            } else {
+              if (!!lastTextRef && lastDimension != '') {
+                if (heightPerCell*counter < lastDimension.length * 8) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+                }
+              }
+              lastTextRef = null;
+              counter = 0;
+              lastDimension = '';
+            }
+            var value = nodesX[i].dimension;
+            if (!value || value == '') return '';
+            if (!!lastTextRef && lastDimension != '') {
+              if (heightPerCell*counter < lastDimension.length * 12) {
+                lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+              } else {
+                lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+              }
+            }
+            lastTextRef = $(this);
+            counter = 0;
+            lastDimension = value;
+            return value.split(' ').shift();
+          });
+        if (!!lastTextRef) {
+          if (heightPerCell*counter < lastDimension.length * 12) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+          }
+          lastTextRef = null;
+        }
+      var counter = 0;
+      lastDimension = '';
+      row.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0) {
+              lastDimension = nodesX[0].dimension;
+              return -margin.left + 10;
+            }
+            if (!nodesX[i].dimension || nodesX[i].dimension == '') {
+              counter = 0;
+              return -margin.left + 10;
+            }
+            counter++;
+            if (nodesX[i].dimension == lastDimension) {
+              return -margin.left + (margin.left-marginLeft)/(treeDepthX+1);
+            }
+            lastDimension = nodesX[i].dimension;
+            counter = 0;
+            return -margin.left + 10;
+          })
+          .attr("x2", -margin.left + (margin.left-marginLeft)/(treeDepthX+1))
+          .attr("class", "rowParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");        
+    }
     addRowParentText(row);
-
+    addDimensionText(row);
+    row.selectAll('text')
+      .on ("mouseover", function ( p, j ) {
+        if (j > treeDepthX) {
+          var text = d3.select(this).text().trim();
+          d3.selectAll('.row').selectAll('text').classed("active", function(d, i) { return nodesX[d[0].y-1].dimension == text + ' view'; });
+        } else d3.selectAll('.row').selectAll('text').classed("active", function(d, i) { return (i == 0 && d[0].y == p[0].y) || (i <= j && !!nodesX[d[0].y-1].indices && nodesX[d[0].y-1].indices[j-1] == p[0].y); });
+      })
+      .on("mouseout", mouseout)
+      .style("cursor", "pointer")
+      .on('click', function ( e, i ) {
+        var text = d3.select(this).text().trim();
+        if (!text || text == '') return;
+        if (!selectize1) return;
+        if (i > treeDepthX) text += ' view';
+        selectize1.setValue(text, false);
+      });
 
     var column = svg.selectAll(".column")
         .data(matrixY)
