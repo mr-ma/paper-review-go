@@ -40,36 +40,21 @@ text.active {
     <script src='d3-tip.js'></script>
 
     <script src="error.js"></script>
-
 </header>
 <body>
 
 <div style="margin-left:20px;margin-top:50px;">
-
-<ul class="nav nav-tabs tabs-up" id="tabsContainer">
-  <li><a href="javascript:void(0)" name="parent" data-target="#parentFrame" class="media_node active span" id="parent" data-toggle="tabajax" rel="tooltip">Parent</a></li>
-  <li><a href="javascript:void(0)" name="Number of children" data-target="#numChildrenFrame" class="media_node active span" id="numChildren" data-toggle="tabajax" rel="tooltip">Number of children</a></li>
-</ul>
-
-<div class="tab-content" style="width:200px;">
-  <div class="tab-pane fade in active" id="parentFrame">
-    <label for="parents1">x property: </label>
-    <select class="form-control" id="parents2" hidden>
-    </select>
-    <label for="parents2">y property: </label>
-    <select class="form-control" id="parents1" hidden>
-    </select>
-  </div>
-  <div class="tab-pane fade in" id="numChildrenFrame" hidden>
-    <form>
-      <label for="maxChildren">Min children: </label><input type="text" class="form-control" id="minChildren">
-      <label for="maxChildren">Max children: </label><input type="text" class="form-control" id="maxChildren">
+    <form style="width:165px;">
+      <label for="parents1">x property: </label>
+      <select class="form-control" id="parents2" hidden>
+      </select>
+      <label for="parents2">y property: </label>
+      <select class="form-control" id="parents1" hidden>
+      </select>
     </form>
-  </div>
 </div>
 
 <form style="padding:10px;width:200px;">
-
 <div>
   <label for="showChildAttributes">Show child attributes</label>
   <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
@@ -98,27 +83,26 @@ text.active {
   <option value="name">by Name</option>
   <option value="count">by Value</option>
 </select>
-<label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme">
-  <option value="YGB">YGB</option>
-  <option value="Rainbow">Rainbow</option>
-</select>
+<label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
 </form>
+<div id="colorLegend"></div>
 </div>
 
 <script>
   var totalNumberOfCitations, maxReferenceCount;
   var selectize1, selectize2;
+  var parents = [];
   var buildingMatrix = false;
 
-  var menu = [
-    {
-      title: 'Hide',
-      action: function(elm, d, i) {
-        //filterItems(); // TODO
-      },
-      disabled: false // optional, defaults to false
-    },
-  ];
+  const colorsBlue = ["#1CB5E0", "#189ECC", "#1587B9", "#1171A6", "#0E5A93", "#0A437F", "#072D6C", "#031659", "#000046"];
+  const colorsYGB = ["#F0F8FF","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"]; // #FFFFDD
+  const colorsRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
+  const colorsWeddingDayBlues = ["#40E0D0", "#6FCB9C", "#9FB668", "#CFA134", "#FF8C00", "#FF6920", "#FF4640", "#FF2360", "FF0080"];
+  const colors2 = ["#DFDFDF", "#BFBFBF", "#9F9F9F", "#7F7F7F", "#5F5F5F", "#3F3F3F", "#1F1F1F", "#000000"];
+  const colors3 = ["#8078FA", "#7069E2", "#605ACA", "#514BB2", "#413C9A", "#312D82", "#221E6A", "#120F52", "#03003B"];
+  const colors4 = ["#F0F2F0", "#D2D5DA", "#B4B8C4", "#969BAE", "#787F98", "#5A6282", "#3C456C", "#1E2856", "#000C40"];
+
+  const COLOR_GRADIENTS =  [{name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'rainbow', colors: colorsRainbow}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
 
   function buildParentTreeHelper ( attributes ) {
     var roots = [];
@@ -154,6 +138,13 @@ text.active {
     return max;
   }
 
+  function hasDimensions ( nodes ) {
+    for ( var i = 0; i < nodes.length; i++ ) {
+      if (!!nodes[i].dimension && nodes[i].dimension != '') return true;
+    }
+    return false;
+  }
+
   function checkForOccurrence ( array, value ) {
     for ( var i = 0; i < array.length; i++ ) {
       for ( var j = 0; j < array[i].length; j++ ) {
@@ -172,7 +163,90 @@ text.active {
     return max;
   }
 
+  function applyColorGradient ( defs, gradient, minValue, maxValue ) {
+    if (!gradient.name || !gradient.colors) return {};
+    var colors = gradient.colors;
+    var colorRange = d3.range(0, 1, 1.0 / (colors.length - 1));
+    colorRange.push(1);
+           
+    var colorScale = d3.scale.linear()
+      .domain(colorRange)
+      .range(colors)
+      .interpolate(d3.interpolateHcl);
+
+    var colorInterpolate = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    defs.append("linearGradient")
+      .attr("id", "gradient-" + gradient.name + "-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(colors)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(colors.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+    return {colorScale: colorScale, colorInterpolate: colorInterpolate};
+  }
+
+  // https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
+  function updateColorLegend ( gradientID, width, height) { //     var w = 300, h = 50;
+    d3.select("#colorLegend").selectAll("svg").remove();
+    var legend = d3.select("#colorLegend")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    legend.append("rect")
+      .attr("width", width)
+      .attr("height", height - 30)
+      .style("fill", "url(#" + gradientID + ")")
+      .attr("transform", "translate(0,10)");
+
+    var y = d3.scale.linear()
+      .range([300, 0])
+      .domain([68, 12]);
+
+    var yAxis = d3.svg.axis().scale(y).orient("bottom").ticks(5);
+
+    legend.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(0,30)")
+      .call(yAxis)
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end");
+  }
+
+  function updateColorGradient ( svg, gradient ) {
+    var gradientID = "gradient-" + gradient.name + "-colors";
+    svg.select(".cell")
+      .style("fill", "url(#" + gradientID + ")");
+    svg.selectAll(".cell")
+      .transition().duration(1000)
+      .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); });
+    updateColorLegend(gradientID, 300, 50);
+  }
+
+  function sortNodes ( value, nodesX, nodesY ) {
+    var sortX, sortY;
+    if (value == 'name') {
+      sortX = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); };
+      sortY = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); };
+    } else if (value == 'count') {
+      sortX = function (a, b) { return b.count - a.count; };
+      sortY = function (a, b) { return b.count - a.count; };
+    } else return;
+    nodesX.sort(sortX);
+    nodesY.sort(sortY);
+    return {x: nodesX, y: nodesY};
+  }
+
   function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {
+    if (!!buildingMatrix) return;
     buildingMatrix = true;
     var rootsX = buildParentTree(attributesX.response);
     var rootsY = buildParentTree(attributesY.response);
@@ -200,14 +274,17 @@ text.active {
       return a.ParentText < b.ParentText ? 1 : (a.parentText == b.ParentText ? 0 : -1);
     });
   */
+    var nodesOriginalX = nodesX.slice(0);
+    var nodesOriginalY = nodesY.slice(0);
+
     if (n > m) {
       for ( var i = 0; i < (n - m); i++ ) {
-        nodesY.push({id: -Infinity, text: '', parentText: ''});
+        nodesY.push({id: -Infinity, text: '', parentText: '', dimension: ''});
       }
       m = n;
     } else if (n < m) {
       for ( var i = 0; i < (m - n); i++ ) {
-        nodesX.push({id: -Infinity, text: '', parentText: ''});
+        nodesX.push({id: -Infinity, text: '', parentText: '', dimension: ''});
       }
       n = m;
     }
@@ -249,6 +326,8 @@ text.active {
     var selectedOrder = $('#order').val();
     if (!selectedOrder || selectedOrder == 'default') {
       nodesX.sort ( function ( a, b ) {
+        if (a.dimension != '' && b.dimension == '') return -1;
+        if (a.dimension == '' && b.dimension != '') return 1;
         if (a.dimension < b.dimension) return -1;
         else if (a.dimension > b.dimension) return 1;
         var i = a.parents.length - 1;
@@ -268,6 +347,8 @@ text.active {
       });
 
       nodesY.sort ( function ( a, b ) {
+        if (a.dimension != '' && b.dimension == '') return -1;
+        if (a.dimension == '' && b.dimension != '') return 1;
         if (a.dimension < b.dimension) return -1;
         else if (a.dimension > b.dimension) return 1;
         var i = a.parents.length - 1;
@@ -285,6 +366,10 @@ text.active {
         if (a.text == '' && b.text == '') return 0;
         return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
       });
+    } else {
+      var sortedNodes = sortNodes(selectedOrder, nodesX, nodesY);
+      nodesX = sortedNodes.x;
+      nodesY = sortedNodes.y;
     }
 
     correlations.response.forEach(function(link) {
@@ -440,20 +525,21 @@ text.active {
       */
 
     var labelText = onClickURL == 'citationDetails' ? ' references' : ' citations';
-    if (maxValue < 0) {
-      labelText = ' references';
-      maxValue = 0;
-      for ( var i = 0; i < matrixX.length; i++ ) {
-        for ( var j = 0; j < matrixX[i].length; j++ ) {
-          if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
-        }
-      }
-      for ( var i = 0; i < matrixY.length; i++ ) {
-        for ( var j = 0; j < matrixY[i].length; j++ ) {
-          if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
-        }
+    console.log('val: ' + $('#dataType').val())
+    if ($('#dataType').val().split('referenceCount').length > 1) labelText = ' references';
+    maxValue = 0;
+    for ( var i = 0; i < matrixX.length; i++ ) {
+      for ( var j = 0; j < matrixX[i].length; j++ ) {
+        if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
       }
     }
+    for ( var i = 0; i < matrixY.length; i++ ) {
+      for ( var j = 0; j < matrixY[i].length; j++ ) {
+        if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
+      }
+    }
+
+    console.log('max value: ' + maxValue)
 
     var minValue = 0;
     var margin = {top: 500, right: 0, bottom: 30, left: 500}, // left/top: 240
@@ -483,7 +569,7 @@ text.active {
       nodesY[i].xPosition = getXPosition({x: i});
     }
 
-    d3.select("svg").remove();
+    d3.selectAll("svg").remove();
     var svg = d3.select("body").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -493,69 +579,13 @@ text.active {
 
     var defs = svg.append("defs");
 
-    var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
-    var colourRangeYGB = d3.range(0, 1, 1.0 / (coloursYGB.length - 1));
-    colourRangeYGB.push(1);
-           
-    //Create color gradient
-    var colorScaleYGB = d3.scale.linear()
-      .domain(colourRangeYGB)
-      .range(coloursYGB)
-      .interpolate(d3.interpolateHcl);
-
-    //Needed to map the values of the dataset to the color scale
-    var colorInterpolateYGB = d3.scale.linear()
-      .domain([minValue, maxValue])
-      .range([0,1]);
-
-    ///////////////////////////////////////////////////////////////////////////
-    ///////////////////// Create the YGB color gradient ///////////////////////
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Calculate the gradient  
-    defs.append("linearGradient")
-      .attr("id", "gradient-ygb-colors")
-      .attr("x1", "0%").attr("y1", "0%")
-      .attr("x2", "100%").attr("y2", "0%")
-      .selectAll("stop") 
-      .data(coloursYGB)                  
-      .enter().append("stop") 
-      .attr("offset", function(d,i) { return i/(coloursYGB.length-1); })   
-      .attr("stop-color", function(d) { return d; });
-
-    ///////////////////////////////////////////////////////////////////////////
-    //////////// Get continuous color scale for the Rainbow ///////////////////
-    ///////////////////////////////////////////////////////////////////////////
-
-    var coloursRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
-    var colourRangeRainbow = d3.range(0, 1, 1.0 / (coloursRainbow.length - 1));
-    colourRangeRainbow.push(1);
-           
-    //Create color gradient
-    var colorScaleRainbow = d3.scale.linear()
-      .domain(colourRangeRainbow)
-      .range(coloursRainbow)
-      .interpolate(d3.interpolateHcl);
-
-    //Needed to map the values of the dataset to the color scale
-    var colorInterpolateRainbow = d3.scale.linear()
-      .domain([minValue, maxValue])
-      .range([0,1]);
-
-    ///////////////////////////////////////////////////////////////////////////
-    //////////////////// Create the Rainbow color gradient ////////////////////
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Calculate the gradient  
-    defs.append("linearGradient")
-      .attr("id", "gradient-rainbow-colors")
-      .attr("x1", "0%").attr("y1", "0%")
-      .attr("x2", "100%").attr("y2", "0%")
-      .selectAll("stop") 
-      .data(coloursRainbow)                  
-      .enter().append("stop") 
-      .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
-      .attr("stop-color", function(d) { return d; });
+    COLOR_GRADIENTS.forEach ( function ( gradient ) {
+      var result = applyColorGradient(defs, gradient, minValue, maxValue);
+      if (!!result) {
+        if (!!result.colorScale) gradient.colorScale = result.colorScale;
+        if (!!result.colorInterpolate) gradient.colorInterpolate = result.colorInterpolate;
+      }
+    });
 
     var x = d3.scale.ordinal().rangeBands([0, width]),
         y = d3.scale.ordinal().rangeBands([0, height]),
@@ -580,12 +610,18 @@ text.active {
     x.domain(d3.range(maxValue));
     y.domain(d3.range(maxValue));
 
-    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return '' + d.z + labelText; });
+    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { if (!!d.fullText) { if (d.fullText == -1) return ''; return d.fullText; } return '' + d.z + labelText; });
     svg.call(d3Tip);
 
-    var treeDepthX = getTreeDepth(nodesX)+1;
-    var treeDepthY = getTreeDepth(nodesY)+1;
-    console.log('y depth: ' + treeDepthY + ', x depth: ' + treeDepthX);
+    var hasDimensionsX = hasDimensions(nodesX);
+    var hasDimensionsY = hasDimensions(nodesY);
+
+    var treeDepthX = getTreeDepth(nodesX);
+    var treeDepthY = getTreeDepth(nodesY);
+    var hasParentsX = treeDepthX > 0;
+    var hasParentsY = treeDepthY > 0;
+    if (hasDimensionsX) treeDepthX++;
+    if (hasDimensionsY) treeDepthY++;
 /*
     for ( var i = 0; i < 1; i++ ) {
       var marginLeft = margin.left / (i+1) - 10;
@@ -602,8 +638,13 @@ text.active {
     }
 */
 
-    var marginLeft = getMaxNameLength(nodesX) * 6;
-    var marginTop = getMaxNameLength(nodesY) * 6 + 5;
+    var heightPerCell = height / nodesX.length;
+    var widthPerCell = width / nodesY.length;
+
+    var marginLeft = getMaxNameLength(nodesX) * 3;
+    var marginTop = getMaxNameLength(nodesY) * 3 + 5;
+
+    console.log('marginLeft: ' + marginLeft)
 
     svg.append("line")
       .attr("x1", -margin.left + 10)
@@ -685,7 +726,6 @@ text.active {
         .attr("stroke-width", "1")
         .style("stroke", "black");
 
-
     var row = svg.selectAll(".row")
         .data(matrixX)
       .enter().append("g")
@@ -693,21 +733,130 @@ text.active {
         .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
         .each(row);
 
+    var column = svg.selectAll(".column")
+        .data(matrixY)
+      .enter().append("g")
+        .attr("class", "column")
+        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+
     row.append("text")
+        .attr("class", "rowText")
         .attr("x", -6)
         .attr("y", x.rangeBand() / 2)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
         .attr("font-size", "8pt")
-        .text(function(d, i) { return nodesX[i].text; })
+        .text(function(d, i) {
+          if (!nodesX[i].text) return '';
+          if (nodesX[i].text.length * 4 > marginLeft && nodesX[i].text.length > 22) {
+            d3.select(this).attr('data-fulltext', nodesX[i].text)
+            return nodesX[i].text.substr(0, 22) + '...';
+          }
+          return nodesX[i].text;
+        })
         .attr("transform", function (d, i) { return "translate(-120,0)"; });
 
     var maxNodeAmount = Math.max(nodesX.length, nodesY.length);
 
-    var heightPerCell = height / nodesX.length;
-    var widthPerCell = width / nodesY.length;
+    function filterDimension ( elm, dimension ) {
+      var newNodesX = [];
+      var newNodesY = [];
+      switch(elm) {
+        case 'row':
+          nodesOriginalX.forEach ( function ( node ) {
+            if (!!node.dimension && node.dimension != '' && node.dimension != dimension) newNodesX.push(node);
+          });
+          newNodesY = nodesOriginalY;
+          break;
+        case 'column':
+          nodesOriginalY.forEach ( function ( node ) {
+            if (!!node.dimension && node.dimension != '' && node.dimension != dimension) newNodesY.push(node);
+          });
+          newNodesX = nodesOriginalX;
+          break;
+        default:
+      }
+      if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, -1, onClickURL);
+    }
 
-    // TODO fix and copy to columns
+    function filterChildAttributes ( elm, parent ) {
+      var newNodesX = [];
+      var newNodesY = [];
+      $.ajax
+        ({
+          type: "POST",
+          url: 'allChildrenLeafAttributes',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({'taxonomy_id': 1, parent: parent}),
+          success: function ( children ) {
+            if (!children || !children.response) {
+              handleError('Cannot get child attributes from DB for attribute: "' + parent + '".');
+              return;
+            }
+            console.log(children.response)
+            switch (elm) {
+              case 'row':
+                nodesOriginalX.forEach ( function ( node ) {
+                  var found = false;
+                  for ( var i = 0; i < children.response.length; i++ ) {
+                    if (children.response[i].text == node.text) {
+                      found = true;
+                      break;
+                    }
+                  }
+                  if (!found && !!node.text && node.text != '') newNodesX.push(node);
+                });
+                newNodesY = nodesOriginalY;
+                break;
+              case 'column':
+                nodesOriginalY.forEach ( function ( node ) {
+                  var found = false;
+                  for ( var i = 0; i < children.response.length; i++ ) {
+                    if (children.response[i].text == node.text) {
+                      found = true;
+                      break;
+                    }
+                  }
+                  if (!found && !!node.text && node.text != '') newNodesY.push(node);
+                });
+                newNodesX = nodesOriginalX;
+                break;
+              default:
+            }
+            if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, -1, onClickURL);
+          }
+        });
+    }
+
+    var menu = [
+      {
+        title: 'Hide',
+        action: function(elm, d, i) {
+          if (!!buildingMatrix) return;
+          var that = d3.select(elm);
+          var text = that.text().trim();
+          if (!text || text == '') return;
+          var fullText = that.attr('data-fulltext');
+          if (text.split('...').length > 1) {
+            if (!fullText) return;
+            text = fullText;
+          }
+          var elmClass = that.attr('class');
+          switch (elmClass) {
+            case 'rowText': filterChildAttributes('row', text); break;
+            case 'columnText': filterChildAttributes('column', text); break;
+            case 'rowDimensionText': filterDimension('row', text + ' view'); break;
+            case 'columnDimensionText': filterDimension('column', text + ' view'); break;
+            case 'rowParentText': filterChildAttributes('row', text); break;
+            case 'columnParentText': filterChildAttributes('column', text); break;
+            default:
+          }
+        },
+        disabled: false // optional, defaults to false
+      },
+    ];
 
     function addRowParentText ( row ) {
       var lastTextRef;
@@ -732,14 +881,18 @@ text.active {
               if (nodesX[d[0].y-1].indices.length < k) nodesX[d[0].y-1].indices[k] = -1;
               counter++;
               var index = (!!lastValueX && lastValueX != '') ? nodesX[i].parents.indexOf(lastValueX) : -1;
-              if ((index > -1 && index < (treeDepthX-k+1))) {
+              if (index == k) { // index > -1 && index < (treeDepthX-k+1)
                 nodesX[d[0].y-1].indices[k] = rowIndex;
                 return '';
               }
               if (index < 0) {
-                if (!!lastTextRef && lastValueX != '') {
+                if (!!lastTextRef && !!lastValueX && lastValueX != '') {
                   if (heightPerCell*counter < lastValueX.length * 8) {
                     lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                    if (lastValueX.length * 2 > widthPerCell && lastValueX.length > 12) {
+                      lastTextRef.text(lastValueX.substr(0, 12) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueX);
+                    }
                   } else {
                     lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                   }
@@ -748,6 +901,10 @@ text.active {
                 counter = 0;
                 lastValueX = '';
                 rowIndex = -1;
+                parentsX.length = 0;
+                for ( var l = 0; l < treeDepthX; l++ ) {
+                  parentsX.push([]);
+                }
               }
               if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
               else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
@@ -767,9 +924,13 @@ text.active {
               for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
                 parentsX[k].push(nodesX[i].parents[l]);
               }
-              if (!!lastTextRef && lastValueX != '') {
+              if (!!lastTextRef && !!lastValueX && lastValueX != '') {
                 if (heightPerCell*counter < lastValueX.length * 12) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                  if (lastValueX.length * 2 > widthPerCell && lastValueX.length > 12) {
+                    lastTextRef.text(lastValueX.substr(0, 12) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueX);
+                  }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
                 }
@@ -781,9 +942,13 @@ text.active {
               nodesX[d[0].y-1].indices[k] = rowIndex;
               return value;
             });
-        if (!!lastTextRef) {
+        if (!!lastTextRef && !!lastValueX && lastValueX != '') {
           if (heightPerCell*counter < lastValueX.length * 12) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
+                if (lastValueX.length * 2 > widthPerCell && lastValueX.length > 12) {
+                  lastTextRef.text(lastValueX.substr(0, 12) + '...');
+                  lastTextRef.attr('data-fulltext', lastValueX);
+                }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*(margin.left-marginLeft)/(treeDepthX+1) + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
           }
@@ -836,7 +1001,8 @@ text.active {
             }
             var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
             lastParentsX = nodesX[i].parents;
-            return -margin.left + (treeDepthX - parentCounter - (parentsDiff > 0 ? parentsDiff : 0))*(margin.left-marginLeft)/(treeDepthX+1) + ((treeDepthX - parentCounter) == 0 ? 10 : 0);
+            // TODO -?
+            return -margin.left + (treeDepthX - parentCounter + (parentsDiff > 0 ? parentsDiff : 0))*(margin.left-marginLeft)/(treeDepthX+1) + ((treeDepthX - parentCounter + (parentsDiff > 0 ? parentsDiff : 0)) == 0 ? 10 : 0);
           })
           .attr("class", "rowParentLine")
           .attr("stroke-width", "1")
@@ -858,9 +1024,13 @@ text.active {
             if (nodesX[i].dimension == lastDimension) {
               return '';
             } else {
-              if (!!lastTextRef && lastDimension != '') {
+              if (!!lastTextRef && !!lastDimension && lastDimension != '') {
                 if (heightPerCell*counter < lastDimension.length * 8) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+                  if (lastDimension.length * 2 > widthPerCell && lastDimension.length > 12) {
+                    lastTextRef.text(lastDimension.substr(0, 12) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
                 }
@@ -871,9 +1041,13 @@ text.active {
             }
             var value = nodesX[i].dimension;
             if (!value || value == '') return '';
-            if (!!lastTextRef && lastDimension != '') {
+            if (!!lastTextRef && !!lastDimension && lastDimension != '') {
               if (heightPerCell*counter < lastDimension.length * 12) {
                 lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+                if (lastDimension.length * 2 > widthPerCell && lastDimension.length > 12) {
+                  lastTextRef.text(lastDimension.substr(0, 12) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
               } else {
                 lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
               }
@@ -883,9 +1057,13 @@ text.active {
             lastDimension = value;
             return value.split(' ').shift();
           });
-        if (!!lastTextRef) {
+        if (!!lastTextRef && !!lastDimension && lastDimension != '') {
           if (heightPerCell*counter < lastDimension.length * 12) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+            if (lastDimension.length * 2 > widthPerCell && lastDimension.length > 12) {
+              lastTextRef.text(lastDimension.substr(0, 12) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
           }
@@ -917,9 +1095,14 @@ text.active {
           .style("stroke", "black");        
     }
     addRowParentText(row);
-    addRowDimensionText(row);
+    if (hasDimensionsX) addRowDimensionText(row);
     row.selectAll('text')
       .on ("mouseover", function ( p, j ) {
+        var that = d3.select(this);
+        var text = that.text().trim();
+        var fullText = that.attr('data-fulltext');
+        if (!fullText) fullText = -1;
+        if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
         if (j > treeDepthX) {
           var text = d3.select(this).text().trim();
           d3.selectAll('.row').selectAll('text').classed("active", function(d, i) { return nodesX[d[0].y-1].dimension == text + ' view'; });
@@ -928,27 +1111,36 @@ text.active {
       .on("mouseout", mouseout)
       .style("cursor", "pointer")
       .on('click', function ( e, i ) {
-        var text = d3.select(this).text().trim();
+        var that = d3.select(this);
+        var text = that.text().trim();
         if (!text || text == '') return;
+        var fullText = that.attr('data-fulltext');
+        if (text.split('...').length > 1) {
+          if (!fullText) return;
+          text = fullText;
+        }
         if (!selectize1) return;
         if (i > treeDepthX) text += ' view';
+        if (parents.indexOf(text) < 0) return;
         selectize1.setValue(text, false);
       })
       .on("contextmenu", d3.contextMenu(menu));
 
-    var column = svg.selectAll(".column")
-        .data(matrixY)
-      .enter().append("g")
-        .attr("class", "column")
-        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
-
     column.append("text")
+        .attr("class", "columnText")
         .attr("x", 6) // 0
         .attr("y", x.rangeBand() / 2)
         .attr("dy", ".32em")
         .attr("text-anchor", "end")
         .attr("font-size", "8pt")
-        .text(function(d, i) { return nodesY[i].text; })
+        .text(function(d, i) {
+          if (!nodesY[i].text) return '';
+          if (nodesY[i].text.length * 4 > marginTop && nodesY[i].text.length > 22) {
+            d3.select(this).attr('data-fulltext', nodesY[i].text)
+            return nodesY[i].text.substr(0, 22) + '...';
+          }
+          return nodesY[i].text;
+        })
         .attr("transform", function (d, i) { return "translate(120)"; }); // (-30,5)
 
    function addColumnParentText ( column ) {
@@ -974,14 +1166,18 @@ text.active {
               if (nodesY[d[0].x-1].indices.length < k) nodesY[d[0].x-1].indices[k] = -1;
               counter++;
               var index = (!!lastValueY && lastValueY != '') ? nodesY[i].parents.indexOf(lastValueY) : -1;
-              if ((index > -1 && index < (treeDepthY-k+1))) {
+              if (index == k) {
                 nodesY[d[0].x-1].indices[k] = rowIndex;
                 return '';
               }
               if (index < 0) {
-                if (!!lastTextRef && lastValueY != '') {
+                if (!!lastTextRef && !!lastValueY && lastValueY != '') {
                   if (widthPerCell*counter < lastValueY.length * 8) {
                     lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+                    if (lastValueY.length * 2 > heightPerCell && lastValueY.length > 12) {
+                      lastTextRef.text(lastValueY.substr(0, 12) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueY);
+                    }
                   } else {
                     lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
                   }
@@ -990,6 +1186,10 @@ text.active {
                 counter = 0;
                 lastValueY = '';
                 rowIndex = -1;
+                parentsY.length = 0;
+                for ( var l = 0; l < treeDepthY; l++ ) {
+                  parentsY.push([]);
+                }
               }
               if (nodesY[i].parents.length > k) var value = nodesY[i].parents[k];
               else if (nodesY[i].parents.length > 0) var value = nodesY[i].parents[nodesY[i].parents.length-1];
@@ -1009,9 +1209,13 @@ text.active {
               for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
                 parentsY[k].push(nodesY[i].parents[l]);
               }
-              if (!!lastTextRef && lastValueY != '') {
+              if (!!lastTextRef && !!lastValueY && lastValueY != '') {
                 if (widthPerCell*counter < lastValueY.length * 12) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+                  if (lastValueY.length * 2 > heightPerCell && lastValueY.length > 12) {
+                    lastTextRef.text(lastValueY.substr(0, 12) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueY);
+                  }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
                 }
@@ -1023,9 +1227,13 @@ text.active {
               nodesY[d[0].x-1].indices[k] = rowIndex;
               return value;
             });
-        if (!!lastTextRef) {
+        if (!!lastTextRef && !!lastValueY && lastValueY != '') {
           if (widthPerCell*counter < lastValueY.length * 12) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+            if (lastValueY.length * 2 > heightPerCell && lastValueY.length > 12) {
+              lastTextRef.text(lastValueY.substr(0, 12) + '...');
+              lastTextRef.attr('data-fulltext', lastValueY);
+            }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*(margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
           }
@@ -1078,7 +1286,8 @@ text.active {
             }
             var parentsDiff = nodesY[i].parents.length - lastParentsY.length;
             lastParentsY = nodesY[i].parents;
-            return margin.top - (treeDepthY - parentCounter - (parentsDiff > 0 ? parentsDiff : 0))*(margin.top-marginTop)/(treeDepthY+1) - ((treeDepthY - parentCounter) == 0 ? 10 : 0);
+            // TODO -?
+            return margin.top - (treeDepthY - parentCounter + (parentsDiff > 0 ? parentsDiff : 0))*(margin.top-marginTop)/(treeDepthY+1) - ((treeDepthY - parentCounter + (parentsDiff > 0 ? parentsDiff : 0)) == 0 ? 10 : 0);
           })
           .attr("class", "columnParentLine")
           .attr("stroke-width", "1")
@@ -1100,9 +1309,13 @@ text.active {
             if (nodesY[i].dimension == lastDimension) {
               return '';
             } else {
-              if (!!lastTextRef && lastDimension != '') {
+              if (!!lastTextRef && !!lastDimension && lastDimension != '') {
                 if (widthPerCell*counter < lastDimension.length * 8) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+                  if (lastDimension.length * 2 > heightPerCell && lastDimension.length > 12) {
+                    lastTextRef.text(lastDimension.substr(0, 12) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
                 }
@@ -1113,9 +1326,13 @@ text.active {
             }
             var value = nodesY[i].dimension;
             if (!value || value == '') return '';
-            if (!!lastTextRef && lastDimension != '') {
+            if (!!lastTextRef && !!lastDimension && lastDimension != '') {
               if (widthPerCell*counter < lastDimension.length * 12) {
                 lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+                if (lastDimension.length * 2 > heightPerCell && lastDimension.length > 12) {
+                  lastTextRef.text(lastDimension.substr(0, 12) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
               } else {
                 lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
               }
@@ -1125,9 +1342,13 @@ text.active {
             lastDimension = value;
             return value.split(' ').shift();
           });
-        if (!!lastTextRef) {
+        if (!!lastTextRef && !!lastDimension && lastDimension != '') {
           if (widthPerCell*counter < lastDimension.length * 12) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)"});
+            if (lastDimension.length * 2 > heightPerCell && lastDimension.length > 12) {
+              lastTextRef.text(lastDimension.substr(0, 12) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (margin.top-marginTop)/(treeDepthY+1) + 10) + ",10)rotate(90)"; });
           }
@@ -1159,24 +1380,36 @@ text.active {
           .style("stroke", "black");        
     }
     addColumnParentText(column);
-    addColumnDimensionText(column);
+    if (hasDimensionsY) addColumnDimensionText(column);
 
     column.selectAll('text')
       .on ("mouseover", function ( p, j ) {
+        var that = d3.select(this);
+        var text = that.text().trim();
+        var fullText = that.attr('data-fulltext');
+        if (!fullText) fullText = -1;
+        if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
         if (j > treeDepthY) {
-          var text = d3.select(this).text().trim();
           d3.selectAll('.column').selectAll('text').classed("active", function(d, i) { return nodesY[d[0].x-1].dimension == text + ' view'; });
         } else d3.selectAll('.column').selectAll('text').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesY[d[0].x-1].indices && nodesY[d[0].x-1].indices[j-1] == p[0].x); });
       })
       .on("mouseout", mouseout)
       .style("cursor", "pointer")
       .on('click', function ( e, i ) {
-        var text = d3.select(this).text().trim();
+        var that = d3.select(this);
+        var text = that.text().trim();
         if (!text || text == '') return;
+        var fullText = that.attr('data-fulltext');
+        if (text.split('...').length > 1) {
+          if (!fullText) return;
+          text = fullText;
+        }
         if (!selectize2) return;
         if (i > treeDepthY) text += ' view';
+        if (parents.indexOf(text) < 0) return;
         selectize2.setValue(text, false);
-      });
+      })
+      .on("contextmenu", d3.contextMenu(menu));
 
 /*
     column.append("line")
@@ -1243,20 +1476,20 @@ text.active {
     }
 
     function mouseover(p) {
+      d3Tip.show(p);
       d3.selectAll(".row").selectAll("text").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y-1].indices && nodesX[p.y-1].indices.length > (i-1) && nodesX[p.y-1].indices[i-1] == d[0].y); });
       var dimensionX = nodesX[p.y-1].dimension;
       var dimensionY = nodesY[p.x].dimension;
       if (!!dimensionX && dimensionX != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionX; });
       d3.selectAll(".column").selectAll("text").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesY[p.x].indices && nodesY[p.x].indices.length > (i-1) && nodesY[p.x].indices[i-1] == d[0].x); });
       if (!!dimensionY && dimensionY != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionY; });
-      d3Tip.show(p);
       console.log('value: ' + matrixX[p.y-1][p.x].z + ', src: ' + nodesX[p.y-1].text + ', dest: ' + nodesY[p.x].text);
       //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
     }
 
     function mouseout(p) {
-      d3.selectAll("text").classed("active", false);
       d3Tip.hide(p);
+      d3.selectAll("text").classed("active", false);
     }
 
     $('#order').unbind().on("change", function() {
@@ -1310,17 +1543,8 @@ text.active {
     */
       // TODO
       if (!!buildingMatrix) return;
-      var sortX, sortY;
-      if (value == 'name') {
-        sortX = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); };
-        sortY = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else return d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); };
-      } else if (value == 'count') {
-        sortX = function (a, b) { return b.count - a.count; };
-        sortY = function (a, b) { return b.count - a.count; };
-      } else return;
-      nodesX.sort(sortX);
-      nodesY.sort(sortY);
-      buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL);
+      var sortedNodes = sortNodes(value, nodesX, nodesY);
+      buildMatrix({response: sortNodes(nodesX).x}, {response: sortNodes(nodesY).y}, correlations, -1, onClickURL);
 
       /*
       setTimeout ( function () {
@@ -1334,50 +1558,12 @@ text.active {
     }
     //setTimeout(function () { order('count'); }, 2000);
 
-    ///////////////////////////////////////////////////////////////////////////
-    ////////////////////////// Color Interactions /////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////
-    //On click transition
-    d3.select("#color").on("change", function() {
-      var currentFill = this.value
-        if(currentFill === "rainbow") {
-          updateRainbow();
-        } else {
-          updateYGB();
-        }//else 
-      });
-
-    //Update the colors to a more light yellow-green-dark blue
-    function updateYGB() {
-      //Fill the legend rectangle
-      svg.select(".cell")
-        .style("fill", "url(#gradient-ygb-colors)");
-      //Transition the hexagon colors
-      svg.selectAll(".cell")
-        .transition().duration(1000)
-        .style("fill", function (d,i) { return colorScaleYGB(colorInterpolateYGB(d.z)); });
-    }//updateYGB
-
-    //Transition the colors to a rainbow
-    function updateRainbow() {
-      //Fill the legend rectangle
-      svg.select(".cell")
-        .style("fill", "url(#gradient-rainbow-colors)");
-      //Transition the hexagon colors
-      svg.selectAll(".cell")
-        .transition().duration(1000)
-        .style("fill", function (d,i) { return colorScaleRainbow(colorInterpolateRainbow(d.z)); })
-    }//updateRainbow
-
-    //Start set-up
-    updateYGB();
+    if (COLOR_GRADIENTS.length > 0) updateColorGradient(svg, COLOR_GRADIENTS[0]);
 
     $('#colorTheme').unbind().on('change', function ( e ) {
-      switch(this.value) {
-        case 'YGB': updateYGB(); break;
-        case 'Rainbow': updateRainbow(); break;
-        default: updateYGB();
-      }
+      var index = this.value - 0;
+      console.log('index: ' + index)
+      if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index]);
     });
     buildingMatrix = false;
   }
@@ -1522,6 +1708,7 @@ function getCorrelationOptions () {
 }
 
 function initPage () {
+  parents.length = 0;
   $.get('citation', function ( citations ) {
     if (!citations || !citations.response) {
       handleError('Cannot get citations from DB.');
@@ -1555,14 +1742,22 @@ function initPage () {
           allAttributes.response.sort( function ( a, b ) {
             return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
           });
+          $('#colorTheme').html('');
+          for ( var i = 0; i < COLOR_GRADIENTS.length; i++ ) {
+            $('#colorTheme').append('<option value="' + i + '">' + COLOR_GRADIENTS[i].name + '</option>');
+          }
           $('#parents1, #parents2').html('');
           $('#parents1, #parents2').append('<option>All attributes</option>');
           $('#parents1, #parents2').append('<option>All citations</option>');
+          parents.push('All attributes');
+          parents.push('All citations');
           dimensions.response.forEach ( function ( dimension ) {
             $('#parents1, #parents2').append('<option>' + dimension.text + '</option>');
+            parents.push(dimension.text);
           });
           allAttributes.response.forEach ( function ( attribute ) {
             $('#parents1, #parents2').append('<option>' + attribute.text + '</option>');
+            parents.push(attribute.text);
           });
           $('#parents1').val('');
           if (!!selectize1) selectize1.destroy();
