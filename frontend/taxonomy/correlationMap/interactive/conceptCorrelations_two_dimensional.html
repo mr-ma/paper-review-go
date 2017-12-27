@@ -85,7 +85,7 @@ text.active {
 </select>
 <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
 </form>
-<div id="colorLegend"></div>
+<div id="colorLegend" style="margin-left:10px;"></div>
 </div>
 
 <script>
@@ -191,7 +191,7 @@ text.active {
   }
 
   // https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
-  function updateColorLegend ( gradientID, width, height) { //     var w = 300, h = 50;
+  function updateColorLegend ( gradientID, width, height, maxValue ) { //     var w = 300, h = 50;
     d3.select("#colorLegend").selectAll("svg").remove();
     var legend = d3.select("#colorLegend")
       .append("svg")
@@ -205,8 +205,8 @@ text.active {
       .attr("transform", "translate(0,10)");
 
     var y = d3.scale.linear()
-      .range([300, 0])
-      .domain([68, 12]);
+      .range([300, 0]) // 300, 0
+      .domain([maxValue, 5]); // 68, 12
 
     var yAxis = d3.svg.axis().scale(y).orient("bottom").ticks(5);
 
@@ -221,14 +221,14 @@ text.active {
       .style("text-anchor", "end");
   }
 
-  function updateColorGradient ( svg, gradient ) {
+  function updateColorGradient ( svg, gradient, maxValue ) {
     var gradientID = "gradient-" + gradient.name + "-colors";
     svg.select(".cell")
       .style("fill", "url(#" + gradientID + ")");
     svg.selectAll(".cell")
       .transition().duration(1000)
       .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); });
-    updateColorLegend(gradientID, 300, 50);
+    updateColorLegend(gradientID, 300, 50, maxValue);
   }
 
   function sortNodes ( value, nodesX, nodesY ) {
@@ -527,15 +527,17 @@ text.active {
     var labelText = onClickURL == 'citationDetails' ? ' references' : ' citations';
     console.log('val: ' + $('#dataType').val())
     if ($('#dataType').val().split('referenceCount').length > 1) labelText = ' references';
-    maxValue = 0;
-    for ( var i = 0; i < matrixX.length; i++ ) {
-      for ( var j = 0; j < matrixX[i].length; j++ ) {
-        if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
+    if (maxValue < 0) {
+      maxValue = 0;
+      for ( var i = 0; i < matrixX.length; i++ ) {
+        for ( var j = 0; j < matrixX[i].length; j++ ) {
+          if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
+        }
       }
-    }
-    for ( var i = 0; i < matrixY.length; i++ ) {
-      for ( var j = 0; j < matrixY[i].length; j++ ) {
-        if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
+      for ( var i = 0; i < matrixY.length; i++ ) {
+        for ( var j = 0; j < matrixY[i].length; j++ ) {
+          if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
+        }
       }
     }
 
@@ -776,7 +778,7 @@ text.active {
           break;
         default:
       }
-      if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, -1, onClickURL);
+      if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL);
     }
 
     function filterChildAttributes ( elm, parent ) {
@@ -825,7 +827,7 @@ text.active {
                 break;
               default:
             }
-            if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, -1, onClickURL);
+            if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL);
           }
         });
     }
@@ -1544,7 +1546,7 @@ text.active {
       // TODO
       if (!!buildingMatrix) return;
       var sortedNodes = sortNodes(value, nodesX, nodesY);
-      buildMatrix({response: sortNodes(nodesX).x}, {response: sortNodes(nodesY).y}, correlations, -1, onClickURL);
+      buildMatrix({response: sortedNodes.x}, {response: sortedNodes.y}, correlations, maxValue, onClickURL);
 
       /*
       setTimeout ( function () {
@@ -1558,12 +1560,13 @@ text.active {
     }
     //setTimeout(function () { order('count'); }, 2000);
 
-    if (COLOR_GRADIENTS.length > 0) updateColorGradient(svg, COLOR_GRADIENTS[0]);
+    var colorThemeIndex = $('#colorTheme')[0].value - 0;
+    if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[colorThemeIndex], maxValue);
 
     $('#colorTheme').unbind().on('change', function ( e ) {
       var index = this.value - 0;
       console.log('index: ' + index)
-      if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index]);
+      if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue);
     });
     buildingMatrix = false;
   }
@@ -1690,8 +1693,6 @@ function renderMatrixHelper () {
         handleError('Cannot get correlation data from DB.');
         return;
       }
-      console.log('correlations: ', correlations.response)
-      console.log('rendering with max value: ' + maxValue)
       loadAttributes(false, correlations, options, maxValue, onClickURL, showMatrix);
     });
 }

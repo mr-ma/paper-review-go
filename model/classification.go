@@ -54,14 +54,18 @@ type Position struct {
   Z string `json:"z"`
 }
 
-type AttributeRequest struct{
-  Text string  `json:"text"`
+type AttributeRequest struct {
+  Text string `json:"text"`
   X string `json:"x"`
   Y string `json:"y"`
   XMajor string `json:"xMajor"`
   YMajor string `json:"xMajor"`
   Major int8 `json:"major"`
   Dimension string `json:"dimension"`
+}
+
+type DimensionRequest struct {
+  Text string `json:"text"`
 }
 
 type CorrelationRequest struct {

@@ -1039,21 +1039,19 @@ var bendPointUtilities = {
       edge = this.currentCtxEdge;
       bendPointIndex = this.currentBendIndex;
     }
-    
+
     var distances = edge.data('cyedgebendeditingDistances');
     var weights = edge.data('cyedgebendeditingWeights');
     
     distances.splice(bendPointIndex, 1);
     weights.splice(bendPointIndex, 1);
     
-    
     if(distances.length == 0 || weights.length == 0){
       edge.removeClass('edgebendediting-hasbendpoints');
     }
-    else {
-      edge.data('cyedgebendeditingDistances', distances);
-      edge.data('cyedgebendeditingWeights', weights);
-    }
+    // TODO removed "else"
+    edge.data('cyedgebendeditingDistances', distances);
+    edge.data('cyedgebendeditingWeights', weights);
   },
   calculateDistance: function(pt1, pt2) {
     var diffX = pt1.x - pt2.x;

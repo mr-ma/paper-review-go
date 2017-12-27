@@ -68,8 +68,11 @@ func main() {
 	mux.Handle("POST", "/citationsPerAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsPerAttributeHandler), "getCitationsPerAttributeHandler", nil)))
 	mux.Handle("POST", "/citationsPerAttributeIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsPerAttributeIncludingChildrenHandler), "getCitationsPerAttributeIncludingChildrenHandler", nil)))
 	mux.Handle("POST", "/addAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(addAttributeHandler), "addAttributeHandler", nil)))
+	mux.Handle("POST", "/addDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(addDimensionHandler), "addDimensionHandler", nil)))
 	mux.Handle("POST", "/removeAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(removeAttributeHandler), "removeAttributeHandler", nil)))
+	mux.Handle("POST", "/removeDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(removeDimensionHandler), "removeDimensionHandler", nil)))
 	mux.Handle("POST", "/renameAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(renameAttributeHandler), "renameAttributeHandler", nil)))
+	mux.Handle("POST", "/renameDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(renameDimensionHandler), "renameDimensionHandler", nil)))
 	mux.Handle("POST", "/addTaxonomyRelation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(addTaxonomyRelationHandler), "addTaxonomyRelationHandler", nil)))
 	mux.Handle("POST", "/removeTaxonomyRelation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(removeTaxonomyRelationHandler), "removeTaxonomyRelationHandler", nil)))
 	mux.Handle("POST", "/updateTaxonomyRelationType", cors.Build(tigertonic.Timed(tigertonic.Marshaled(updateTaxonomyRelationTypeHandler), "updateTaxonomyRelationTypeHandler", nil)))
@@ -104,6 +107,14 @@ func main() {
 	mux.Handle("GET", "/attributeCoverage", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandler), "getAttributeCoverageHandler", nil)))
 	mux.HandleFunc("GET", "/error.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/error.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/zoomInIcon.png", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/icons/zoom_in_128.png")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/zoomOutIcon.png", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/icons/zoom_out_128.png")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bluebird.min.js", func(w http.ResponseWriter, r *http.Request) {
@@ -624,6 +635,12 @@ func addAttributeHandler(u *url.URL, h http.Header, attributeRequest *model.Attr
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }
+func addDimensionHandler(u *url.URL, h http.Header, dimensionRequest *model.DimensionRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.AddDimension(dimensionRequest.Text)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
+}
 func removeAttributeHandler(u *url.URL, h http.Header, attributeRequest *model.AttributeRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attribute := model.Attribute{Text: attributeRequest.Text}
@@ -631,9 +648,22 @@ func removeAttributeHandler(u *url.URL, h http.Header, attributeRequest *model.A
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }
+func removeDimensionHandler(u *url.URL, h http.Header, dimensionRequest *model.AttributeRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	dimension := model.Dimension{Text: dimensionRequest.Text}
+	result, err := driver.RemoveDimension(dimension)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
+}
 func renameAttributeHandler(u *url.URL, h http.Header, renameAttributeRequest *model.RenameAttributeRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.RenameAttribute(renameAttributeRequest.PreviousName, renameAttributeRequest.NewName)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
+}
+func renameDimensionHandler(u *url.URL, h http.Header, renameDimensionRequest *model.RenameAttributeRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.RenameDimension(renameDimensionRequest.PreviousName, renameDimensionRequest.NewName)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }

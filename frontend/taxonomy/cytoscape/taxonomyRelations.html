@@ -144,8 +144,8 @@
               label: 'data(id)',
               'text-valign': 'top',
               'text-halign': 'right',
-              'text-margin-x': '-100px',
-              'text-margin-y': '30px'
+              'text-margin-x': '5px',
+              'text-margin-y': '-5px'
           }
         },
         {
@@ -216,7 +216,7 @@
     if (displayedDimension == 'Interdimensional view') var saveURL = 'saveMajorPositions';
     else var saveURL = 'savePositions';
     var positions = [];
-    cy.$('.child').forEach ( function ( node ) {
+    cy.$('.parent,.child').forEach ( function ( node ) {
       var table = node.data('table');
       var position = node.position();
       positions.push({id: node.id(), table: table, x: '' + position.x, y: '' + position.y});
@@ -266,10 +266,11 @@
               return;
             }
             var previousName = ele.data('id');
+            var renameURL = (ele.data('table') == 'dimension') ? 'renameDimension' : 'renameAttribute';
             $.ajax
               ({
                   type: "POST",
-                  url: 'renameAttribute',
+                  url: renameURL,
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
@@ -353,21 +354,75 @@
     dialog.open();
   }
 
+  function addDimension ( cy, ele, e, major ) {
+    var dialog = BootstrapDialog.show({
+      title: 'Enter dimension name',
+      message: '<div><label for="dimensionName">Name:</label><input type="text" id="dimensionName" placeholder="name"></div>',
+      buttons: [{
+          label: 'Add',
+          cssClass: 'btn-primary',
+          hotkey: 13, // Enter
+          action: function(data) {
+            var dimensionName = $('#dimensionName').val();
+            if (dimensionName == '' || cy.$('[id="' + dimensionName + '"]').length > 0) {
+              handleError('This dimension name already exists in this domain.');
+              return;
+            }
+            var request = {text: dimensionName};
+            console.log('sending post')
+            $.ajax
+              ({
+                  type: "POST",
+                  //the url where you want to sent the userName and password to
+                  url: 'addDimension',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  //json object to sent to the authentication url
+                  data: JSON.stringify(request),
+                  success: function ( result ) {
+                    var position = ele.position();
+                    cy.add({data: { id: dimensionName, table: 'dimension' }, classes: 'dimension', position: {x: position.x + ele.width(), y: position.y + ele.height()} });
+                    dialog.close();
+                    addNode(cy, cy.$('[id="' + dimensionName + '"]'), e, major);
+                  }
+              });
+          }
+      },{
+          label: 'Cancel',
+          cssClass: 'btn-primary',
+          hotkey: 27, // Esc
+          action: function(data) {
+            dialog.close();
+          }
+      }]
+    });
+    dialog.open();
+  }
+
   function removeNodes ( ur, selecteds ) {
     var promises = [];
     selecteds.forEach ( function ( selected ) {
       var removePromise = new Promise ( function ( resolve, reject ) {
+        var selectedID = selected.id();
+        var selectedTable = selected.data('table');
+        var removeURL = (selectedTable == 'dimension') ? 'removeDimension' : 'removeAttribute';
         $.ajax
           ({
             type: "POST",
             //the url where you want to sent the userName and password to
-            url: 'removeAttribute',
+            url: removeURL,
             dataType: 'json',
             contentType:'application/json',
             async: true,
             //json object to sent to the authentication url
-            data: JSON.stringify({text: selected.id()}),
-            success: function () {
+            data: JSON.stringify({text: selectedID}),
+            success: function ( result ) {
+              if (!result || !result.response || !result.response.success) {
+                if (selectedTable == 'dimension') handleError('Error occurred while deleting dimension: "' + selectedID + '". Dimensions must be empty before they can be deleted.');
+                else handleError('Error occurred while deleting attribute: "' + selectedID + '".');
+                return;
+              }
               resolve();
             }
           });
@@ -584,7 +639,7 @@
     var selected = selecteds[0];
     var dialog = BootstrapDialog.show({
       title: 'Remove item',
-      message: '<div><label for="deleteConfirmation">Type: <strong>DELETE "name"</strong> to delete the item. (attributeSrc_attributeDest for edges):</label><input type="text" id="deleteConfirmation"></input></div>',
+      message: '<div><label for="deleteConfirmation">Type the name of the item to delete it. (attributeSrc_attributeDest for edges):</label><input type="text" id="deleteConfirmation"></input></div>',
       buttons: [{
           label: 'Delete',
           cssClass: 'btn-primary',
@@ -592,8 +647,8 @@
           action: function(data) {
             // TODO fix modal issue (z-index?) coming from "Interdimensional view"
             var deleteConfirmation = $('#deleteConfirmation').val();
-            if (deleteConfirmation.toLowerCase().trim() != ('delete ' + selected.data('id')).toLowerCase().trim()) {
-              handleError('Type: <strong>DELETE "name"</strong> to delete the item. (attributeSrc_attributeDest for edges).');
+            if (deleteConfirmation.toLowerCase().trim() != (selected.data('id')).toLowerCase().trim()) {
+              handleError('Type the name of the item to delete it. (attributeSrc_attributeDest for edges).');
               return;
             }
             callback(ur, selecteds);
@@ -697,25 +752,41 @@
       var x = attribute.x - 0;
       var y = attribute.y - 0;
       if (!isNaN(x) && !isNaN(y)) {
+        var found = false;
         for ( var i = 0; i < citationCounts.length; i++ ) {
           if (citationCounts[i].attribute == attribute.text) {
             items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
+            found = true;
             break;
           }
+        }
+        if (!found) {
+          items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: 0, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
         }
       }
     });
     relations.forEach ( function ( relation ) {
       var relationObj = { data: { id: relation.attributeSrc + '_' + relation.attributeDest, source: relation.attributeSrc, target: relation.attributeDest, annotation: !!relation.annotation ? relation.annotation : '', dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), relation: relation.relation }, classes: relation.relation };
-      if (!!relation.edgeBendPoints) var edgePoints = JSON.parse('[' + relation.edgeBendPoints + ']');
-      else var edgePoints = [];
+      var points = [];
+      if (!!relation.edgeBendPoints) {
+        var edgeBendPoints = relation.edgeBendPoints != '' ? relation.edgeBendPoints.split(';') : [];
+        try {
+          edgeBendPoints.forEach ( function ( edgeBendPoint ) {
+            points.push(JSON.parse(edgeBendPoint.replace(/\'/g, '"')));
+          });
+        } catch ( err ) {
+          console.log('JSON parse error of edge bend points: ', relation.edgeBendPoints);
+        }
+      }
+      /*
       var x, y;
       var points = [];
       for ( var i = 0; i < edgePoints.length; i++ ) {
         if (i % 2 == 0) x = edgePoints[i];
         else points.push({x: x, y: edgePoints[i]});
       }
-      if (points.length > 0) relationObj.data.bendPointPositions = points;
+      */
+      relationObj.data.bendPointPositions = points;
       items.push(relationObj);
     });
 
@@ -886,6 +957,14 @@
       atMouse: false // draw menu at mouse position
     });
     var dimensionCommands = [];
+    dimensionCommands.push({
+      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+      content: 'Rename', // html/text content to be displayed in the menu
+      select: function(ele){ // a function to execute when the command is selected
+        renameNode(ele);
+      },
+      enabled: true // whether the command is selectable
+    });
     if (!isInterDimensional) {
       dimensionCommands.push({
         fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
@@ -908,6 +987,18 @@
       },
       enabled: true // whether the command is selectable
     });
+    if (isInterDimensional) {
+      dimensionCommands.push({
+        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+        content: 'Add dimension', // html/text content to be displayed in the menu
+        title: 'Add dimension',
+        select: function(ele, e){ // a function to execute when the command is selected
+          e.preventDefault();
+          addDimension(cy, ele, e, true);
+        },
+        enabled: true // whether the command is selectable
+      });
+    }
     cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
       selector: '.dimension', // elements matching this Cytoscape.js selector will trigger cxtmenus
@@ -987,12 +1078,10 @@
               $.ajax
                 ({
                     type: "POST",
-                    //the url where you want to sent the userName and password to
                     url: 'citationsPerAttributeIncludingChildren',
                     dataType: 'json',
                     contentType:'application/json',
                     async: true,
-                    //json object to sent to the authentication url
                     data: JSON.stringify({attribute: attribute}),
                     success: function ( citationsPerAttribute ) {
                       if (!citationsPerAttribute) {
@@ -1037,12 +1126,10 @@
       $.ajax
         ({
             type: "POST",
-            //the url where you want to sent the userName and password to
             url: 'addTaxonomyRelation',
             dataType: 'json',
             contentType:'application/json',
             async: true,
-            //json object to sent to the authentication url
             data: JSON.stringify({'taxonomy_id': 1, attributeSrc: sourceNode.id(), attributeDest: targetNode.id(), dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: 'Depends'}),
             success: function ( result ) {
               console.log('Added taxonomy relation successfully, source: ' + sourceID + ', target: ' + targetID + '.');
@@ -1056,7 +1143,11 @@
       },
       fisheye: true,
       animate: true,
-      undoable: false
+      undoable: false,
+      expandCollapseCuePosition: function ( e ) { var position = e.position(); return {x: position.x - e.width()/2, y: position.y - 25}; }, // 'top-left'
+      expandCollapseCueSize: 20, // 12
+      expandCueImage: 'zoomInIcon.png',
+      collapseCueImage: 'zoomOutIcon.png'
     });
     cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
       cy.destroy();
@@ -1083,29 +1174,49 @@
         return;
       }
       var dimension = displayedDimension;
+      var promises = [];
       cy.edges().forEach ( function ( entry ) {
-        var segments = edgeBendEditingApi.getSegmentPoints(entry);
+        var segments = entry.segmentPoints();
         if (!!segments) {
-          console.log('seg: ', segments);
+          var segmentStr = '';
+          segments.forEach ( function ( segment ) {
+            segmentStr += (segmentStr != '' ? ';' : '') + JSON.stringify(segment);
+          });
+          segmentStr = segmentStr.replace(/\"/g, "'");
           var attributeSrc = entry.data('source');
           var attributeDest = entry.data('target');
-          $.ajax
-            ({
-                type: "POST",
-                //the url where you want to sent the userName and password to
-                url: 'saveEdgeBendPoints',
-                dataType: 'json',
-                contentType:'application/json',
-                async: true,
-                //json object to sent to the authentication url
-                data: JSON.stringify({'taxonomy_id': 1, attributeSrc: attributeSrc, attributeDest: attributeDest, edgeBendPoints: segments.toString(), dimension: dimension}),
-                success: function ( result ) {
-                  $('#clickMe').click();
-                  console.log('Saved edge bend points successfully.');
-                }
+          var saveEdgeBendPointsPromise = new Promise ( function ( resolve, reject ) {
+            $.ajax
+              ({
+                  type: "POST",
+                  url: 'saveEdgeBendPoints',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  data: JSON.stringify({'taxonomy_id': 1, attributeSrc: attributeSrc, attributeDest: attributeDest, edgeBendPoints: segmentStr, dimension: dimension}),
+                  success: function ( result ) {
+                    resolve(result);
+                  },
+                  error: function () {
+                    reject('Error occurred while saving edge bend points to DB.');
+                  }
+              });
             });
+            promises.push(saveEdgeBendPointsPromise);
           }
       });
+      if (promises.length == 0) {
+        console.log('Saved edge bend points successfully.');
+        savePositions(cy, dimensions);
+        return;
+      }
+      Promise.all(promises)
+        .then ( function ( results ) {
+          console.log('Saved edge bend points successfully.');
+          savePositions(cy, dimensions);
+        }).catch ( function ( err ) {
+          handleError(err);
+        });
     });
     $('#merge').unbind().click ( function () {
        var selecteds = cy.$(".parent:selected, .child:selected");

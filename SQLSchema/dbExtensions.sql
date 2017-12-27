@@ -81,8 +81,9 @@ INSERT IGNORE dimension (id_dimension, text) VALUES (4, "Interdimensional view")
 
 /*INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (1, 32, 4), (1, 57, 4), (1, 62, 4), (1, 67, 4), (1, 93, 4), (1, 20, 4), (1, 5, 4), (1, 14, 4), (1, 84, 4), (1, 72, 4), (1, 80, 4), (1, 27, 4), (1, 73, 4);*/
 
-INSERT IGNORE INTO taxonomy_relation (id_taxonomy_relation, id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (232, 1, 32, 84, 2, 4), (233, 1, 32, 20, 2, 4), (234, 1, 32, 27, 2, 4), (235, 1, 32, 67, 1, 4), (236, 1, 57, 20, 2, 4), (237, 1, 62, 32, 2, 4), (238, 1, 93, 14, 1, 4), (239, 1, 5, 93, 2, 4), (240, 1, 84, 32, 2, 4), (241, 1, 80, 72, 2, 4), (242, 1, 27, 5, 2, 4), (243, 1, 27, 32, 2, 4), (244, 1, 73, 27, 2, 4);
-INSERT IGNORE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relation, annotation) VALUES (1, 232, "Impedes"), (1, 233, "Transforms"), (1, 234, "Mitigates or raises the bar"), (1, 236, "Affects"), (1, 237, "Strengthens"), (1, 239, "Contains"), (1, 240, "Identifies"), (1, 241, "Support"), (1, 242, "Tampers with"), (1, 243, "Tampers with"), (1, 244, "Executes");
+/* Interdimensional relations */
+INSERT IGNORE INTO taxonomy_relation (id_taxonomy_relation, id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (232, 1, 32, 84, 2, 4), (233, 1, 32, 20, 2, 4), (234, 1, 32, 27, 2, 4), (235, 1, 32, 67, 1, 4), (236, 1, 57, 20, 2, 4), (237, 1, 62, 32, 2, 4), (238, 1, 93, 14, 1, 4), (239, 1, 5, 93, 2, 4), (240, 1, 84, 32, 2, 4), (241, 1, 80, 72, 2, 4), (242, 1, 27, 5, 2, 4), (243, 1, 27, 32, 2, 4), (244, 1, 73, 27, 2, 4), (245, 1, 84, 5, 4);
+INSERT IGNORE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relation, annotation) VALUES (1, 232, "Impedes"), (1, 233, "Transforms"), (1, 234, "Mitigates or raises the bar"), (1, 236, "Affects"), (1, 237, "Strengthens"), (1, 239, "Contains"), (1, 240, "Identifies"), (1, 241, "Support"), (1, 242, "Tampers with"), (1, 243, "Tampers with"), (1, 244, "Executes"), (1, 245, "Identifies asset");
 
 ALTER TABLE taxonomy_relation ADD COLUMN edgeBendPoints longtext;
 
@@ -98,13 +99,16 @@ ALTER TABLE taxonomy_relation ADD UNIQUE KEY taxonomy_relation_attributes_UNIQUE
 SET FOREIGN_KEY_CHECKS = 0;
 
 ALTER TABLE attribute CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE dimension CHANGE COLUMN id_dimension id_dimension INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE taxonomy_dimension CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL;
+ALTER TABLE taxonomy_dimension CHANGE COLUMN id_dimension id_dimension INT(11) UNSIGNED NOT NULL;
 ALTER TABLE taxonomy_relation CHANGE COLUMN id_src_attribute id_src_attribute INT(11) UNSIGNED NOT NULL, CHANGE COLUMN id_dest_attribute id_dest_attribute INT(11) UNSIGNED NOT NULL;
 ALTER TABLE mapping CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL;
 
 
 ALTER TABLE taxonomy_dimension ADD CONSTRAINT taxonomy_dimension_id_attribute_foreign FOREIGN KEY (id_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE taxonomy_dimension ADD CONSTRAINT taxonomy_dimension_id_dimension_foreign FOREIGN KEY (id_dimension) REFERENCES dimension (id_dimension) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE taxonomy_relation ADD CONSTRAINT taxonomy_relation_id_src_attribute_foreign FOREIGN KEY (id_src_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE taxonomy_relation ADD CONSTRAINT taxonomy_relation_id_dest_attribute_foreign FOREIGN KEY (id_dest_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE mapping ADD CONSTRAINT mapping_id_attribute_foreign FOREIGN KEY (id_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
