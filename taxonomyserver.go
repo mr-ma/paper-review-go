@@ -167,10 +167,6 @@ func main() {
 		p := loadPage("frontend/src/js/jquery.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/jquery-2.0.3.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/jquery-2.0.3.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/d3.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/d3.min.js")
 		fmt.Fprintf(w, "%s", p)
