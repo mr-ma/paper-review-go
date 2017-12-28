@@ -23,6 +23,8 @@ type ClassificationDriver interface {
 	GetCitationCounts() ([]model.CitationCount, error)
 	GetCitationCountsIncludingChildren() ([]model.CitationCount, error)
 	UpdateCitationReferenceCounts([]model.ReferenceCount) (model.Result, error)
+	UpdateMajor(string, int) (model.Result, error)
+	UpdateCitationMapping(string, []model.Paper) (model.Result, error)
 	GetRelationTypes() ([]model.RelationType, error)
 	GetCitationsPerAttribute(string) ([]model.Paper, error)
 	GetCitationsPerAttributeIncludingChildren(string) ([]model.Paper, error)
@@ -64,6 +66,9 @@ type ClassificationDriver interface {
 	UpdateTaxonomyRelationType(model.AttributeRelation) (model.Result, error)
 	UpdateTaxonomyRelationAnnotation(model.AttributeRelation) (model.Result, error)
 	RemoveTaxonomyRelationsForAttribute(model.Attribute) (model.Result, error)
+	UpdateChildRelationshipTable() (chan model.Result)
+	UpdateParentRelationshipTable() (chan model.Result)
+	UpdateRelationshipTables() (model.Result)
 	MergeAttributes(model.Attribute, model.Attribute) (model.Result, error)
 	ForkAttribute(string, string, []model.AttributeRelation, []model.AttributeRelation, []model.AttributeRelation, []model.AttributeRelation, []model.Paper, []model.Paper) (model.Result, error)
 }
@@ -254,6 +259,64 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
     		referenceCountStr := strconv.Itoa(elem.ReferenceCount)
 			dbRef.Exec("update paper set referenceCount = " + referenceCountStr + " where citation = \"" + elem.Citation + "\";");
 		}
+		result.Success = true
+		defer dbRef.Close()
+		return result, err
+		}
+
+	func (d MySQLDriver) UpdateMajor(text string, major int) (result model.Result, err error){
+	  	dbRef, err := d.OpenDB()
+		checkErr(err)
+		majorStr := strconv.Itoa(major)
+    	dbRef.Exec("update attribute set major = " + majorStr + " where text = \"" + text + "\";")
+		result.Success = true
+		defer dbRef.Close()
+		return result, err
+		}
+
+	func (d MySQLDriver) UpdateCitationMapping(attribute string, citations []model.Paper) (result model.Result, err error){
+	  	dbRef, err := d.OpenDB()
+		checkErr(err)
+		db, stmt, err := d.Query("SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + attribute + "\";")
+		defer stmt.Close()
+		defer db.Close()
+		rows, err := stmt.Query()
+		checkErr(err)
+		var attributeID int
+		attributeID = -1
+		for rows.Next() {
+			rows.Scan(&attributeID)
+		}
+		defer rows.Close()
+		if attributeID < 0 {
+			result.Success = false
+			return result, err
+		}
+		attributeIDStr := strconv.Itoa(attributeID)
+		db2, stmt2, err2 := d.Query("SELECT COUNT(DISTINCT id_src_attribute) FROM taxonomy_relation WHERE id_dest_attribute = " + attributeIDStr + " AND id_relation > 2;")
+		defer stmt2.Close()
+		defer db2.Close()
+		rows2, err2 := stmt2.Query()
+		checkErr(err2)
+		var childrenCount int
+		for rows2.Next() {
+			rows2.Scan(&childrenCount)
+		}
+		defer rows2.Close()
+		if childrenCount > 0 {
+			result.Success = false
+			return result, err2
+		}
+		citationTupleString := ""
+		for _, elem := range citations {
+			if citationTupleString != "" {
+				citationTupleString += ","
+			}
+			citationTupleString += "(" + strconv.Itoa(elem.ID) + "," + attributeIDStr + ")"
+	    }
+	    fmt.Println(citationTupleString)
+	    dbRef.Exec("DELETE FROM mapping WHERE id_attribute = " + attributeIDStr + " AND (id_paper, id_attribute) NOT IN (" + citationTupleString + ");")
+	    dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES " + citationTupleString + ";");
 		result.Success = true
 		defer dbRef.Close()
 		return result, err
@@ -626,14 +689,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		dbRef, err := d.OpenDB()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attr.id_attribute, attr.text, attr.dimensionText, attr.major, attr.x, attr.y, allparentsperattribute.parents as parentText, attr.x3D, attr.y3D, attr.z3D from (select attribute.id_attribute, attribute.text, dimension.text as dimensionText, attribute.major, attribute.x, attribute.y, attribute.x3D, attribute.y3D, attribute.z3D from attribute inner join taxonomy_dimension on (attribute.id_attribute = taxonomy_dimension.id_attribute and taxonomy_dimension.id_taxonomy = " + taxonomyIdStr + ") inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension and dimension.text = \"" + dimension + "\")) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) order by attr.id_attribute;")
+		db, stmt, err := d.Query("select distinct attr.id_attribute, attr.text, allparentsperattribute.parents as parentText, attr.dimensionText, attr.major, attr.x, attr.y, attr.x3D, attr.y3D, attr.z3D from (select attribute.id_attribute, attribute.text, dimension.text as dimensionText, attribute.major, attribute.x, attribute.y, attribute.x3D, attribute.y3D, attribute.z3D from attribute inner join taxonomy_dimension on (attribute.id_attribute = taxonomy_dimension.id_attribute and taxonomy_dimension.id_taxonomy = " + taxonomyIdStr + ") inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension and dimension.text = \"" + dimension + "\")) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) order by attr.id_attribute;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.Attribute{}
-			rows.Scan(&a.ID,&a.Text,&a.Dimension,&a.Major,&a.X,&a.Y,&a.ParentText,&a.X3D,&a.Y3D,&a.Z3D)
+			rows.Scan(&a.ID,&a.Text,&a.ParentText,&a.Dimension,&a.Major,&a.X,&a.Y,&a.X3D,&a.Y3D,&a.Z3D)
 			attributes = append(attributes, a)
 		}
 		defer rows.Close()
@@ -645,14 +708,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		dbRef, err := d.OpenDB()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attr.id_attribute, attr.text, attr.dimensionText, attr.major, attr.x, attr.y, allparentsperattribute.parents as parentText, attr.x3D, attr.y3D, attr.z3D from (select attribute.id_attribute, attribute.text, dimension.text as dimensionText, attribute.major, attribute.x, attribute.y, attribute.x3D, attribute.y3D, attribute.z3D from attribute inner join taxonomy_dimension on (attribute.id_attribute = taxonomy_dimension.id_attribute and taxonomy_dimension.id_taxonomy = " + taxonomyIdStr + ") inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension and dimension.text = \"" + dimension + "\") left outer join taxonomy_relation on (attribute.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) order by attr.id_attribute;")
+		db, stmt, err := d.Query("select distinct attr.id_attribute, attr.text, allparentsperattribute.parents as parentText, attr.dimensionText, attr.major, attr.x, attr.y, attr.x3D, attr.y3D, attr.z3D from (select attribute.id_attribute, attribute.text, dimension.text as dimensionText, attribute.major, attribute.x, attribute.y, attribute.x3D, attribute.y3D, attribute.z3D from attribute inner join taxonomy_dimension on (attribute.id_attribute = taxonomy_dimension.id_attribute and taxonomy_dimension.id_taxonomy = " + taxonomyIdStr + ") inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension and dimension.text = \"" + dimension + "\") left outer join taxonomy_relation on (attribute.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) order by attr.id_attribute;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.Attribute{}
-			rows.Scan(&a.ID,&a.Text,&a.Dimension,&a.Major,&a.X,&a.Y,&a.ParentText,&a.X3D,&a.Y3D,&a.Z3D)
+			rows.Scan(&a.ID,&a.Text,&a.ParentText,&a.Dimension,&a.Major,&a.X,&a.Y,&a.X3D,&a.Y3D,&a.Z3D)
 			attributes = append(attributes, a)
 		}
 		defer rows.Close()
@@ -684,7 +747,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		dbRef, err := d.OpenDB()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT DISTINCT attr.id_attribute, attr.text, allparentsperattribute.parents AS parentText, dimension.text as dimensionText FROM (SELECT DISTINCT attributeSrc.id_attribute, attributeSrc.text FROM attribute AS attributeSrc INNER JOIN (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = " + taxonomyIdStr + " AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=attributeDest.id_attribute from attribute as attributeDest where attributeDest.text = \"" + parent + "\") tmp) a) AS tmpTable on (attributeSrc.text = \"" + parent + "\" OR FIND_IN_SET(attributeSrc.id_attribute, tmpTable.children)) left outer join taxonomy_relation on (attributeSrc.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) left outer join taxonomy_dimension on (attr.id_attribute = taxonomy_dimension.id_attribute) left outer join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attr.id_attribute;")
+		db, stmt, err := d.Query("SELECT DISTINCT attr.id_attribute, attr.text, allparentsperattribute.parents AS parentText, dimension.text AS dimensionText FROM (SELECT DISTINCT attributeSrc.id_attribute, attributeSrc.text FROM attribute AS attributeSrc INNER JOIN (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = " + taxonomyIdStr + " AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=attributeDest.id_attribute from attribute as attributeDest where attributeDest.text = \"" + parent + "\") tmp) a) AS tmpTable on (attributeSrc.text = \"" + parent + "\" OR FIND_IN_SET(attributeSrc.id_attribute, tmpTable.children)) left outer join taxonomy_relation on (attributeSrc.id_attribute = taxonomy_relation.id_dest_attribute) where taxonomy_relation.id_taxonomy_relation IS NULL) as attr inner join allparentsperattribute on (attr.id_attribute = allparentsperattribute.id_attribute) left outer join taxonomy_dimension on (attr.id_attribute = taxonomy_dimension.id_attribute) left outer join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attr.id_attribute;")
 		defer stmt.Close()
 		defer stmt.Close()	
 		defer db.Close()
@@ -726,14 +789,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		dbRef, err := d.OpenDB()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attribute.id_attribute, attribute.text, dimension.text as dimensionText, attribute.xMajor, attribute.yMajor, attribute.xMajor3D, attribute.yMajor3D, attribute.zMajor3D from attribute inner join taxonomy_dimension on (attribute.major = 1 and attribute.id_attribute = taxonomy_dimension.id_attribute and taxonomy_dimension.id_taxonomy = " + taxonomyIdStr + ") inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attribute.id_attribute;")
+		db, stmt, err := d.Query("select distinct attribute.id_attribute, attribute.text, allparentsperattribute.parents as parentText, dimension.text as dimensionText, attribute.xMajor, attribute.yMajor, attribute.xMajor3D, attribute.yMajor3D, attribute.zMajor3D from attribute inner join allparentsperattribute on (attribute.id_attribute = allparentsperattribute.id_attribute) inner join taxonomy_dimension on (attribute.major = 1 and attribute.id_attribute = taxonomy_dimension.id_attribute and taxonomy_dimension.id_taxonomy = " + taxonomyIdStr + ") inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attribute.id_attribute;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.Attribute{}
-			rows.Scan(&a.ID,&a.Text,&a.Dimension,&a.X,&a.Y,&a.XMajor3D,&a.YMajor3D,&a.ZMajor3D)
+			rows.Scan(&a.ID,&a.Text,&a.ParentText,&a.Dimension,&a.X,&a.Y,&a.XMajor3D,&a.YMajor3D,&a.ZMajor3D)
 			a.Major = 1;
 			attributes = append(attributes, a)
 		}
@@ -848,6 +911,41 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		return result, err
 		}
 
+	func (d MySQLDriver) UpdateChildRelationshipTable() (resultChan chan model.Result){
+		dbRef, err := d.OpenDB()
+		checkErr(err)
+		future := make(chan model.Result)
+		go func () {
+			dbRef.Exec(`DROP PROCEDURE IF EXISTS insertAllChildrenPerAttribute; DELIMITER ;; CREATE PROCEDURE insertAllChildrenPerAttribute() BEGIN DECLARE cursor_id_attribute INT(10); DECLARE cursor_text VARCHAR(50); DECLARE done INT DEFAULT FALSE; DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute; DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE; DELETE FROM allChildrenPerAttribute; OPEN cursor_i; read_loop: LOOP FETCH cursor_i INTO cursor_id_attribute, cursor_text; IF done THEN LEAVE read_loop; END IF; INSERT INTO allChildrenPerAttribute(id_attribute, text, children) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.children IS NULL THEN CAST(cursor_id_attribute AS CHAR(50)) ELSE CONCAT(CAST(cursor_id_attribute AS CHAR(50)), ",", b.children) END) AS children FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=cursor_id_attribute) tmp) a) b)); END LOOP; CLOSE cursor_i; END; ;;`)
+			dbRef.Exec("CALL insertAllChildrenPerAttribute();")
+			defer dbRef.Close()
+			future <- model.Result{Success: true}
+		}()
+		return future
+		}
+
+	func (d MySQLDriver) UpdateParentRelationshipTable() (resultChan chan model.Result){
+		dbRef, err := d.OpenDB()
+		checkErr(err)
+		future := make(chan model.Result)
+		go func () {
+			dbRef.Exec(`DROP PROCEDURE IF EXISTS insertAllParentsPerAttribute; DELIMITER ;; CREATE PROCEDURE insertAllParentsPerAttribute() BEGIN DECLARE cursor_id_attribute INT(10); DECLARE cursor_text VARCHAR(50); DECLARE done INT DEFAULT FALSE; DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute; DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE; DELETE FROM allParentsPerAttribute; OPEN cursor_i; read_loop: LOOP FETCH cursor_i INTO cursor_id_attribute, cursor_text; IF done THEN LEAVE read_loop; END IF; INSERT INTO allParentsPerAttribute(id_attribute, text, parents) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.parents IS NULL THEN "" ELSE b.parents END) AS parents FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS parents FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT parent.text SEPARATOR ',') FROM taxonomy_relation AS relation1 INNER JOIN attribute as parent ON (relation1.id_dest_attribute = parent.id_attribute) WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET((SELECT DISTINCT text FROM attribute WHERE id_attribute = relation1.id_src_attribute), @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=text FROM attribute WHERE id_attribute = cursor_id_attribute) tmp) a) b)); END LOOP; CLOSE cursor_i; END; ;;`)
+			dbRef.Exec("CALL insertAllParentsPerAttribute();")
+			defer dbRef.Close()
+			future <- model.Result{Success: true}
+		}()
+		return future
+		}
+
+	func (d MySQLDriver) UpdateRelationshipTables() (result model.Result){
+		resultFuture1 := d.UpdateParentRelationshipTable()
+		resultFuture2 := d.UpdateChildRelationshipTable()
+		result1 := <-resultFuture1
+		result2 := <-resultFuture2
+		result.Success = result1.Success && result2.Success
+		return result
+		}
+
 	func (d MySQLDriver) AddAttribute(attribute model.Attribute) (result model.Result, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
@@ -868,9 +966,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		majorStr := strconv.Itoa(int(attribute.Major))
 		dbRef.Exec("INSERT INTO attribute (text, x, y, xMajor, yMajor, major) VALUES (\"" + attribute.Text + "\", \"" + attribute.X + "\", \"" + attribute.Y + "\", \"" + attribute.XMajor + "\", \"" + attribute.YMajor + "\", " + majorStr + ");")
 		dbRef.Exec("INSERT INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (1, (SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + attribute.Text + "\"), (SELECT DISTINCT id_dimension FROM dimension WHERE text = \"" + attribute.Dimension + "\"));")
-		dbRef.Exec("DELETE FROM allChildrenPerAttribute;")
-		dbRef.Exec("CALL insertAllChildrenPerAttribute();")
-		dbRef.Exec("CALL insertAllParentsPerAttribute();")
+		d.UpdateRelationshipTables()
 		result.Success = true
 		defer dbRef.Close()
 		return result, err
@@ -917,9 +1013,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 			return result, err
 		}
 		dbRef.Exec("UPDATE attribute SET text = \"" + newName + "\" WHERE text = \"" + previousName + "\";")
-		dbRef.Exec("DELETE FROM allChildrenPerAttribute;")
-		dbRef.Exec("CALL insertAllChildrenPerAttribute();")
-		dbRef.Exec("CALL insertAllParentsPerAttribute();")
+		d.UpdateRelationshipTables()
 		result.Success = true
 		defer dbRef.Close()
 		return result, err
@@ -960,9 +1054,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) SELECT id_paper, (SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + attribute1.Text + ":" + attribute2.Text + "\") FROM mapping WHERE id_attribute = (SELECT id_attribute FROM attribute WHERE text = \"" + attribute1.Text + "\");")
 		dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) SELECT id_paper, (SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + attribute1.Text + ":" + attribute2.Text + "\") FROM mapping WHERE id_attribute = (SELECT id_attribute FROM attribute WHERE text = \"" + attribute2.Text + "\");")
 		dbRef.Exec("DELETE FROM attribute WHERE text = \"" + attribute1.Text + "\" OR text = \"" + attribute2.Text + "\";")
-		dbRef.Exec("DELETE FROM allChildrenPerAttribute;")
-		dbRef.Exec("CALL insertAllChildrenPerAttribute();")
-		dbRef.Exec("CALL insertAllParentsPerAttribute();")
+		d.UpdateRelationshipTables()
 		result.Success = true
 		defer dbRef.Close()
 		return result, err
@@ -1037,9 +1129,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	        dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (" + strconv.Itoa(int(citation.ID)) + ", (select distinct id_attribute from attribute where text = \"" + newAttributeName2 + "\"));")
 	    }
 		dbRef.Exec("DELETE FROM attribute WHERE text = \"" + attribute + "\";")
-		dbRef.Exec("DELETE FROM allChildrenPerAttribute;")
-		dbRef.Exec("CALL insertAllChildrenPerAttribute();")
-		dbRef.Exec("CALL insertAllParentsPerAttribute();")
+		d.UpdateRelationshipTables()
 		result.Success = true
 		defer dbRef.Close()
 		return result, err
@@ -1050,9 +1140,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
 		taxonomyIDStr := strconv.Itoa(int(relation.TaxonomyID))
 		dbRef.Exec("INSERT INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (" + taxonomyIDStr + ", (SELECT id_attribute FROM attribute WHERE text = \"" + relation.AttributeSrc + "\"), (SELECT id_attribute FROM attribute WHERE text = \"" + relation.AttributeDest + "\"), (SELECT id_relation FROM relation WHERE text = \"" + relation.Relation + "\"), (SELECT id_dimension FROM dimension WHERE text = \"" + relation.Dimension + "\"));")
-		dbRef.Exec("DELETE FROM allChildrenPerAttribute;")
-		dbRef.Exec("CALL insertAllChildrenPerAttribute();")
-		dbRef.Exec("CALL insertAllParentsPerAttribute();")
+		d.UpdateRelationshipTables()
 		result.Success = true
 		defer dbRef.Close()
 		return result, err

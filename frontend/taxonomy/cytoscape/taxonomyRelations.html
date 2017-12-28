@@ -77,11 +77,11 @@
   <div class="modal-dialog">
     <div class="loginmodal-container">
       <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
-      <h1 id="multiselectTitle">Fork Node</h1><br>
+      <h1 id="multiselectTitle"></h1><br>
       <form id="multiselectForm">
         <div class="row">
             <div class="col-xs-5">
-                <label for="multiselect">Source node</label>
+                <label for="multiselect"></label>
                 <select name="from[]" id="multiselect" class="multiselect" class="form-control" size="15" multiple="multiple"></select>
             </div>
             <div class="col-xs-2">
@@ -91,8 +91,8 @@
             <button type="button" id="multiselect_left_All_1" class="btn btn-block"><i class="glyphicon glyphicon-backward"></i></button>
             </div>
             <div class="col-xs-5">
-              <label for="multiselect_to">Target node</label>
-                <select name="to[]" id="multiselect_to" class="multiselect_to" class="form-control" size="15" multiple="multiple"></select>
+              <label for="multiselect_to"></label>
+              <select name="to[]" id="multiselect_to" class="multiselect_to" class="form-control" size="15" multiple="multiple"></select>
             </div>
         </div>
         <div>
@@ -297,6 +297,38 @@
     dialog.open();
   }
 
+  function switchMajor ( ele, dimension ) {
+    var text = ele.id();
+    var isMajor = ele.data('major') - 0;
+    if (isNaN(isMajor)) {
+      handleError('Cannot read major attribute of "' + text + '".');
+      return;
+    }
+    if (dimension == 'Interdimensional view') {
+      handleError('Cannot switch to/from major on the "Interdimensional view".');
+      return;
+    }
+    $.ajax
+      ({
+        type: "POST",
+        //the url where you want to sent the userName and password to
+        url: 'updateMajor',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        //json object to sent to the authentication url
+        data: JSON.stringify({text: text, major: (isMajor == 1) ? 0 : 1}),
+        success: function ( result ) {
+          if (!result || !result.response || !result.response.success) {
+            handleError('Error occurred while updating the major attribute of "' + text + '".');
+            return;
+          }
+          ele.classes((isMajor == 1) ? 'child' : 'parent');
+          console.log('Switched the "major" property for attribute: "' + text + '".');
+        }
+    });
+  }
+
   function addNode ( cy, ele, e, major ) {
     var dialog = BootstrapDialog.show({
       title: 'Enter attribute name',
@@ -337,7 +369,7 @@
                   //json object to sent to the authentication url
                   data: JSON.stringify(request),
                   success: function ( result ) {
-                    cy.add({ data: { id: attributeName, table: 'attribute', citationCount: 0, parent: ele.id(), width: attributeName.length * 10 }, classes: !!major ? 'parent' : 'child', position: e.position });
+                    cy.add({ data: { id: attributeName, table: 'attribute', citationCount: 0, parent: ele.id(), width: attributeName.length * 10, major: (!!major ? 1 : 0) }, classes: (!!major ? 'parent' : 'child'), position: e.position });
                     dialog.close();
                   }
               });
@@ -400,7 +432,7 @@
     dialog.open();
   }
 
-  function removeNodes ( ur, selecteds ) {
+  function removeNodes ( cy, selecteds ) {
     var promises = [];
     selecteds.forEach ( function ( selected ) {
       var removePromise = new Promise ( function ( resolve, reject ) {
@@ -432,7 +464,10 @@
     Promise.all(promises)
       .then ( function ( results ) {
         console.log('Removed ' + results.length + ' attribute' + (results.length > 1 ? 's' : '') + ' successfully.');
-        ur.do("remove", selecteds);
+        selecteds.forEach ( function ( selected ) {
+          $(selected).qtip('destroy');
+          cy.remove(selected);
+        });
       }).catch ( function ( err ) {
         handleError(err);
       });
@@ -469,6 +504,8 @@
 
   function loadMultiselect ( data, title, callback ) {
     $('#multiselectTitle').html(title);
+    $('label[for="multiselect"]').html('Source node');
+    $('label[for="multiselect_to"]').html('Target node');
     $('#multiselect, #multiselect_to').html('');
     data.forEach ( function ( entry ) {
       var text = !!entry.text ? entry.text : (!!entry.citation ? entry.citation : '');
@@ -487,6 +524,41 @@
       });
       callback(options);
     });
+  }
+
+  function loadCitationMappingMultiselect ( currentCitations, allCitations, title, callback ) {
+    $('#multiselectTitle').html(title);
+    $('label[for="multiselect"]').html('Current citations');
+    $('label[for="multiselect_to"]').html('All citations');
+    $('#multiselect, #multiselect_to').html('');
+    var currentCitationTexts = [];
+    currentCitations.forEach ( function ( entry ) {
+      var text = entry.citation;
+      var id = entry.id;
+      if (text != '') {
+        $('#multiselect').append('<option value="' + id + '">' + text + '</option>');
+        currentCitationTexts.push(text);
+      }
+    });
+    allCitations.forEach ( function ( entry ) {
+      var text = entry.citation;
+      var id = !!entry.id ? entry.id : text;
+      if (text != '' && currentCitationTexts.indexOf(text) < 0) {
+        $('#multiselect_to').append('<option value="' + id + '">' + text + '</option>');
+      }
+    });
+    $('#multiselectForm').unbind().on('submit', function ( e ) {
+      e.preventDefault();
+      console.log('done');
+      var options = [];
+      $('#multiselect option').each ( function ( index, entry ) {
+        var id = entry.value - 0;
+        if (!isNaN(id)) options.push({id: id});
+      });
+      $('#multiselect-modal').modal('hide');
+      callback(options);
+    });
+    $('#multiselect-modal').modal('show');
   }
 
   function chooseParentRelations ( data, callback ) {
@@ -545,13 +617,55 @@
     } else callback([[],[]]);
   }
 
+  function updateCitationMapping ( ele ) {
+    var text = ele.data('id');
+    $.get('citation', function ( allCitations ) {
+      if (!allCitations) {
+        handleError('Cannot get citations from DB.');
+        return;
+      }
+      console.log("papers: ", allCitations.response);
+      $.ajax
+        ({
+          type: "POST",
+          url: 'citationsPerAttribute',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({attribute: text}),
+          success: function ( citationsPerAttribute ) {
+            if (!citationsPerAttribute) {
+              handleError('Cannot get citations of attribute "' + text + '" from DB.');
+              return;
+            }
+            console.log("papers for attr: ", citationsPerAttribute.response);
+            loadCitationMappingMultiselect(!!citationsPerAttribute.response ? citationsPerAttribute.response : [], !!allCitations.response ? allCitations.response : [], 'Citation mapping of "' + text + '"', function ( mappedCitations ) {
+              $.ajax
+                ({
+                  type: "POST",
+                  url: 'updateCitationMapping',
+                  dataType: 'json',
+                  contentType:'application/json',
+                  async: true,
+                  data: JSON.stringify({attribute: text, citations: mappedCitations}),
+                  success: function ( result ) {
+                    if (!result || !result.response || !result.response.success) {
+                      handleError('Cannot update citation mapping of attribute: "' + text + '". Can only map papers to leaf nodes.');
+                      return;
+                    }
+                    ele.data('citationCount', mappedCitations.length);
+                    console.log('Updated citations mapping of attribute "' + text + '" successfully, mapped papers: ' + mappedCitations.length);
+                  }
+              });
+            });
+          }
+        });
+    });
+  }
+
   function forkNode ( node ) {
     var text = node.data('id');
     var isMajor = node.data('major');
-    if (isMajor == 1) {
-      handleError('Cannot fork major nodes.');
-      return;
-    }
     var dimension = node.data('parent');
     $.ajax
       ({
@@ -603,9 +717,6 @@
                               chooseChildRelations(childRelations.response, function ( childResults ) {
                                 chooseCitationMappings(attributeCoverage.response, function ( citationResults ) {
                                   $('#multiselect-modal').modal('hide');
-                                  console.log('parents: ', parentResults);
-                                  console.log('children: ', childResults);
-                                  console.log('citations: ', citationResults);
                                   $.ajax
                                     ({
                                         type: "POST",
@@ -635,7 +746,7 @@
       });
   }
 
-  function removeItem ( ur, selecteds, callback ) {
+  function removeItem ( cy, selecteds, callback ) {
     var selected = selecteds[0];
     var dialog = BootstrapDialog.show({
       title: 'Remove item',
@@ -651,7 +762,7 @@
               handleError('Type the name of the item to delete it. (attributeSrc_attributeDest for edges).');
               return;
             }
-            callback(ur, selecteds);
+            callback(cy, selecteds);
             dialog.close();
           }
       },{
@@ -705,7 +816,7 @@
     dialog.open();
   }
 
-  function removeEdges ( ur, selecteds ) {
+  function removeEdges ( cy, selecteds ) {
     var promises = [];
     selecteds.forEach ( function ( selected ) {
       var removePromise = new Promise ( function ( resolve, reject ) {
@@ -729,7 +840,10 @@
     Promise.all(promises)
       .then ( function ( results ) {
         console.log('Removed ' + results.length + ' taxonomy relation' + (results.length > 1 ? 's' : '') + ' successfully.');
-        ur.do("remove", selecteds);
+        selecteds.forEach ( function ( selected ) {
+          $(selected).qtip('destroy');
+          cy.remove(selected);
+        });
       }).catch ( function ( err ) {
         handleError(err);
       });
@@ -819,12 +933,30 @@
       var nodeCommands = [];
       nodeCommands.push({
         fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+        content: 'Remove', // html/text content to be displayed in the menu
+        select: function(ele){ // a function to execute when the command is selected
+          removeItem(cy, [ele], removeNodes);
+        },
+        enabled: true // whether the command is selectable
+      });
+      nodeCommands.push({
+        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
         content: 'Rename', // html/text content to be displayed in the menu
         select: function(ele){ // a function to execute when the command is selected
           renameNode(ele);
         },
         enabled: true // whether the command is selectable
       });
+      if (!isInterDimensional) {
+        nodeCommands.push({
+          fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+          content: 'Switch major', // html/text content to be displayed in the menu
+          select: function(ele){ // a function to execute when the command is selected
+            switchMajor(ele);
+          },
+          enabled: true // whether the command is selectable
+        });
+      }
       nodeCommands.push({
         fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
         content: 'Fork', // html/text content to be displayed in the menu
@@ -835,34 +967,15 @@
       });
       nodeCommands.push({
         fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-        content: 'All', // html/text content to be displayed in the menu
+        content: 'Mapped papers', // html/text content to be displayed in the menu
         select: function(ele){ // a function to execute when the command is selected
-          traverseChildren(cy, relations, attribute.text);
-          cy.forceRender();
+          updateCitationMapping(ele);
         },
         enabled: true // whether the command is selectable
       });
+/*
       relations.forEach ( function ( relation ) {
         if (attribute.text == relation.attributeDest) {
-          /*
-          menuItems.push(
-            {
-              id: 'menu_' + relation.attributeDest + '_' + relation.attributeSrc, // ID of menu item
-              content: relation.attributeSrc, // Display content of menu item
-              tooltipText: relation.relation, // Tooltip text for menu item
-              // Filters the elements to have this menu item on cxttap
-              // If the selector is not truthy no elements will have this menu item on cxttap
-              selector: '[id="' + attribute.text + '"]', 
-              onClickFunction: function () { // The function to be executed on click
-                console.log('clicked: ', this);
-              },
-              disabled: false, // Whether the item will be created as disabled
-              show: true, // Whether the item will be shown or not
-              hasTrailingDivider: true, // Whether the item will have a trailing divider
-              coreAsWell: false // Whether core instance have this item on cxttap
-            }
-          );
-          */
           nodeCommands.push({
             fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
             content: relation.attributeSrc, // html/text content to be displayed in the menu
@@ -877,28 +990,35 @@
           });
         }
       });
-      if (nodeCommands.length > 0) {
-        cy.cxtmenu({
-          menuRadius: 100, // the radius of the circular menu in pixels
-          selector: '[id="' + attribute.text + '"]', // elements matching this Cytoscape.js selector will trigger cxtmenus
-          commands: nodeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
-          fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
-          activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
-          activePadding: 20, // additional size in pixels for the active command
-          indicatorSize: 24, // the size in pixels of the pointer to the active command
-          separatorWidth: 3, // the empty spacing in pixels between successive commands
-          spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
-          minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
-          maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
-          openMenuEvents: 'cxttapstart taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
-          itemColor: 'white', // the colour of text in the command's content
-          itemTextShadowColor: 'black', // the text shadow colour of the command's content
-          zIndex: 9999, // the z-index of the ui div
-          atMouse: false // draw menu at mouse position
-        });
-      }
+*/
+      cy.cxtmenu({
+        menuRadius: 100, // the radius of the circular menu in pixels
+        selector: '[id="' + attribute.text + '"]', // elements matching this Cytoscape.js selector will trigger cxtmenus
+        commands: nodeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
+        fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
+        activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
+        activePadding: 20, // additional size in pixels for the active command
+        indicatorSize: 24, // the size in pixels of the pointer to the active command
+        separatorWidth: 3, // the empty spacing in pixels between successive commands
+        spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
+        minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
+        maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
+        openMenuEvents: 'cxttapstart taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
+        itemColor: 'white', // the colour of text in the command's content
+        itemTextShadowColor: 'black', // the text shadow colour of the command's content
+        zIndex: 9999, // the z-index of the ui div
+        atMouse: false // draw menu at mouse position
+      });
     });
     var edgeCommands = [];
+    edgeCommands.push({
+      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+      content: 'Remove', // html/text content to be displayed in the menu
+      select: function(ele){ // a function to execute when the command is selected
+        removeItem(cy, [ele], removeEdges);
+      },
+      enabled: true // whether the command is selectable
+    });
     edgeCommands.push({
       fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
       content: 'Annotation', // html/text content to be displayed in the menu
@@ -957,6 +1077,14 @@
       atMouse: false // draw menu at mouse position
     });
     var dimensionCommands = [];
+    dimensionCommands.push({
+      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
+      content: 'Remove', // html/text content to be displayed in the menu
+      select: function(ele){ // a function to execute when the command is selected
+        removeItem(cy, [ele], removeNodes);
+      },
+      enabled: true // whether the command is selectable
+    });
     dimensionCommands.push({
       fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
       content: 'Rename', // html/text content to be displayed in the menu
@@ -1018,8 +1146,7 @@
       atMouse: true // draw menu at mouse position
     });
     var ur = cy.undoRedo();
-    //document.removeEventListener("keydown");
-    document.addEventListener("keydown", function (e) {
+    $(document).off("keydown").on("keydown", function (e) {
       if(e.which === 46) { // delete
           var selecteds = cy.$(':selected');
           if (selecteds.length == 0) return;
@@ -1029,12 +1156,12 @@
           }
           var selecteds = cy.$("node:selected");
           if (selecteds.length > 0) {
-            removeItem(ur, selecteds, removeNodes);
+            removeItem(cy, selecteds, removeNodes);$()
             return;
           }
           selecteds = cy.$("edge:selected");
           if (selecteds.length > 0) {
-            removeItem(ur, selecteds, removeEdges);
+            removeItem(cy, selecteds, removeEdges);
           }
         }
         else if (e.ctrlKey && e.target.nodeName === 'BODY')
@@ -1071,6 +1198,11 @@
         hide: false,
         events: {
           render: function(event, api) {
+            console.log("rendering")
+            //cy.elements().trigger('qtiphide');
+            //$("div[id^=qtip-]").qtip('hide');
+            var qtipID = $(this).attr('id');
+            if (!!qtipID) $('.qtip[id!="' + qtipID + '"]').remove();
             $('.listCitations').unbind().click( function () {
               event.preventDefault();
               var attribute = $(this).attr('name');
@@ -1144,12 +1276,18 @@
       fisheye: true,
       animate: true,
       undoable: false,
-      expandCollapseCuePosition: function ( e ) { var position = e.position(); return {x: position.x - e.width()/2, y: position.y - 25}; }, // 'top-left'
+      expandCollapseCuePosition: function ( e ) { var position = e.position(); return {x: position.x + e.width()/2 - 21, y: position.y - e.height()/2 - 5}; }, // 'top-left'
+      expandCollapseCueSensitivity: 5,
       expandCollapseCueSize: 20, // 12
       expandCueImage: 'zoomInIcon.png',
       collapseCueImage: 'zoomOutIcon.png'
     });
     cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
+    /*
+      cy.$('.parent,.child').forEach ( function ( entry ) {
+        $(entry).qtip('destroy');
+      });
+    */
       cy.destroy();
       if (isInterDimensional) {
         var dimText = this.id();

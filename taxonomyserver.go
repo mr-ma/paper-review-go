@@ -83,6 +83,8 @@ func main() {
 	mux.Handle("GET", "/citation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsHandler), "getCitationsHandler", nil)))
 	mux.Handle("GET", "/citationCount", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountHandler), "getCitationCountHandler", nil)))
 	mux.Handle("GET", "/citationCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsHandler), "getCitationCountsHandler", nil)))
+	mux.Handle("POST", "/updateMajor", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateMajorHandler), "getUpdateMajorHandler", nil)))
+	mux.Handle("POST", "/updateCitationMapping", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateCitationMappingHandler), "getUpdateCitationMappingHandler", nil)))
 	mux.Handle("POST", "/updateCitationReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateCitationReferenceCountsHandler), "getUpdateCitationReferenceCountsHandler", nil)))
 	mux.Handle("GET", "/citationCountsIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsIncludingChildrenHandler), "getCitationCountsIncludingChildrenHandler", nil)))
 	mux.Handle("GET", "/relationTypes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getRelationTypesHandler), "getRelationTypesHandler", nil)))
@@ -165,8 +167,16 @@ func main() {
 		p := loadPage("frontend/src/js/jquery.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/jquery-2.0.3.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/jquery-2.0.3.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/d3.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/d3.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/d3-hierarchy.v1.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/d3-hierarchy.v1.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/d3-context-menu.js", func(w http.ResponseWriter, r *http.Request) {
@@ -366,6 +376,10 @@ func main() {
 	// mux.Handle("GET","/",cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIndexHandler), "getIndexHandler", nil)))
 	mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/index.html")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/circlePacking", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/hierarchy/circlePacking.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/conceptCorrelationMatrix", func(w http.ResponseWriter, r *http.Request) {
@@ -742,6 +756,18 @@ func getCitationCountsIncludingChildrenHandler(u *url.URL, h http.Header, r *MyR
 	citationCounts, err := driver.GetCitationCountsIncludingChildren()
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citationCounts), citationCounts}, nil
+}
+func getUpdateMajorHandler(u *url.URL, h http.Header, updateMajorRequest *model.UpdateMajorRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.UpdateMajor(updateMajorRequest.Text, updateMajorRequest.Major)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
+}
+func getUpdateCitationMappingHandler(u *url.URL, h http.Header, updateCitationMappingRequest *model.UpdateCitationMappingRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.UpdateCitationMapping(updateCitationMappingRequest.Attribute, updateCitationMappingRequest.Citations)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }
 func getRelationTypesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)

@@ -113,6 +113,11 @@ type CitationsPerAttributeRequest struct {
   Attribute string `json:"attribute"`
 }
 
+type UpdateCitationMappingRequest struct {
+  Attribute string `json:"attribute"`
+  Citations []Paper `json:"citations"`
+}
+
 type SharedPapersRequest struct {
   Text1 string `json:"text1"`
   Text2 string `json:"text2"`
@@ -148,6 +153,11 @@ type ReferenceCount struct {
 
 type UpdateReferenceCountsRequest struct {
   ReferenceCounts []ReferenceCount `json:"referenceCounts"`
+}
+
+type UpdateMajorRequest struct {
+  Text string `json:"text"`
+  Major int `json:"major"`
 }
 
 type Relation struct{

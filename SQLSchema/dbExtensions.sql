@@ -91,6 +91,7 @@ ALTER TABLE paper ADD COLUMN referenceCount int(20) DEFAULT "0";
 ALTER TABLE mapping ADD COLUMN referenceCount int(20) DEFAULT "0";
 
 ALTER TABLE attribute ADD UNIQUE KEY attribute_text_UNIQUE (text);
+ALTER TABLE mapping ADD UNIQUE KEY mapping_id_paper_id_attribute_UNIQUE (id_paper, id_attribute);
 ALTER TABLE taxonomy_dimension ADD UNIQUE KEY taxonomy_dimension_id_attribute_UNIQUE (id_taxonomy, id_attribute);
 ALTER TABLE taxonomy_relation ADD UNIQUE KEY taxonomy_relation_attributes_UNIQUE (id_taxonomy, id_src_attribute, id_dest_attribute, id_dimension);
 

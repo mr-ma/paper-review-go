@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+<head>
+    <title>Circle Packing</title>
+    <script src="jquery.min.js"></script>
+    <script type="text/javascript" src="d3.min.js"></script>
+    <script type="text/javascript" src="d3-hierarchy.v1.min.js"></script>
+
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap.min.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <script src="multiselect.min.js"></script>
+
+    <link href="loginForm.css" type="text/css" rel="stylesheet"/>
+
+    <!-- promises -->
+    <script src="bluebird.min.js"></script>
+    <script src="error.js"></script>
+    <style>
+
+    .node {
+      cursor: pointer;
+    }
+
+    .node:hover {
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+
+    .node--leaf {
+      fill: white;
+    }
+
+    .label {
+      font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-anchor: middle;
+      text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
+    }
+
+    .label,
+    .node--root,
+    .node--leaf {
+      pointer-events: none;
+    }
+
+    </style>
+</head>
+<body>
+  <svg width="960" height="960"></svg>
+<script>
+
+  var isInterDimensional = true;
+  var displayedDimension;
+
+  function showHierarchy ( json ) {
+    var svg = d3.select("svg"),
+        margin = 20,
+        diameter = svg.attr("width"),
+        g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+
+    var color = d3.scale.linear()
+        .domain([-1, 5])
+        .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
+        .interpolate(d3.interpolateHcl);
+
+    var pack = d3.pack()
+        .size([diameter - margin, diameter - margin])
+        .padding(2);
+
+      var rootNode = d3.hierarchy(json)
+          .sum(function(d) { return d.size; })
+          .sort(function(a, b) { return b.value - a.value; });
+
+      var focus = rootNode,
+          nodes = pack(rootNode).descendants(),
+          view;
+
+      var circle = g.selectAll("circle")
+        .data(nodes)
+        .enter().append("circle")
+          .attr("class", function(d) { return d.parent ? (d.children && d.children.length > 0) ? "node" : "node node--leaf" : "node node--root"; })
+          .style("fill", function(d) { return (d.children && d.children.length > 0) ? color(d.depth) : 'lightgreen'; })
+          .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
+
+      var text = g.selectAll("text")
+        .data(nodes)
+        .enter().append("text")
+          .attr("class", "label")
+          .style("fill-opacity", function(d) { return d.parent === rootNode ? 1 : 0; })
+          .style("display", function(d) { return d.parent === rootNode ? "inline" : "none"; })
+          .text(function(d) { return d.data.name; });
+
+      var node = g.selectAll("circle,text");
+
+      svg.style("background", color(-1))
+         .on("click", function() { zoom(rootNode); });
+
+      //$('.node--leaf').unbind().on("click", function () { console.log("child node got clicked...."); });
+
+      zoomTo([rootNode.x, rootNode.y, rootNode.r * 2 + margin]);
+
+      function zoom(d) {
+        var focus0 = focus; focus = d;
+
+        var transition = d3.transition()
+            .duration(d3.event.altKey ? 7500 : 750)
+            .tween("zoom", function(d) {
+              var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
+              return function(t) { zoomTo(i(t)); };
+            });
+
+        svg.selectAll("text")
+          .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
+          .style("fill-opacity", function(d) { if (d.parent === focus) { this.style.display = "inline"; } else { this.style.display = "none"; } return d.parent === focus ? 1 : 0; })
+          //.on("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
+          //.on("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
+      }
+
+      function zoomTo(v) {
+        var k = diameter / v[2]; view = v;
+        node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
+        circle.attr("r", function(d) { return d.r * k; });
+      }
+  }
+
+  function traverseTree ( json, attributes, parents, counter ) {
+    if (attributes.length == 0 || counter > 100) {
+      parents.forEach ( function ( parent ) {
+        console.log('cit: ', parent.citationCount)
+        parent.size = !!parent.citationCount ? (parent.citationCount * 10) : (parent.children.length > 0 ? 100 * parent.children.length : 100);
+      })
+      return json;
+    }
+    var remainingAttributes = [];
+    attributes.forEach ( function ( attribute ) {
+      var found = false;
+      for ( var i = 0; i < parents.length; i++ ) {
+        if (parents[i].name.trim() == attribute.parentText.trim()) {
+          var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount};
+          parents[i].children.push(obj);
+          parents.push(obj);
+          found = true;
+          break;
+        }
+      }
+      if (!found) remainingAttributes.push(attribute);
+    });
+    return traverseTree(json, remainingAttributes, parents, counter+1);
+  }
+
+  function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts ) {
+    console.log('creating json, sttr: ', attributes);
+    isInterDimensional = dimensions.length > 1;
+
+    var json = {'name': 'Taxonomy', 'children': [], 'citationCount': 0};
+    dimensions.forEach ( function ( dimension ) {
+      json.children.push({'name': dimension.text, 'children': [], 'citationCount': 0, 'size': 1000});
+    });
+    var remainingAttributes = [];
+    var orphanAttributes = [];
+    var parents = [];
+    attributes.forEach ( function ( attribute ) {
+      var found = false;
+      for ( var i = 0; i < citationCounts.length; i++ ) {
+        if (citationCounts[i].attribute == attribute.text) {
+          attribute.citationCount = citationCounts[i].citationCount;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        attribute.citationCount = 0;
+      }
+      if (!!attribute.parentText) attribute.parentText = attribute.parentText.split(',').shift();
+      if (!attribute.dimension || attribute.dimension == '') orphanAttributes.push(attribute);
+      else if (!attribute.parentText || attribute.parentText == '') {
+        var found = false;
+        for ( var i = 0; i < json.children.length; i++ ) {
+          if (json.children[i].name.trim() == attribute.dimension.trim()) {
+            var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount};
+            json.children[i].children.push(obj);
+            parents.push(obj);
+            found = true;
+            break;
+          }
+        }
+        if (!found) remainingAttributes.push(attribute);
+      } else remainingAttributes.push(attribute);
+    });
+    
+    orphanAttributes.forEach ( function ( orphan ) {
+      var obj = {'name': orphan.text, 'children': [], 'citationCount': orphan.citationCount};
+      json.children.push(obj);
+      parents.push(obj);
+    });
+    
+    json = traverseTree(json, remainingAttributes, parents, 0);
+    showHierarchy(json);
+  }
+
+    function showDimension ( taxonomyID, dimension ) {
+      $.get('dimension', function ( dimensionResults ) {
+        if (!dimensionResults || !dimensionResults.response) {
+          console.log('Cannot get dimensions from DB.');
+          return;
+        }
+        var request = {'taxonomy_id': taxonomyID};
+        var attributeURL, attributeRelationsURL, dimensions;
+        switch(dimension) {
+          case 'Interdimensional view': attributeURL = 'attribute'; attributeRelationsURL = 'interdimensionalRelations'; dimensions = dimensionResults.response; break;
+          default: attributeURL = 'attributesPerDimension'; attributeRelationsURL = 'attributeRelations'; dimensions = [{text: dimension}]; request.dimension = dimension;
+        }
+        $.ajax
+          ({
+              type: "GET",
+              //the url where you want to sent the userName and password to
+              url: attributeURL,
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              //json object to sent to the authentication url
+              data: JSON.stringify(request),
+              success: function ( attributes ) {
+                if (!attributes) {
+                  console.log('Cannot get attributes from DB.');
+                  return;
+                }
+                console.log(attributes.response)
+                $.ajax
+                  ({
+                      type: "POST",
+                      //the url where you want to sent the userName and password to
+                      url: attributeRelationsURL,
+                      dataType: 'json',
+                      contentType:'application/json',
+                      async: true,
+                      //json object to sent to the authentication url
+                      data: JSON.stringify(request),
+                      success: function ( relations ) {
+                        if (!relations) {
+                          console.log('Cannot get attribute relations from DB.');
+                          return;
+                        }
+                        $.get('relationTypes', function ( relationTypes ) {
+                          if (!relationTypes) {
+                            console.log('Cannot get relation types from DB.');
+                            return;
+                          }
+                          $.get('citationCounts', function ( citationCounts ) {
+                              if (!citationCounts) {
+                                console.log('Cannot get citation counts from DB.');
+                                return;
+                              }
+                              createJSON(dimensions, !!attributes.response ? attributes.response : [], !!relations.response ? relations.response : [], !!relationTypes.response ? relationTypes.response : [], !!citationCounts.response ? citationCounts.response : []);
+                              displayedDimension = dimension;
+                          });
+                        });
+                      }
+                  });
+              }
+          });
+      });
+    }
+
+    function showDimensionRelations () {
+      var request = {'taxonomy_id': taxonomyID};
+      $.ajax
+        ({
+            type: "POST",
+            //the url where you want to sent the userName and password to
+            url: 'dimensionMajorAttributes',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            //json object to sent to the authentication url
+            data: JSON.stringify(request),
+            success: function ( majorAttributes ) {
+              showDimensions(majorAttributes.response);
+            }
+        });
+    }
+
+    $(document).ready( function () {
+      var taxonomyID = 1;
+      var dimension = window.location.href.split('#').pop().replace(/%20/g, ' ');
+      if (dimension != '') {
+        console.log('dimension: ' + dimension);
+        showDimension(taxonomyID, dimension);
+      }
+    });
+	</script>
+</body>
+</html>
+
