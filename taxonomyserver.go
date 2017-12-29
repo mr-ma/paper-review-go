@@ -378,6 +378,10 @@ func main() {
 		p := loadPage("frontend/taxonomy/hierarchy/circlePacking.html")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/treeMap", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/hierarchy/treeMap.html")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/conceptCorrelationMatrix", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations.html")
 		fmt.Fprintf(w, "%s", p)

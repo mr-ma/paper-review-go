@@ -1,9 +1,9 @@
 <!doctype html>
 <html>
 <head>
-    <title>Circle Packing</title>
+    <title>Treemap</title>
     <script src="jquery.min.js"></script>
-    <script type="text/javascript" src="d3.min.js"></script>
+    <script type="text/javascript" src="d3.v4.min.js"></script>
     <script type="text/javascript" src="d3-hierarchy.v1.min.js"></script>
 
     <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
@@ -21,29 +21,27 @@
     <script src="error.js"></script>
     <style>
 
+    body {
+      font: 10px sans-serif;
+      position: relative;
+    }
+
     .node {
-      cursor: pointer;
+      box-sizing: border-box;
+      position: absolute;
+      overflow: hidden;
     }
 
-    .node:hover {
-      stroke: #000;
-      stroke-width: 1.5px;
+    .node-label {
+      padding: 4px;
+      line-height: 1em;
+      white-space: pre;
     }
 
-    .node--leaf {
-      fill: white;
-    }
-
-    .label {
-      font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
-      text-anchor: middle;
-      text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
-    }
-
-    .label,
-    .node--root,
-    .node--leaf {
-      pointer-events: none;
+    .node-value {
+      color: rgba(0,0,0,0.8);
+      font-size: 9px;
+      margin-top: 1px;
     }
 
     </style>
@@ -61,67 +59,52 @@
         diameter = svg.attr("width"),
         g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 
-    var color = d3.scale.linear()
+    var color = d3.scaleLinear()
         .domain([-1, 5])
         .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
         .interpolate(d3.interpolateHcl);
 
-    var pack = d3.pack()
-        .size([diameter - margin, diameter - margin])
-        .padding(2);
+    var width = 960,
+      height = 1060;
+
+
+    var format = d3.format(",d");
+
+    var color = d3.scaleOrdinal()
+        .range(d3.schemeCategory10
+            .map(function(c) { c = d3.rgb(c); c.opacity = 0.6; return c; }));
+
+    //var stratify = d3.stratify()
+    //    .parentId(function(d) { return d.id.substring(0, d.id.lastIndexOf(".")); });
+
+    var treemap = d3.treemap()
+      .size([width, height])
+      .padding(1)
+      .round(true);
 
       var rootNode = d3.hierarchy(json)
-          .sum(function(d) { return d.size; })
-          .sort(function(a, b) { return b.value - a.value; });
+          .sum(function(d) { return d.value; })
+          .sort(function(a, b) { return b.height - a.height || b.value - a.value; });
 
-      var focus = rootNode,
-          nodes = pack(rootNode).descendants(),
-          view;
+     treemap(rootNode);
 
-      var circle = g.selectAll("circle")
-        .data(nodes)
-        .enter().append("circle")
-          .attr("class", function(d) { return d.parent ? (d.children && d.children.length > 0) ? "node" : "node node--leaf" : "node node--root"; })
-          .style("fill", function(d) { return (d.children && d.children.length > 0) ? color(d.depth) : 'lightgreen'; })
-          .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
-
-      var text = g.selectAll("text")
-        .data(nodes)
-        .enter().append("text")
-          .attr("class", "label")
-          .style("fill-opacity", function(d) { return d.parent === rootNode ? 1 : 0; })
-          .style("display", function(d) { return d.parent === rootNode ? "inline" : "none"; })
-          .text(function(d) { return d.data.name; });
-
-      var node = g.selectAll("circle,text");
-
-      svg.style("background", color(-1))
-         .on("click", function() { zoom(rootNode); });
-
-      zoomTo([rootNode.x, rootNode.y, rootNode.r * 2 + margin]);
-
-      function zoom(d) {
-        var focus0 = focus; focus = d;
-
-        var transition = d3.transition()
-            .duration(d3.event.altKey ? 7500 : 750)
-            .tween("zoom", function(d) {
-              var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
-              return function(t) { zoomTo(i(t)); };
-            });
-
-        svg.selectAll("text")
-          .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
-          .style("fill-opacity", function(d) { if (d.parent === focus) { this.style.display = "inline"; } else { this.style.display = "none"; } return d.parent === focus ? 1 : 0; })
-          //.on("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
-          //.on("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
-      }
-
-      function zoomTo(v) {
-        var k = diameter / v[2]; view = v;
-        node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
-        circle.attr("r", function(d) { return d.r * k; });
-      }
+    d3.select("body")
+      .selectAll(".node")
+      .data(rootNode.leaves())
+      .enter().append("div")
+        .attr("class", "node")
+        .attr("title", function(d) { return d.id + "\n" + format(d.value); })
+        .style("left", function(d) { return d.x0 + "px"; })
+        .style("top", function(d) { return d.y0 + "px"; })
+        .style("width", function(d) { return d.x1 - d.x0 + "px"; })
+        .style("height", function(d) { return d.y1 - d.y0 + "px"; })
+        .style("background", function(d) { while (d.depth > 1) d = d.parent; return color(d.id); })
+      .append("div")
+        .attr("class", "node-label")
+        .text(function(d) { return d.data.name; })
+      .append("div")
+        .attr("class", "node-value")
+        .text(function(d) { return format(d.value); });
   }
 
   function traverseTree ( json, attributes, parents, counter ) {
