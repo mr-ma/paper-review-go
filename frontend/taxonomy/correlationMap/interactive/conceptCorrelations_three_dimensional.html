@@ -615,16 +615,16 @@ function renderMatrixHelper () {
     var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
     var showChildAttributes = $('#showChildAttributes').is(':checked');
     switch(parent1) {
-      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'attribute'; break;
+      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'leafAttribute'; break;
       case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'attributesPerDimension'; requestX.dimension = parent1; break;
-      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent1; break;
+      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
     }
     switch(parent2) {
-      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'attribute'; break;
+      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'leafAttribute'; break;
       case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'attributesPerDimension'; requestY.dimension = parent2; break;
-      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent2; break;
+      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
     }
     var options = {ajaxTypeX: ajaxTypeX, ajaxTypeY: ajaxTypeY, attributeUrlX: attributeUrlX, attributeUrlY: attributeUrlY, requestX: requestX, requestY: requestY};
     $.get(correlationURL, function ( correlations ) {
@@ -632,7 +632,6 @@ function renderMatrixHelper () {
         handleError('Cannot get correlation data from DB.');
         return;
       }
-      console.log('rendering with max value: ' + maxValue)
       loadAttributes(false, correlations, options, maxValue, onClickURL, showMatrix);
     });
 }

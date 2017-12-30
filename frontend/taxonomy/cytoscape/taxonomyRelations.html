@@ -95,7 +95,7 @@
               <select name="to[]" id="multiselect_to" class="multiselect_to" class="form-control" size="15" multiple="multiple"></select>
             </div>
         </div>
-        <div>
+        <div style="margin-top:20px;">
           <input type="submit" id="submitMultiselect" class="btn btn-success" value="Save">
         </div>
     </form>
@@ -140,6 +140,8 @@
           selector: '.dimension',
           style: {
               'background-color': 'white',
+              'border-color': '#00008B',
+              'color': '#00008B',
               'border-width': '5px',
               label: 'data(id)',
               'text-valign': 'top',
@@ -369,6 +371,10 @@
                   //json object to sent to the authentication url
                   data: JSON.stringify(request),
                   success: function ( result ) {
+                    if (!result || !result.response || !result.response.success) {
+                      handleError('This name already exists in the taxonomy. Please choose a different one or delete the other node.');
+                      return;
+                    }
                     cy.add({ data: { id: attributeName, table: 'attribute', citationCount: 0, parent: ele.id(), width: attributeName.length * 10, major: (!!major ? 1 : 0) }, classes: (!!major ? 'parent' : 'child'), position: e.position });
                     dialog.close();
                   }
@@ -863,6 +869,7 @@
       else items.push({data: { id: dimension.text, table: 'dimension' }, classes: 'dimension' }); // , style: { events: 'no' }
     });
     attributes.forEach ( function ( attribute ) {
+      if (attribute.text == 'dududududuee') console.log('found: dududududuee')
       var x = attribute.x - 0;
       var y = attribute.y - 0;
       if (!isNaN(x) && !isNaN(y)) {
@@ -924,7 +931,7 @@
       elements: items,
       layout: {
         name: 'preset',
-        zoom: 0.75
+        zoom: 1
         //rows: 3
       },
       style: STYLES

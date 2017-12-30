@@ -47,26 +47,15 @@
     </style>
 </head>
 <body>
-  <svg width="960" height="960"></svg>
 <script>
 
   var isInterDimensional = true;
   var displayedDimension;
 
   function showHierarchy ( json ) {
-    var svg = d3.select("svg"),
-        margin = 20,
-        diameter = svg.attr("width"),
-        g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
-
-    var color = d3.scaleLinear()
-        .domain([-1, 5])
-        .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
-        .interpolate(d3.interpolateHcl);
 
     var width = 960,
-      height = 1060;
-
+        height = 1060;
 
     var format = d3.format(",d");
 
@@ -74,43 +63,86 @@
         .range(d3.schemeCategory10
             .map(function(c) { c = d3.rgb(c); c.opacity = 0.6; return c; }));
 
-    //var stratify = d3.stratify()
-    //    .parentId(function(d) { return d.id.substring(0, d.id.lastIndexOf(".")); });
+    var stratify = d3.stratify()
+        .parentId(function(d) { return d.data.name.substring(0, d.data.name.lastIndexOf(".")); });
 
     var treemap = d3.treemap()
-      .size([width, height])
-      .padding(1)
-      .round(true);
+        .size([width, height])
+        .padding(1)
+        .round(true);
+
 
       var rootNode = d3.hierarchy(json)
-          .sum(function(d) { return d.value; })
-          .sort(function(a, b) { return b.height - a.height || b.value - a.value; });
+          .sum(function(d) { return d.size; })
+          .sort(function(a, b) { return b.height - a.height || b.size - a.size; });
 
-     treemap(rootNode);
+      treemap(rootNode);
 
-    d3.select("body")
-      .selectAll(".node")
-      .data(rootNode.leaves())
-      .enter().append("div")
-        .attr("class", "node")
-        .attr("title", function(d) { return d.id + "\n" + format(d.value); })
-        .style("left", function(d) { return d.x0 + "px"; })
-        .style("top", function(d) { return d.y0 + "px"; })
-        .style("width", function(d) { return d.x1 - d.x0 + "px"; })
-        .style("height", function(d) { return d.y1 - d.y0 + "px"; })
-        .style("background", function(d) { while (d.depth > 1) d = d.parent; return color(d.id); })
-      .append("div")
-        .attr("class", "node-label")
-        .text(function(d) { return d.data.name; })
-      .append("div")
-        .attr("class", "node-value")
-        .text(function(d) { return format(d.value); });
+      var focus = rootNode,
+        nodes = rootNode.leaves(),
+        view;
+
+      d3.select("body")
+        .selectAll(".node")
+        .data(rootNode.leaves())
+        .enter().append("div")
+          .attr("class", "node")
+          .attr("title", function(d) { return d.data.name; })
+          .style("left", function(d) { return d.x0 + "px"; })
+          .style("top", function(d) { return d.y0 + "px"; })
+          .style("width", function(d) { return d.x1 - d.x0 + "px"; })
+          .style("height", function(d) { return d.y1 - d.y0 + "px"; })
+          .style("background", function(d) { while (d.depth > 1) d = d.parent; return color(d.data.name); })
+          .on("click", function(d) { if (focus !== d.parent) zoom(d.parent), d3.event.stopPropagation(); else if ($(this).attr("class").split('node--leafnode').length > 1) showCitations(d.data.name), d3.event.stopPropagation(); else if (focus !== d) zoom(d), d3.event.stopPropagation(); })
+        .append("div")
+          .attr("class", "node-label")
+          .text(function(d) { return d.data.name; })
+        .append("div")
+          .attr("class", "node-value")
+          .text(function(d) { return format(d.data.size); });
+
+    function type(d) {
+      d.size = +d.size;
+      return d;
+    }
+
+    var svg = d3.select("svg");
+
+    var margin = 20;
+    var diameter = svg.attr("width");
+
+    svg.style("background", color(-1))
+       .on("click", function() { zoom(rootNode); });
+
+    zoomTo([rootNode.x, rootNode.y]);
+
+    function zoom(d) {
+      var focus0 = focus; focus = d;
+
+      var transition = d3.transition()
+          .duration(d3.event.altKey ? 7500 : 750)
+          .tween("zoom", function(d) {
+            var i = d3.interpolateZoom(view, [focus.x, focus.y]);
+            return function(t) { zoomTo(i(t)); };
+          });
+
+      svg.selectAll("text")
+        .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
+        .style("fill-opacity", function(d) { if (d.parent === focus) { this.style.display = "inline"; } else { this.style.display = "none"; } return d.parent === focus ? 1 : 0; })
+        //.on("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
+        //.on("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
+    }
+
+    function zoomTo(v) {
+      var k = diameter / v[2]; view = v;
+      node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
+      
+    }
   }
 
   function traverseTree ( json, attributes, parents, counter ) {
     if (attributes.length == 0 || counter > 100) {
       parents.forEach ( function ( parent ) {
-        console.log('cit: ', parent.citationCount)
         parent.size = !!parent.citationCount ? (parent.citationCount * 10) : (parent.children.length > 0 ? 100 * parent.children.length : 100);
       })
       return json;

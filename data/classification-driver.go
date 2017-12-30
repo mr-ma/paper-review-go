@@ -54,6 +54,7 @@ type ClassificationDriver interface {
 	GetAttributeDetails(string) ([]model.Attribute, error)
 	GetCitationDetails(string, string) ([]model.Paper, error)
 	GetAttributeCoverage() ([]model.AttributeCoverage, error)
+	GetAttributeCoverageWithReferenceCounts() ([]model.AttributeCoverage, error)
 	ExportCorrelationsCSV(filterAttributes []model.Attribute)
 	AddAttribute(model.Attribute) (model.Result, error)
 	AddDimension(string) (model.Result, error)
@@ -632,6 +633,24 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	func (d MySQLDriver) GetAttributeCoverage() (attributeCoverage []model.AttributeCoverage, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
+		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, 1 as value from attribute inner join mapping on (attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper);`)
+		defer stmt.Close()
+		defer db.Close()
+		rows, err := stmt.Query()
+		checkErr(err)
+		for rows.Next() {
+			a := model.AttributeCoverage{}
+			rows.Scan(&a.AttributeName,&a.PaperName,&a.Text1,&a.Text2,&a.AttributeID,&a.PaperID,&a.Value)
+			attributeCoverage = append(attributeCoverage, a)
+		}
+		defer rows.Close()
+		defer dbRef.Close()
+		return attributeCoverage, err
+		}
+
+	func (d MySQLDriver) GetAttributeCoverageWithReferenceCounts() (attributeCoverage []model.AttributeCoverage, err error){
+		dbRef, err := d.OpenDB()
+		checkErr(err)
 		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, paper.referenceCount as value from attribute inner join mapping on (attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper);`)
 		defer stmt.Close()
 		defer db.Close()
@@ -916,8 +935,15 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
 		future := make(chan model.Result)
 		go func () {
-			dbRef.Exec(`DROP PROCEDURE IF EXISTS insertAllChildrenPerAttribute; DELIMITER ;; CREATE PROCEDURE insertAllChildrenPerAttribute() BEGIN DECLARE cursor_id_attribute INT(10); DECLARE cursor_text VARCHAR(50); DECLARE done INT DEFAULT FALSE; DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute; DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE; DELETE FROM allChildrenPerAttribute; OPEN cursor_i; read_loop: LOOP FETCH cursor_i INTO cursor_id_attribute, cursor_text; IF done THEN LEAVE read_loop; END IF; INSERT INTO allChildrenPerAttribute(id_attribute, text, children) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.children IS NULL THEN CAST(cursor_id_attribute AS CHAR(50)) ELSE CONCAT(CAST(cursor_id_attribute AS CHAR(50)), ",", b.children) END) AS children FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=cursor_id_attribute) tmp) a) b)); END LOOP; CLOSE cursor_i; END; ;;`)
-			dbRef.Exec("CALL insertAllChildrenPerAttribute();")
+			/*
+			db, stmt, err := d.Query(`DROP PROCEDURE IF EXISTS insertallchildrenperattribute; DELIMITER ;; CREATE PROCEDURE insertallchildrenperattribute() BEGIN DECLARE cursor_id_attribute INT(10); DECLARE cursor_text VARCHAR(50); DECLARE done INT DEFAULT FALSE; DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute; DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE; DELETE FROM allChildrenPerAttribute; OPEN cursor_i; read_loop: LOOP FETCH cursor_i INTO cursor_id_attribute, cursor_text; IF done THEN LEAVE read_loop; END IF; INSERT INTO allChildrenPerAttribute(id_attribute, text, children) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.children IS NULL THEN CAST(cursor_id_attribute AS CHAR(50)) ELSE CONCAT(CAST(cursor_id_attribute AS CHAR(50)), ",", b.children) END) AS children FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=cursor_id_attribute) tmp) a) b)); END LOOP; CLOSE cursor_i; END; ;;`)
+			checkErr(err)
+			defer stmt.Close()
+			defer db.Close()
+			rows, err := stmt.Query()
+			defer rows.Close()
+			*/
+			dbRef.Exec("CALL insertallparentsperattribute();")
 			defer dbRef.Close()
 			future <- model.Result{Success: true}
 		}()
@@ -929,8 +955,15 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
 		future := make(chan model.Result)
 		go func () {
-			dbRef.Exec(`DROP PROCEDURE IF EXISTS insertAllParentsPerAttribute; DELIMITER ;; CREATE PROCEDURE insertAllParentsPerAttribute() BEGIN DECLARE cursor_id_attribute INT(10); DECLARE cursor_text VARCHAR(50); DECLARE done INT DEFAULT FALSE; DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute; DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE; DELETE FROM allParentsPerAttribute; OPEN cursor_i; read_loop: LOOP FETCH cursor_i INTO cursor_id_attribute, cursor_text; IF done THEN LEAVE read_loop; END IF; INSERT INTO allParentsPerAttribute(id_attribute, text, parents) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.parents IS NULL THEN "" ELSE b.parents END) AS parents FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS parents FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT parent.text SEPARATOR ',') FROM taxonomy_relation AS relation1 INNER JOIN attribute as parent ON (relation1.id_dest_attribute = parent.id_attribute) WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET((SELECT DISTINCT text FROM attribute WHERE id_attribute = relation1.id_src_attribute), @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=text FROM attribute WHERE id_attribute = cursor_id_attribute) tmp) a) b)); END LOOP; CLOSE cursor_i; END; ;;`)
-			dbRef.Exec("CALL insertAllParentsPerAttribute();")
+			/*
+			db, stmt, err := d.Query(`DROP PROCEDURE IF EXISTS insertallparentsperattribute; DELIMITER ;; CREATE PROCEDURE insertallparentsperattribute() BEGIN DECLARE cursor_id_attribute INT(10); DECLARE cursor_text VARCHAR(50); DECLARE done INT DEFAULT FALSE; DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute; DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE; DELETE FROM allParentsPerAttribute; OPEN cursor_i; read_loop: LOOP FETCH cursor_i INTO cursor_id_attribute, cursor_text; IF done THEN LEAVE read_loop; END IF; INSERT INTO allParentsPerAttribute(id_attribute, text, parents) VALUES(cursor_id_attribute, cursor_text, (SELECT (CASE WHEN b.parents IS NULL THEN "" ELSE b.parents END) AS parents FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS parents FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT parent.text SEPARATOR ',') FROM taxonomy_relation AS relation1 INNER JOIN attribute as parent ON (relation1.id_dest_attribute = parent.id_attribute) WHERE relation1.id_taxonomy = 1 AND relation1.id_relation > 2 AND FIND_IN_SET((SELECT DISTINCT text FROM attribute WHERE id_attribute = relation1.id_src_attribute), @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=text FROM attribute WHERE id_attribute = cursor_id_attribute) tmp) a) b)); END LOOP; CLOSE cursor_i; END; ;;`)
+			checkErr(err)
+			defer stmt.Close()
+			defer db.Close()
+			rows, err := stmt.Query()
+			defer rows.Close()
+			*/
+			dbRef.Exec("CALL insertallparentsperattribute();")
 			defer dbRef.Close()
 			future <- model.Result{Success: true}
 		}()

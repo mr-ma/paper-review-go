@@ -107,6 +107,7 @@ func main() {
 	mux.Handle("POST", "/mergeAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMergeAttributesHandler), "getMergeAttributesHandler", nil)))
 	mux.Handle("POST", "/forkAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getForkAttributeHandler), "getForkAttributeHandler", nil)))
 	mux.Handle("GET", "/attributeCoverage", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandler), "getAttributeCoverageHandler", nil)))
+	mux.Handle("GET", "/attributeCoverageWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandlerWithReferenceCounts), "getAttributeCoverageHandlerWithReferenceCounts", nil)))
 	mux.HandleFunc("GET", "/error.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/error.js")
 		fmt.Fprintf(w, "%s", p)
@@ -378,8 +379,8 @@ func main() {
 		p := loadPage("frontend/taxonomy/hierarchy/circlePacking.html")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/treeMap", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/hierarchy/treeMap.html")
+	mux.HandleFunc("GET", "/treemap", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/hierarchy/treemap.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/conceptCorrelationMatrix", func(w http.ResponseWriter, r *http.Request) {
@@ -404,10 +405,6 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/3D", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/3D/hierarchy.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/treemap", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/treemap.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/chord", func(w http.ResponseWriter, r *http.Request) {
@@ -888,6 +885,12 @@ func getForkAttributeHandler(u *url.URL, h http.Header, forkAttributeRequest *mo
 func getAttributeCoverageHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeCoverage, err := driver.GetAttributeCoverage()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
+}
+func getAttributeCoverageHandlerWithReferenceCounts(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	attributeCoverage, err := driver.GetAttributeCoverageWithReferenceCounts()
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
 }

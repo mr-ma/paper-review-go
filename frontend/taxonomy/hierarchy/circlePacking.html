@@ -55,6 +55,39 @@
   var isInterDimensional = true;
   var displayedDimension;
 
+  function showCitations ( attribute ) {
+    if (!attribute || attribute == '') return;
+    $.ajax
+      ({
+        type: "POST",
+        url: 'citationsPerAttribute',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify({attribute: attribute}),
+        success: function ( citationsPerAttribute ) {
+          if (!citationsPerAttribute) {
+            handleError('Cannot get citations from DB for attribute: ' + attribute + '.');
+            return;
+          }
+          var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+          var sumOfReferences = 0;
+          if (!!citationsPerAttribute.response) {
+            citationsPerAttribute.response.forEach ( function ( citationPerAttribute ) {
+              citationTable += '<tr><td>' + citationPerAttribute.citation + '</td><td>' + citationPerAttribute.referenceCount + '</td><td>' + citationPerAttribute.bib + '</td></tr>';
+              sumOfReferences += citationPerAttribute.referenceCount;
+            });
+          }
+          citationTable += '</tbody></table></div>';
+          if (sumOfReferences > 0) citationTable = '<div><p><b>Sum of references:</b>  ' + sumOfReferences + '</p></div>' + citationTable;
+          BootstrapDialog.show({
+            title: 'Citations for attribute "' + attribute + '"',
+            message: citationTable
+          });
+        }
+      });
+  }
+
   function showHierarchy ( json ) {
     var svg = d3.select("svg"),
         margin = 20,
@@ -81,9 +114,9 @@
       var circle = g.selectAll("circle")
         .data(nodes)
         .enter().append("circle")
-          .attr("class", function(d) { return d.parent ? (d.children && d.children.length > 0) ? "node" : "node node--leaf" : "node node--root"; })
+          .attr("class", function(d) { return d.parent ? (d.data.children && d.data.children.length > 0) ? "node" : "node node--leafnode" : "node node--root"; })
           .style("fill", function(d) { return (d.children && d.children.length > 0) ? color(d.depth) : 'lightgreen'; })
-          .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
+          .on("click", function(d) { if (focus !== d.parent) zoom(d.parent), d3.event.stopPropagation(); else if ($(this).attr("class").split('node--leafnode').length > 1) showCitations(d.data.name), d3.event.stopPropagation(); else if (focus !== d) zoom(d), d3.event.stopPropagation(); });
 
       var text = g.selectAll("text")
         .data(nodes)
@@ -127,7 +160,6 @@
   function traverseTree ( json, attributes, parents, counter ) {
     if (attributes.length == 0 || counter > 100) {
       parents.forEach ( function ( parent ) {
-        console.log('cit: ', parent.citationCount)
         parent.size = !!parent.citationCount ? (parent.citationCount * 10) : (parent.children.length > 0 ? 100 * parent.children.length : 100);
       })
       return json;

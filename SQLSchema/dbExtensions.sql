@@ -119,7 +119,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 /* foreign keys end */
 
 /* dummy reference count data */
-UPDATE paper SET referenceCount = id_paper;
+/* UPDATE paper SET referenceCount = id_paper; */
 
 /* update taxonomy_relation.id_dimension */
 UPDATE taxonomy_relation as relation SET id_dimension = (SELECT DISTINCT id_dimension from taxonomy_dimension WHERE taxonomy_dimension.id_attribute = relation.id_src_attribute) WHERE relation.id_dimension = 0;
@@ -137,10 +137,10 @@ CREATE TABLE allChildrenPerAttribute (
 
 /* procedure creation + call has to be run after every db import/recreation: */
 
-DROP PROCEDURE IF EXISTS insertAllChildrenPerAttribute;
+DROP PROCEDURE IF EXISTS insertallchildrenperattribute;
 DELIMITER ;;
 
-CREATE PROCEDURE insertAllChildrenPerAttribute()
+CREATE PROCEDURE insertallchildrenperattribute()
 BEGIN
   DECLARE cursor_id_attribute INT(10);
   DECLARE cursor_text VARCHAR(50);
@@ -160,7 +160,7 @@ BEGIN
 END;
 ;;
 
-/* CALL insertAllChildrenPerAttribute(); */
+/* CALL insertallchildrenperattribute(); */
 
 DROP TABLE IF EXISTS allParentsPerAttribute;
 CREATE TABLE allParentsPerAttribute (
@@ -171,10 +171,10 @@ CREATE TABLE allParentsPerAttribute (
   UNIQUE KEY allParentsPerAttribute_id_attribute_UNIQUE (id_attribute)
 ) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
 
-DROP PROCEDURE IF EXISTS insertAllParentsPerAttribute;
+DROP PROCEDURE IF EXISTS insertallparentsperattribute;
 DELIMITER ;;
 
-CREATE PROCEDURE insertAllParentsPerAttribute()
+CREATE PROCEDURE insertallparentsperattribute()
 BEGIN
   DECLARE cursor_id_attribute INT(10);
   DECLARE cursor_text VARCHAR(50);
@@ -194,7 +194,7 @@ BEGIN
 END;
 ;;
 
-/* CALL insertAllParentsPerAttribute(); */
+/* CALL insertallparentsperattribute(); */
 
 /* dummy taxonomy coordinates */
 /*
