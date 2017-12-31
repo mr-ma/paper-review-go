@@ -37,7 +37,7 @@
 
     <link href="jquery.qtip.min.css" type="text/css" rel="stylesheet"/>
     <script src='jquery.qtip.min.js'></script>
-    <!-- <script src='cytoscape-qtip.js'></script> -->
+    <script src='cytoscape-qtip.js'></script>
 
     <script src='cytoscape-snap-to-grid.js'></script>
 
@@ -103,124 +103,134 @@
   </div>
 </div>
 <script>
-  const STYLES =       [
-        {
-          selector: '.child',
-          style: {
-            width: 'data(width)',
-            height: '50px',
-            color: 'black',
-            'border-width': '2px',
-            'border-style': 'solid',
-            'border-color': 'grey',
-            shape: 'rectangle',
-            'background-color': 'white',
-            label: 'data(id)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'overlay-opacity': 0
-          }
-        },
-        {
-          selector: '.parent',
-          style: {
-            width: 'data(width)',
-            height: '50px',
-            color: 'black',
-            'border-width': '2px',
-            'border-style': 'solid',
-            'border-color': 'lightgrey',
-            shape: 'roundrectangle',
-            'background-color': 'white',
-            label: 'data(id)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'overlay-opacity': 0
-          }
-        },
-        {
-          selector: '.dimension',
-          style: {
-            'background-color': 'white',
-            'border-color': '#00008B',
-            'color': '#00008B',
-            'border-width': '5px',
-            label: 'data(id)',
-            'text-valign': 'top',
-            'text-halign': 'right',
-            'text-margin-x': '5px',
-            'text-margin-y': '-5px',
-            'compound-sizing-wrt-labels': 'include',
-            'min-height-bias-top': '100%',
-            'min-height-bias-bottom': '100%',
-            'min-width-bias-left': '100%',
-            'min-width-bias-right': '100%',
-            'overlay-opacity': 0
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-           'curve-style': 'segments', // bezier, unbundled-bezier, haystack, segments with: 'segment-distances': '10px 30px', 'segment-weights': '0.2 1.2',
-           'segment-distances': '0px', //'segment-weights': '0.2 1.2'
-           //'edge-distances': '5px',
-           //'source-distance-from-node': '10px',
-           //'target-distance-from-node': '10px',
-           'width': 1,
-           'target-arrow-color': 'black', // #ccc
-           'line-color': 'black',
-            label: 'data(annotation)',
-            'text-margin-y': '-12px',
-            'text-valign': 'center',
-            'text-halign': 'center'
-          }
-        },
-        {
-          selector: '.Depends',
-          style: {
-            'target-arrow-shape': 'none',
-            'target-arrow-fill': 'filled',
-            'arrow-scale': 1
-          }
-        },
-        {
-          selector: '.DependsDirected',
-          style: {
-            'target-arrow-shape': 'triangle',
-            'target-arrow-fill': 'filled',
-            'arrow-scale': 1
-          }
-        },
-        {
-          selector: '.InstanceOf',
-          style: {
-            'target-arrow-shape': 'triangle',
-            'target-arrow-fill': 'hollow',
-            'arrow-scale': 2
-          }
-        },
-        {
-          selector: '.MemberOf',
-          style: {
-            'target-arrow-shape': 'diamond',
-            'target-arrow-fill': 'hollow',
-            'arrow-scale': 2.5
-          }
-        },
-        {
-          selector: '.PartOf',
-          style: {
-            'target-arrow-shape': 'diamond',
-            'target-arrow-fill': 'filled',
-            'arrow-scale': 2.5
-          }
+  const STYLES = [
+      {
+        selector: '.child',
+        style: {
+          width: 'data(width)',
+          height: '50px',
+          color: 'black',
+          'border-width': '2px',
+          'border-style': 'solid',
+          'border-color': 'grey',
+          shape: 'rectangle',
+          'background-color': 'white',
+          label: 'data(id)',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'overlay-opacity': 0
         }
-      ];
+      },
+      {
+        selector: '.parent',
+        style: {
+          width: 'data(width)',
+          height: '50px',
+          color: 'black',
+          'border-width': '2px',
+          'border-style': 'solid',
+          'border-color': 'lightgrey',
+          shape: 'roundrectangle',
+          'background-color': 'white',
+          label: 'data(id)',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'overlay-opacity': 0
+        }
+      },
+      {
+        selector: '.dimension',
+        style: {
+          'background-color': 'white',
+          'border-color': '#00008B',
+          'color': '#00008B',
+          'border-width': '5px',
+          label: 'data(id)',
+          'text-valign': 'top',
+          'text-halign': 'right',
+          'text-margin-x': '5px',
+          'text-margin-y': '-5px',
+          'compound-sizing-wrt-labels': 'include',
+          'min-height-bias-top': '100%',
+          'min-height-bias-bottom': '100%',
+          'min-width-bias-left': '100%',
+          'min-width-bias-right': '100%',
+          'overlay-opacity': 0
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+         'curve-style': 'segments', // bezier, unbundled-bezier, haystack, segments with: 'segment-distances': '10px 30px', 'segment-weights': '0.2 1.2',
+         'segment-distances': '0px', //'segment-weights': '0.2 1.2'
+         //'edge-distances': '5px',
+         //'source-distance-from-node': '10px',
+         //'target-distance-from-node': '10px',
+         'width': 1,
+         'target-arrow-color': 'black', // #ccc
+         'line-color': 'black',
+          label: 'data(annotation)',
+          'text-margin-y': '-12px',
+          'text-valign': 'center',
+          'text-halign': 'center'
+        }
+      },
+      {
+        selector: '.Depends',
+        style: {
+          'target-arrow-shape': 'none',
+          'target-arrow-fill': 'filled',
+          'arrow-scale': 1
+        }
+      },
+      {
+        selector: '.DependsDirected',
+        style: {
+          'target-arrow-shape': 'triangle',
+          'target-arrow-fill': 'filled',
+          'arrow-scale': 1
+        }
+      },
+      {
+        selector: '.InstanceOf',
+        style: {
+          'target-arrow-shape': 'triangle',
+          'target-arrow-fill': 'hollow',
+          'arrow-scale': 2
+        }
+      },
+      {
+        selector: '.MemberOf',
+        style: {
+          'target-arrow-shape': 'diamond',
+          'target-arrow-fill': 'hollow',
+          'arrow-scale': 2.5
+        }
+      },
+      {
+        selector: '.PartOf',
+        style: {
+          'target-arrow-shape': 'diamond',
+          'target-arrow-fill': 'filled',
+          'arrow-scale': 2.5
+        }
+      }
+    ];
+
+  var cy;
+  var isInterDimensional = true;
+  var displayedDimension;
+
+  function handleErrorHelper ( error ) {
+    if (!!cy) cy.elements().trigger('qtiphide');
+    handleError(error);
+  }
+
   function savePositions ( cy, dimensions ) {
     //if (dimensions.length > 1) var saveURL = 'saveMajorPositions';
     //else var saveURL = 'savePositions';
     if (!displayedDimension) {
-      handleError('No dimension selected.');
+      handleErrorHelper('No dimension selected.');
       return;
     }
     var dimension = displayedDimension;
@@ -259,7 +269,8 @@
     });
   }
 
-  function renameNode ( ele ) {
+  function renameNode ( cy, ele ) {
+    cy.elements().trigger('qtiphide');
     var dialog = BootstrapDialog.show({
       title: 'Enter new attribute name',
       message: '<div><label for="newAttributeName">Name:</label><input type="text" id="newAttributeName" placeholder="name"></div>',
@@ -273,7 +284,7 @@
           action: function(data) {
             var newAttributeName = $('#newAttributeName').val();
             if (newAttributeName == '' || cy.$('[id="' + newAttributeName + '"]').length > 0) {
-              handleError('This attribute name already exists in this domain.');
+              handleErrorHelper('This attribute name already exists in this domain.');
               return;
             }
             var previousName = ele.data('id');
@@ -288,7 +299,7 @@
                   data: JSON.stringify({previousName: previousName, newName: newAttributeName}),
                   success: function ( result ) {
                     if (!result || !result.response || !result.response.success) {
-                      handleError('Cannot rename attribute "' + previousName + '" to "' + newAttributeName + '". This name already exists.');
+                      handleErrorHelper('Cannot rename attribute "' + previousName + '" to "' + newAttributeName + '". This name already exists.');
                       return;
                     }
                     dialog.close();
@@ -312,11 +323,11 @@
     var text = ele.id();
     var isMajor = ele.data('major') - 0;
     if (isNaN(isMajor)) {
-      handleError('Cannot read major attribute of "' + text + '".');
+      handleErrorHelper('Cannot read major attribute of "' + text + '".');
       return;
     }
     if (dimension == 'Interdimensional view') {
-      handleError('Cannot switch to/from major on the "Interdimensional view".');
+      handleErrorHelper('Cannot switch to/from major on the "Interdimensional view".');
       return;
     }
     $.ajax
@@ -331,7 +342,7 @@
         data: JSON.stringify({text: text, major: (isMajor == 1) ? 0 : 1}),
         success: function ( result ) {
           if (!result || !result.response || !result.response.success) {
-            handleError('Error occurred while updating the major attribute of "' + text + '".');
+            handleErrorHelper('Error occurred while updating the major attribute of "' + text + '".');
             return;
           }
           ele.classes((isMajor == 1) ? 'child' : 'parent');
@@ -341,6 +352,7 @@
   }
 
   function addNode ( cy, ele, e, major ) {
+    cy.elements().trigger('qtiphide');
     var dialog = BootstrapDialog.show({
       title: 'Enter attribute name',
       message: '<div><label for="attributeName">Name:</label><input type="text" id="attributeName" placeholder="name"></div>',
@@ -351,7 +363,7 @@
           action: function(data) {
             var attributeName = $('#attributeName').val();
             if (attributeName == '' || cy.$('[id="' + attributeName + '"]').length > 0) {
-              handleError('This attribute name already exists in this domain.');
+              handleErrorHelper('This attribute name already exists in this domain.');
               return;
             }
             var request = {text: attributeName};
@@ -381,7 +393,7 @@
                   data: JSON.stringify(request),
                   success: function ( result ) {
                     if (!result || !result.response || !result.response.success) {
-                      handleError('This name already exists in the taxonomy. Please choose a different one or delete the other node.');
+                      handleErrorHelper('This name already exists in the taxonomy. Please choose a different one or delete the other node.');
                       return;
                     }
                     cy.add({ data: { id: attributeName, table: 'attribute', citationCount: 0, parent: ele.id(), width: attributeName.length * 10, major: (!!major ? 1 : 0) }, classes: (!!major ? 'parent' : 'child'), position: e.position });
@@ -402,6 +414,7 @@
   }
 
   function addDimension ( cy, ele, e, major ) {
+    cy.elements().trigger('qtiphide');
     var dialog = BootstrapDialog.show({
       title: 'Enter dimension name',
       message: '<div><label for="dimensionName">Name:</label><input type="text" id="dimensionName" placeholder="name"></div>',
@@ -412,7 +425,7 @@
           action: function(data) {
             var dimensionName = $('#dimensionName').val();
             if (dimensionName == '' || cy.$('[id="' + dimensionName + '"]').length > 0) {
-              handleError('This dimension name already exists in this domain.');
+              handleErrorHelper('This dimension name already exists in this domain.');
               return;
             }
             var request = {text: dimensionName};
@@ -466,8 +479,8 @@
             data: JSON.stringify({text: selectedID}),
             success: function ( result ) {
               if (!result || !result.response || !result.response.success) {
-                if (selectedTable == 'dimension') handleError('Error occurred while deleting dimension: "' + selectedID + '". Dimensions must be empty before they can be deleted.');
-                else handleError('Error occurred while deleting attribute: "' + selectedID + '".');
+                if (selectedTable == 'dimension') handleErrorHelper('Error occurred while deleting dimension: "' + selectedID + '". Dimensions must be empty before they can be deleted.');
+                else handleErrorHelper('Error occurred while deleting attribute: "' + selectedID + '".');
                 return;
               }
               resolve();
@@ -484,13 +497,13 @@
           cy.remove(selected);
         });
       }).catch ( function ( err ) {
-        handleError(err);
+        handleErrorHelper(err);
       });
   }
 
   function mergeNodes ( nodes ) {
     if (nodes.length != 2) {
-      handleError('Can only merge 2 attributes at a time.');
+      handleErrorHelper('Can only merge 2 attributes at a time.');
       return;
     }
     var text1 = nodes[0].data('id');
@@ -509,7 +522,7 @@
           data: JSON.stringify({text1: text1, text2: text2, dimension1: dimension1, dimension2: dimension2}),
           success: function ( result ) {
             if (!result || !result.response || !result.response.success) {
-              handleError('Error occurred while merging the attributes "' + text1 + '" and "' + text2 + '".');
+              handleErrorHelper('Error occurred while merging the attributes "' + text1 + '" and "' + text2 + '".');
               return;
             }
             window.location.reload(false);
@@ -573,6 +586,7 @@
       $('#multiselect-modal').modal('hide');
       callback(options);
     });
+    if (!!cy) cy.elements().trigger('qtiphide');
     $('#multiselect-modal').modal('show');
   }
 
@@ -636,7 +650,7 @@
     var text = ele.data('id');
     $.get('citation', function ( allCitations ) {
       if (!allCitations) {
-        handleError('Cannot get citations from DB.');
+        handleErrorHelper('Cannot get citations from DB.');
         return;
       }
       console.log("papers: ", allCitations.response);
@@ -650,7 +664,7 @@
           data: JSON.stringify({attribute: text}),
           success: function ( citationsPerAttribute ) {
             if (!citationsPerAttribute) {
-              handleError('Cannot get citations of attribute "' + text + '" from DB.');
+              handleErrorHelper('Cannot get citations of attribute "' + text + '" from DB.');
               return;
             }
             console.log("papers for attr: ", citationsPerAttribute.response);
@@ -665,7 +679,7 @@
                   data: JSON.stringify({attribute: text, citations: mappedCitations}),
                   success: function ( result ) {
                     if (!result || !result.response || !result.response.success) {
-                      handleError('Cannot update citation mapping of attribute: "' + text + '". Can only map papers to leaf nodes.');
+                      handleErrorHelper('Cannot update citation mapping of attribute: "' + text + '". Can only map papers to leaf nodes.');
                       return;
                     }
                     ele.data('citationCount', mappedCitations.length);
@@ -694,7 +708,7 @@
           data: JSON.stringify({'taxonomy_id': 1, text: text, dimension: dimension}),
           success: function ( childRelations ) {
             if (!childRelations) {
-              handleError('Error occurred while forking the attribute: ' + text);
+              handleErrorHelper('Error occurred while forking the attribute: ' + text);
               return;
             }
             $.ajax
@@ -709,7 +723,7 @@
                   data: JSON.stringify({'taxonomy_id': 1, text: text, dimension: dimension}),
                   success: function ( parentRelations ) {
                     if (!parentRelations) {
-                      handleError('Error occurred while forking the attribute: ' + text);
+                      handleErrorHelper('Error occurred while forking the attribute: ' + text);
                       return;
                     }
                     $.ajax
@@ -724,10 +738,13 @@
                           data: JSON.stringify({attribute: text}),
                           success: function ( attributeCoverage ) {
                             if (!attributeCoverage) {
-                              handleError('Error occurred while forking the attribute: ' + text);
+                              handleErrorHelper('Error occurred while forking the attribute: ' + text);
                               return;
                             }
-                            if (!!parentRelations.response || childRelations.response || attributeCoverage.response) $('#multiselect-modal').modal('show');
+                            if (!!parentRelations.response || childRelations.response || attributeCoverage.response) {
+                              cy.elements().trigger('qtiphide');
+                              if (!!cy) $('#multiselect-modal').modal('show');
+                            }
                             chooseParentRelations(parentRelations.response, function ( parentResults ) {
                               chooseChildRelations(childRelations.response, function ( childResults ) {
                                 chooseCitationMappings(attributeCoverage.response, function ( citationResults ) {
@@ -744,7 +761,7 @@
                                         data: JSON.stringify({text: text, dimension: dimension, parents1: parentResults[0], parents2: parentResults[1], children1: childResults[0], children2: childResults[1], citations1: citationResults[0], citations2: citationResults[1]}),
                                         success: function ( result ) {
                                           if (!result || !result.response || !result.response.success) {
-                                            handleError('Cannot fork attribute "' + text + '".');
+                                            handleErrorHelper('Cannot fork attribute "' + text + '".');
                                             return;
                                           }
                                           window.location.reload(false);
@@ -763,6 +780,7 @@
 
   function removeItem ( cy, selecteds, callback ) {
     var selected = selecteds[0];
+    cy.elements().trigger('qtiphide');
     var dialog = BootstrapDialog.show({
       title: 'Remove item',
       message: '<div><label for="deleteConfirmation">Type the name of the item to delete it. (attributeSrc_attributeDest for edges):</label><input type="text" id="deleteConfirmation"></input></div>',
@@ -774,7 +792,7 @@
             // TODO fix modal issue (z-index?) coming from "Interdimensional view"
             var deleteConfirmation = $('#deleteConfirmation').val();
             if (deleteConfirmation.toLowerCase().trim() != (selected.data('id')).toLowerCase().trim()) {
-              handleError('Type the name of the item to delete it. (attributeSrc_attributeDest for edges).');
+              handleErrorHelper('Type the name of the item to delete it. (attributeSrc_attributeDest for edges).');
               return;
             }
             callback(cy, selecteds);
@@ -793,6 +811,7 @@
   }
 
   function updateEdgeAnnotation ( cy, ele, sourceID, targetID, dimensions, isInterDimensional ) {
+    cy.elements().trigger('qtiphide');
     var dialog = BootstrapDialog.show({
       title: 'Enter edge annotation',
       message: '<div><label for="edgeAnnotation">Annotation:</label><input type="text" id="edgeAnnotation" placeholder="annotation"></div>',
@@ -860,13 +879,9 @@
           cy.remove(selected);
         });
       }).catch ( function ( err ) {
-        handleError(err);
+        handleErrorHelper(err);
       });
   }
-
-  var cy;
-  var isInterDimensional = true;
-  var displayedDimension;
 
   function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts ) {
     console.log('creating json, sttr: ', attributes);
@@ -959,7 +974,7 @@
         fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
         content: 'Rename', // html/text content to be displayed in the menu
         select: function(ele){ // a function to execute when the command is selected
-          renameNode(ele);
+          renameNode(cy, ele);
         },
         enabled: true // whether the command is selectable
       });
@@ -1105,7 +1120,7 @@
       fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
       content: 'Rename', // html/text content to be displayed in the menu
       select: function(ele){ // a function to execute when the command is selected
-        renameNode(ele);
+        renameNode(cy, ele);
       },
       enabled: true // whether the command is selectable
     });
@@ -1167,7 +1182,7 @@
           var selecteds = cy.$(':selected');
           if (selecteds.length == 0) return;
           if (selecteds.length > 1) {
-            handleError('Can only remove one item at a time');
+            handleErrorHelper('Can only remove one item at a time');
             return;
           }
           var selecteds = cy.$("node:selected");
@@ -1188,7 +1203,7 @@
     });
     cy.$('.parent,.child').each ( function ( entry, index ) {
       var titleText = (entry.data('citationCount') > 0) ? '<span><label>Citations</label><input type="button" class="listCitations" value="List" name="' + entry.data('id') + '" style="margin-left:15px;"></span>' : 'Citations';
-      $(entry).qtip({
+      entry.qtip({
         content: {
           text: function ( event, api ) {
             return '' + this.data('citationCount');
@@ -1201,7 +1216,10 @@
         position: {
             my: 'top center',
             // Position my top left...
-            at: 'bottom center' // at the bottom right of...
+            at: 'bottom center', // at the bottom right of...
+            adjust: {
+              cyViewport: true
+            }
         },
         style: {
             classes: 'qtip-light',
@@ -1211,14 +1229,9 @@
                 height: 12
             }
         },
-        hide: false,
         events: {
           render: function(event, api) {
             console.log("rendering")
-            //cy.elements().trigger('qtiphide');
-            //$("div[id^=qtip-]").qtip('hide');
-            //var qtipID = $(this).attr('id');
-            //if (!!qtipID) $('.qtip[id!="' + qtipID + '"]').remove();
             $('.listCitations').unbind().click( function () {
               event.preventDefault();
               var attribute = $(this).attr('name');
@@ -1233,7 +1246,7 @@
                     data: JSON.stringify({attribute: attribute}),
                     success: function ( citationsPerAttribute ) {
                       if (!citationsPerAttribute) {
-                        handleError('Cannot get citations from DB for attribute: ' + attribute + '.');
+                        handleErrorHelper('Cannot get citations from DB for attribute: ' + attribute + '.');
                         return;
                       }
                       var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
@@ -1257,10 +1270,13 @@
           }
         },
         show: {
-          event: 'click qtipshow'
+          event: 'click qtipshow',
+          cyBgOnly: true
         },
         hide: {
-          event: 'qtiphide'
+          event: 'qtiphide',
+          cyViewport: true,
+          cyBgOnly: true
         }
       });
     });
@@ -1299,11 +1315,11 @@
       collapseCueImage: 'zoomOutIcon.png'
     });
     cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
-    /*
-      cy.$('.parent,.child').forEach ( function ( entry ) {
-        $(entry).qtip('destroy');
+      cy.$('.parent,.child').each ( function ( node, index ) {
+        var api = node.qtip('api');
+        api.destroy();
+        api.disable();
       });
-    */
       cy.destroy();
       if (isInterDimensional) {
         var dimText = this.id();
@@ -1324,7 +1340,7 @@
     });
     $('#getEdges').unbind().click ( function () {
       if (!displayedDimension) {
-        handleError('No dimension selected.');
+        handleErrorHelper('No dimension selected.');
         return;
       }
       var dimension = displayedDimension;
@@ -1369,16 +1385,16 @@
           console.log('Saved edge bend points successfully.');
           savePositions(cy, dimensions);
         }).catch ( function ( err ) {
-          handleError(err);
+          handleErrorHelper(err);
         });
     });
     $('#merge').unbind().click ( function () {
        var selecteds = cy.$(".parent:selected, .child:selected");
        if (selecteds.length < 2) {
-         handleError('Not enough attributes selected.');
+         handleErrorHelper('Not enough attributes selected.');
          return;
        } else if (selecteds.length > 2) {
-         handleError('Can only merge 2 attributes at a time.');
+         handleErrorHelper('Can only merge 2 attributes at a time.');
          return;
        }
        mergeNodes(selecteds);
