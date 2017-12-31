@@ -100,6 +100,7 @@ ALTER TABLE taxonomy_relation ADD UNIQUE KEY taxonomy_relation_attributes_UNIQUE
 SET FOREIGN_KEY_CHECKS = 0;
 
 ALTER TABLE attribute CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE attribute CHANGE COLUMN text text varchar(500) NOT NULL;
 ALTER TABLE dimension CHANGE COLUMN id_dimension id_dimension INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE taxonomy_dimension CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL;

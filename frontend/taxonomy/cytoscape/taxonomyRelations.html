@@ -103,6 +103,7 @@
   </div>
 </div>
 <script>
+  const COLOR_BLUE = '#00008B';
   const STYLES = [
       {
         selector: '.child',
@@ -142,8 +143,8 @@
         selector: '.dimension',
         style: {
           'background-color': 'white',
-          'border-color': '#00008B',
-          'color': '#00008B',
+          'border-color': COLOR_BLUE,
+          'color': COLOR_BLUE,
           'border-width': '5px',
           label: 'data(id)',
           'text-valign': 'top',
@@ -493,7 +494,9 @@
       .then ( function ( results ) {
         console.log('Removed ' + results.length + ' attribute' + (results.length > 1 ? 's' : '') + ' successfully.');
         selecteds.forEach ( function ( selected ) {
-          $(selected).qtip('destroy');
+          var api = selected.qtip('api');
+          api.destroy();
+          api.disable();
           cy.remove(selected);
         });
       }).catch ( function ( err ) {
@@ -522,7 +525,7 @@
           data: JSON.stringify({text1: text1, text2: text2, dimension1: dimension1, dimension2: dimension2}),
           success: function ( result ) {
             if (!result || !result.response || !result.response.success) {
-              handleErrorHelper('Error occurred while merging the attributes "' + text1 + '" and "' + text2 + '".');
+              handleErrorHelper('Error occurred while merging the attributes "' + text1 + '" and "' + text2 + '". Make sure that a node with the name "' + text1 + ':' + text2 + '" does not exist.');
               return;
             }
             window.location.reload(false);
@@ -791,6 +794,8 @@
           action: function(data) {
             // TODO fix modal issue (z-index?) coming from "Interdimensional view"
             var deleteConfirmation = $('#deleteConfirmation').val();
+            console.log('edge: ' + (selected.data('id')).toLowerCase().trim())
+            console.log("answer: " + deleteConfirmation.toLowerCase().trim())
             if (deleteConfirmation.toLowerCase().trim() != (selected.data('id')).toLowerCase().trim()) {
               handleErrorHelper('Type the name of the item to delete it. (attributeSrc_attributeDest for edges).');
               return;
@@ -875,7 +880,9 @@
       .then ( function ( results ) {
         console.log('Removed ' + results.length + ' taxonomy relation' + (results.length > 1 ? 's' : '') + ' successfully.');
         selecteds.forEach ( function ( selected ) {
-          $(selected).qtip('destroy');
+          var api = selected.qtip('api');
+          api.destroy();
+          api.disable();
           cy.remove(selected);
         });
       }).catch ( function ( err ) {
@@ -1202,7 +1209,7 @@
                 ur.redo();
     });
     cy.$('.parent,.child').each ( function ( entry, index ) {
-      var titleText = (entry.data('citationCount') > 0) ? '<span><label>Citations</label><input type="button" class="listCitations" value="List" name="' + entry.data('id') + '" style="margin-left:15px;"></span>' : 'Citations';
+      var titleText = '<span><label>Citations</label><input type="button" class="listCitations" value="List" name="' + entry.data('id') + '" style="margin-left:15px;"></span>';
       entry.qtip({
         content: {
           text: function ( event, api ) {
@@ -1270,7 +1277,8 @@
           }
         },
         show: {
-          event: 'click qtipshow',
+          solo: true,
+          event: 'qtipshow',
           cyBgOnly: true
         },
         hide: {
@@ -1284,6 +1292,32 @@
     //cy.navigator();
     cy.edgehandles({handleNodes: '.child, .parent'});
     var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
+    var viewUtilities = cy.viewUtilities({
+      node: {
+        highlighted: { color: COLOR_BLUE },
+        unhighlighted: { 'opacity': 1 }
+      },
+      edge: {
+        highlighted: { color: COLOR_BLUE },
+        unhighlighted: { 'opacity': 1 }
+      }
+    });
+    cy.on('select', '.parent,.child', function ( evt ) {
+      var node = evt.target;
+      node.trigger('qtipshow');
+      var selecteds = cy.$('.parent:selected, .child:selected');
+      if (selecteds.length > 2) {
+        selecteds.each ( function ( selected ) {
+          if (selected.data('id') != node.data('id')) selected.unselect();
+        });
+      }
+      viewUtilities.highlight(node);
+    });
+    cy.on('unselect', '.parent,.child', function ( evt ) {
+      var node = evt.target;
+      node.trigger('qtiphide');
+      viewUtilities.unhighlight(node);
+    });
     cy.on('ehcomplete', function (event, sourceNode, targetNode, addedEles) {
       var sourceID = sourceNode.id();
       var targetID = targetNode.id();
@@ -1445,6 +1479,7 @@
   }
 
     function showDimension ( taxonomyID, dimension ) {
+      window.location.href = window.location.href.split('#').shift() + '#' + dimension;
       $.get('dimension', function ( dimensionResults ) {
         if (!dimensionResults || !dimensionResults.response) {
           console.log('Cannot get dimensions from DB.');

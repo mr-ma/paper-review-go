@@ -1078,6 +1078,20 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	func (d MySQLDriver) MergeAttributes(attribute1 model.Attribute, attribute2 model.Attribute) (result model.Result, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
+		db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE text = \"" + attribute1.Text + ":" + attribute2.Text + "\";")
+		defer stmt.Close()
+		defer db.Close()
+		rows, err := stmt.Query()
+		checkErr(err)
+		var rowCount int
+		for rows.Next() {
+			rows.Scan(&rowCount)
+		}
+		defer rows.Close()
+		if rowCount > 0 {
+			result.Success = false
+			return result, err
+		}
 		dbRef.Exec("INSERT INTO attribute (text, x, y, xMajor, yMajor, major) SELECT \"" + attribute1.Text + ":" + attribute2.Text + "\" as newName, attribute.x, attribute.y, attribute.xMajor, attribute.yMajor, attribute.major FROM attribute WHERE attribute.text = \"" + attribute1.Text + "\";")
 		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (1, (SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + attribute1.Text + ":" + attribute2.Text + "\"), (SELECT DISTINCT id_dimension FROM dimension WHERE text = \"" + attribute1.Dimension + "\"));")
 		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, (SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + attribute1.Text + ":" + attribute2.Text + "\"), id_dest_attribute, id_relation, id_dimension FROM taxonomy_relation WHERE id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = \"" + attribute1.Text + "\");")
