@@ -172,6 +172,10 @@ func main() {
 		p := loadPage("frontend/src/js/d3.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/d3.layout.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/d3.layout.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/d3-hierarchy.v1.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/d3-hierarchy.v1.min.js")
 		fmt.Fprintf(w, "%s", p)
@@ -365,11 +369,6 @@ func main() {
 		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-snap-to-grid.js")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/treemap.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/treemap.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
 	// mux.Handle("GET","/",cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIndexHandler), "getIndexHandler", nil)))
 	mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/index.html")
@@ -381,6 +380,10 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/treemap", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/hierarchy/treemap.html")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/treemap2", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/hierarchy/treemap2.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/conceptCorrelationMatrix", func(w http.ResponseWriter, r *http.Request) {

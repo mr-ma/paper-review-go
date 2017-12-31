@@ -122,32 +122,29 @@
 
     node = rootNode;
 
-    var nodes = rootNode.children;
+    var nodes = rootNode.descendants();
     console.log(nodes)
 
-    function updateTreemap ( nodes ) {
-      svg.selectAll("g").remove();
-      var cell = svg.selectAll("g")
-          .data(nodes)
-        .enter().append("svg:g")
-          .attr("class", "cell")
-          .attr("transform", function(d) { return "translate(" + d.x0 + "," + d.y0 + ")"; })
-          .on("click", function(d) { var target = node == d ? (!!d.parent ? d.parent : rootNode) : (!!d.children && d.children.length > 0 ? d : null); if (!!target) return zoom(target), d3.event.stopPropagation(); else showCitations(d.data.name), d3.event.stopPropagation(); }); // node == d.parent ? rootNode : d.parent
+    svg.selectAll("g").remove();
+    var cell = svg.selectAll("g")
+        .data(nodes)
+      .enter().append("svg:g")
+        .attr("class", "cell")
+        .attr("transform", function(d) { return "translate(" + d.x0 + "," + d.y0 + ")"; })
+        .on("click", function(d) { var target = node != d.parent ? (!!d.parent ? d.parent : rootNode) : (!!d.children && d.children.length > 0 ? d : (!!d.parent && d.parent.parent ? d.parent.parent : null)); if (!!target) return zoom(target), d3.event.stopPropagation(); }); // node == d.parent ? rootNode : d.parent
 
-      cell.append("svg:rect")
-          .attr("width", function(d) { return (d.x1 - d.x0) - 1; })
-          .attr("height", function(d) { return (d.y1 - d.y0) - 1; })
-          .style("fill", function(d) { return !!d.parent ? color(d.parent.data.name) : color(d.data.name); });
+    cell.append("svg:rect")
+        .attr("width", function(d) { return (d.x1 - d.x0) - 1; })
+        .attr("height", function(d) { return (d.y1 - d.y0) - 1; })
+        .style("fill", function(d) { return !!d.parent ? color(d.parent.data.name) : color(d.data.name); });
 
-      cell.append("svg:text")
-          .attr("x", function(d) { return (d.x1 - d.x0) / 2; })
-          .attr("y", function(d) { return (d.y1 - d.y0) / 2; })
-          .attr("dy", ".35em")
-          .attr("text-anchor", "middle")
-          .text(function(d) { return d.data.name; })
-          .style("opacity", function(d) { d.w = this.getComputedTextLength(); return (d.x1 - d.x0) > d.w ? 1 : 0; });
-    }
-    updateTreemap(nodes);
+    cell.append("svg:text")
+        .attr("x", function(d) { return (d.x1 - d.x0) / 2; })
+        .attr("y", function(d) { return (d.y1 - d.y0) / 2; })
+        .attr("dy", ".35em")
+        .attr("text-anchor", "middle")
+        .text(function(d) { return d.data.name; })
+        .style("opacity", function(d) { d.w = this.getComputedTextLength(); return (d.x1 - d.x0) > d.w ? 1 : 0; });
 
     d3.select("body").on("keydown", function( e ) { if (d3.event.keyCode == 27) zoom(!!node.parent ? node.parent : rootNode); }); // escape key
 
@@ -165,7 +162,6 @@
     }
 
     function zoom(d) {
-      updateTreemap(d.children);
       var kx = w / (d.x1 - d.x0), ky = h / (d.y1 - d.y0);
       x.domain([d.x0, d.x0 + (d.x1 - d.x0)]);
       y.domain([d.y0, d.y0 + (d.y1 - d.y0)]);

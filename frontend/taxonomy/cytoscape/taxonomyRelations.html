@@ -37,7 +37,7 @@
 
     <link href="jquery.qtip.min.css" type="text/css" rel="stylesheet"/>
     <script src='jquery.qtip.min.js'></script>
-    <script src='cytoscape-qtip.js'></script>
+    <!-- <script src='cytoscape-qtip.js'></script> -->
 
     <script src='cytoscape-snap-to-grid.js'></script>
 
@@ -117,7 +117,8 @@
             'background-color': 'white',
             label: 'data(id)',
             'text-valign': 'center',
-            'text-halign': 'center'
+            'text-halign': 'center',
+            'overlay-opacity': 0
           }
         },
         {
@@ -133,21 +134,28 @@
             'background-color': 'white',
             label: 'data(id)',
             'text-valign': 'center',
-            'text-halign': 'center'
+            'text-halign': 'center',
+            'overlay-opacity': 0
           }
         },
         {
           selector: '.dimension',
           style: {
-              'background-color': 'white',
-              'border-color': '#00008B',
-              'color': '#00008B',
-              'border-width': '5px',
-              label: 'data(id)',
-              'text-valign': 'top',
-              'text-halign': 'right',
-              'text-margin-x': '5px',
-              'text-margin-y': '-5px'
+            'background-color': 'white',
+            'border-color': '#00008B',
+            'color': '#00008B',
+            'border-width': '5px',
+            label: 'data(id)',
+            'text-valign': 'top',
+            'text-halign': 'right',
+            'text-margin-x': '5px',
+            'text-margin-y': '-5px',
+            'compound-sizing-wrt-labels': 'include',
+            'min-height-bias-top': '100%',
+            'min-height-bias-bottom': '100%',
+            'min-width-bias-left': '100%',
+            'min-width-bias-right': '100%',
+            'overlay-opacity': 0
           }
         },
         {
@@ -162,6 +170,7 @@
            'target-arrow-color': 'black', // #ccc
            'line-color': 'black',
             label: 'data(annotation)',
+            'text-margin-y': '-12px',
             'text-valign': 'center',
             'text-halign': 'center'
           }
@@ -1179,7 +1188,7 @@
     });
     cy.$('.parent,.child').each ( function ( entry, index ) {
       var titleText = (entry.data('citationCount') > 0) ? '<span><label>Citations</label><input type="button" class="listCitations" value="List" name="' + entry.data('id') + '" style="margin-left:15px;"></span>' : 'Citations';
-      entry.qtip({
+      $(entry).qtip({
         content: {
           text: function ( event, api ) {
             return '' + this.data('citationCount');
@@ -1208,8 +1217,8 @@
             console.log("rendering")
             //cy.elements().trigger('qtiphide');
             //$("div[id^=qtip-]").qtip('hide');
-            var qtipID = $(this).attr('id');
-            if (!!qtipID) $('.qtip[id!="' + qtipID + '"]').remove();
+            //var qtipID = $(this).attr('id');
+            //if (!!qtipID) $('.qtip[id!="' + qtipID + '"]').remove();
             $('.listCitations').unbind().click( function () {
               event.preventDefault();
               var attribute = $(this).attr('name');
@@ -1280,8 +1289,8 @@
         name: "preset",
         animate: "end"
       },
-      fisheye: true,
-      animate: true,
+      fisheye: false,
+      animate: false,
       undoable: false,
       expandCollapseCuePosition: function ( e ) { var position = e.position(); return {x: position.x + e.width()/2 - 21, y: position.y - e.height()/2 - 5}; }, // 'top-left'
       expandCollapseCueSensitivity: 2,
