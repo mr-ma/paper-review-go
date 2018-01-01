@@ -214,6 +214,7 @@ type CitationCount struct {
   Attribute string `json:"attribute"`
   CitationCount int64 `json:"citationCount"`
   MaxReferenceCount int64 `json:"maxReferenceCount"`
+  ReferenceCountSum int64 `json:"referenceCountSum"`
 }
 
 type Result struct {

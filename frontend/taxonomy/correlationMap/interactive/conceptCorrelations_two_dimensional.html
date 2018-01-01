@@ -608,11 +608,11 @@ text.active {
       default: d3.range(m)
     });
 
-    var maxValue = Math.max(m, n);
+    var maxAxisLength = Math.max(m, n);
 
     // The default sort order.
-    x.domain(d3.range(maxValue));
-    y.domain(d3.range(maxValue));
+    x.domain(d3.range(maxAxisLength));
+    y.domain(d3.range(maxAxisLength));
 
     var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { if (!!d.fullText) { if (d.fullText == -1) return ''; return d.fullText; } return '' + d.z + labelText; });
     svg.call(d3Tip);
@@ -650,8 +650,6 @@ text.active {
 
     if (!hasDimensionsX && !hasParentsX) margin.left = marginLeft*2;
     if (!hasDimensionsY && !hasParentsY) margin.top = marginTop*2;
-
-    console.log('marginLeft: ' + marginLeft)
 
     svg.append("line")
       .attr("x1", -margin.left + 10)
@@ -1633,7 +1631,6 @@ text.active {
 
     $('#colorTheme').unbind().on('change', function ( e ) {
       var index = this.value - 0;
-      console.log('index: ' + index)
       if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue);
     });
     buildingMatrix = false;

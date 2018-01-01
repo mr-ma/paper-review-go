@@ -1294,11 +1294,11 @@
     var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
     var viewUtilities = cy.viewUtilities({
       node: {
-        highlighted: { color: COLOR_BLUE },
+        highlighted: { 'color': COLOR_BLUE, 'border-color': COLOR_BLUE },
         unhighlighted: { 'opacity': 1 }
       },
       edge: {
-        highlighted: { color: COLOR_BLUE },
+        highlighted: { 'color': COLOR_BLUE, 'line-color': COLOR_BLUE },
         unhighlighted: { 'opacity': 1 }
       }
     });
@@ -1313,10 +1313,18 @@
       }
       viewUtilities.highlight(node);
     });
+    cy.on('select', 'edge', function ( evt ) {
+      var edge = evt.target;
+      viewUtilities.highlight(edge);
+    });
     cy.on('unselect', '.parent,.child', function ( evt ) {
       var node = evt.target;
       node.trigger('qtiphide');
       viewUtilities.unhighlight(node);
+    });
+    cy.on('unselect', 'edge', function ( evt ) {
+      var edge = evt.target;
+      viewUtilities.unhighlight(edge);
     });
     cy.on('ehcomplete', function (event, sourceNode, targetNode, addedEles) {
       var sourceID = sourceNode.id();

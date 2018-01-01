@@ -202,14 +202,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	func (d MySQLDriver) GetCitationCount() (citationCounts []model.CitationCount, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
-		db, stmt, err := d.Query("select count(distinct id_paper) as citationCount, max(referenceCount) as maxReferenceCount from paper;")
+		db, stmt, err := d.Query("select count(distinct id_paper) as citationCount, max(referenceCount) as maxReferenceCount, sum(referenceCount) as referenceCountSum from paper;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.CitationCount{}
-			rows.Scan(&a.CitationCount,&a.MaxReferenceCount)
+			rows.Scan(&a.CitationCount,&a.MaxReferenceCount,&a.ReferenceCountSum)
 			citationCounts = append(citationCounts, a)
 		}
 		defer rows.Close()
@@ -220,14 +220,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	func (d MySQLDriver) GetCitationCounts() (citationCounts []model.CitationCount, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
-		db, stmt, err := d.Query("select distinct attribute.text, count(*) as citationCount from attribute left outer join mapping on (attribute.id_attribute = mapping.id_attribute) group by attribute.id_attribute;")
+		db, stmt, err := d.Query("select distinct attribute.text, count(*) as citationCount, sum(case when tmp.referenceCount is not null then tmp.referenceCount else 0 end) as referenceCountSum from attribute left outer join (select distinct mapping.id_attribute, paper.referenceCount from mapping inner join paper on (mapping.id_paper = paper.id_paper)) as tmp on (attribute.id_attribute = tmp.id_attribute) group by attribute.id_attribute;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.CitationCount{}
-			rows.Scan(&a.Attribute,&a.CitationCount)
+			rows.Scan(&a.Attribute,&a.CitationCount,&a.ReferenceCountSum)
 			citationCounts = append(citationCounts, a)
 		}
 		defer rows.Close()
@@ -238,14 +238,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	func (d MySQLDriver) GetCitationCountsIncludingChildren() (citationCounts []model.CitationCount, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
-		db, stmt, err := d.Query("select distinct allchildrenperattribute.text, count(*) as citationCount from allchildrenperattribute left outer join mapping on (FIND_IN_SET(mapping.id_attribute, allchildrenperattribute.children)) group by allchildrenperattribute.text;")
+		db, stmt, err := d.Query("select distinct allchildrenperattribute.text, count(*) as citationCount, sum(case when tmp.referenceCount is not null then tmp.referenceCount else 0 end) from allchildrenperattribute left outer join (select distinct mapping.id_attribute, paper.referenceCount from mapping inner join paper on (mapping.id_paper = paper.id_paper)) as tmp on (FIND_IN_SET(tmp.id_attribute, allchildrenperattribute.children)) group by allchildrenperattribute.text;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.CitationCount{}
-			rows.Scan(&a.Attribute,&a.CitationCount)
+			rows.Scan(&a.Attribute,&a.CitationCount,&a.ReferenceCountSum)
 			citationCounts = append(citationCounts, a)
 		}
 		defer rows.Close()

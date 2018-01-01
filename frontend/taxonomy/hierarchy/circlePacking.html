@@ -49,11 +49,98 @@
     </style>
 </head>
 <body>
-  <svg width="960" height="960"></svg>
+  <div style="width:165px;margin-top:30px;margin-bottom:30px;margin-left:10px;">
+    <form>
+      <label for="dataType">Data Type: </label><select class="form-control" id="dataType">
+        <option value="citationCount" selected="selected">Citation count</option>
+        <option value="referenceCount">Sum of references</option>
+      </select>
+      <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
+  </form>
+  </div>
+  <div id="colorLegend" style="margin-left:330px;margin-top:30px;margin-bottom:15px;"></div>
+  <div id="svgContainer">
+  </div>
 <script>
+
+  const colorsBlue = ["#1CB5E0", "#189ECC", "#1587B9", "#1171A6", "#0E5A93", "#0A437F", "#072D6C", "#031659", "#000046"];
+  const colorsYGB = ["#F0F8FF","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"]; // #FFFFDD
+  const colorsRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
+  const colorsWeddingDayBlues = ["#40E0D0", "#6FCB9C", "#9FB668", "#CFA134", "#FF8C00", "#FF6920", "#FF4640", "#FF2360", "FF0080"];
+  const colors2 = ["#DFDFDF", "#BFBFBF", "#9F9F9F", "#7F7F7F", "#5F5F5F", "#3F3F3F", "#1F1F1F", "#000000"];
+  const colors3 = ["#8078FA", "#7069E2", "#605ACA", "#514BB2", "#413C9A", "#312D82", "#221E6A", "#120F52", "#03003B"];
+  const colors4 = ["#F0F2F0", "#D2D5DA", "#B4B8C4", "#969BAE", "#787F98", "#5A6282", "#3C456C", "#1E2856", "#000C40"];
+
+  const COLOR_GRADIENTS =  [{name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'rainbow', colors: colorsRainbow}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
 
   var isInterDimensional = true;
   var displayedDimension;
+
+ function applyColorGradient ( defs, gradient, minValue, maxValue ) {
+    if (!gradient.name || !gradient.colors) return {};
+    var colors = gradient.colors;
+    var colorRange = d3.range(0, 1, 1.0 / (colors.length - 1));
+    colorRange.push(1);
+           
+    var colorScale = d3.scale.linear()
+      .domain(colorRange)
+      .range(colors)
+      .interpolate(d3.interpolateHcl);
+
+    var colorInterpolate = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    defs.append("linearGradient")
+      .attr("id", "gradient-" + gradient.name + "-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop") 
+      .data(colors)                  
+      .enter().append("stop") 
+      .attr("offset", function(d,i) { return i/(colors.length-1); })   
+      .attr("stop-color", function(d) { return d; });
+    return {colorScale: colorScale, colorInterpolate: colorInterpolate};
+  }
+
+  // https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
+  function updateColorLegend ( gradientID, width, height, maxValue ) { //     var w = 300, h = 50;
+    d3.select("#colorLegend").selectAll("svg").remove();
+    var legend = d3.select("#colorLegend")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    legend.append("rect")
+      .attr("width", width)
+      .attr("height", height - 30)
+      .style("fill", "url(#" + gradientID + ")")
+      .attr("transform", "translate(0,10)");
+
+    var y = d3.scale.linear()
+      .range([500, 0]) // 300, 0
+      .domain([maxValue, 10]); // 68, 12
+
+    var yAxis = d3.svg.axis().scale(y).orient("bottom").ticks(5);
+
+    legend.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(0,30)")
+      .call(yAxis)
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end");
+  }
+
+  function updateColorGradient ( svg, gradient, maxValue ) {
+    var gradientID = "gradient-" + gradient.name + "-colors";
+    svg.selectAll(".node--leafnode")
+      .transition().duration(1000)
+      .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.data.size)); });
+    updateColorLegend(gradientID, 300, 50, maxValue);
+  }
 
   function showCitations ( attribute ) {
     if (!attribute || attribute == '') return;
@@ -88,7 +175,9 @@
       });
   }
 
-  function showHierarchy ( json ) {
+  function showHierarchy ( json, minValue, maxValue ) {
+    d3.selectAll("svg").remove();
+    $('#svgContainer').html('<svg width="960" height="960"></svg>');
     var svg = d3.select("svg"),
         margin = 20,
         diameter = svg.attr("width"),
@@ -98,6 +187,16 @@
         .domain([-1, 5])
         .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
         .interpolate(d3.interpolateHcl);
+
+    var defs = svg.append("defs");
+
+    COLOR_GRADIENTS.forEach ( function ( gradient ) {
+      var result = applyColorGradient(defs, gradient, minValue, maxValue);
+      if (!!result) {
+        if (!!result.colorScale) gradient.colorScale = result.colorScale;
+        if (!!result.colorInterpolate) gradient.colorInterpolate = result.colorInterpolate;
+      }
+    });
 
     var pack = d3.pack()
         .size([diameter - margin, diameter - margin])
@@ -110,6 +209,8 @@
       var focus = rootNode,
           nodes = pack(rootNode).descendants(),
           view;
+
+      console.log('nodes: ', nodes);
 
       var circle = g.selectAll("circle")
         .data(nodes)
@@ -130,6 +231,8 @@
 
       svg.style("background", color(-1))
          .on("click", function() { zoom(rootNode); });
+
+      d3.select("body").on("keydown", function( e ) { if (d3.event.keyCode == 27) zoom(!!node.parent ? node.parent : rootNode); }); // escape key
 
       zoomTo([rootNode.x, rootNode.y, rootNode.r * 2 + margin]);
 
@@ -155,13 +258,21 @@
         node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
         circle.attr("r", function(d) { return d.r * k; });
       }
+      var colorThemeIndex = $('#colorTheme')[0].value - 0;
+      if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[colorThemeIndex], maxValue);
+
+      $('#colorTheme').unbind().on('change', function ( e ) {
+        var index = this.value - 0;
+        if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue);
+      });
   }
 
-  function traverseTree ( json, attributes, parents, counter ) {
+  function traverseTree ( json, attributes, parents, counter, useReferenceCount ) {
     if (attributes.length == 0 || counter > 100) {
       parents.forEach ( function ( parent ) {
-        parent.size = !!parent.citationCount ? (parent.citationCount * 10) : (parent.children.length > 0 ? 100 * parent.children.length : 100);
-      })
+        if (!!useReferenceCount) parent.size = !!parent.referenceCountSum ? (parent.referenceCountSum) : 0;
+        else parent.size = !!parent.citationCount ? (parent.citationCount) : 0;
+      });
       return json;
     }
     var remainingAttributes = [];
@@ -169,7 +280,7 @@
       var found = false;
       for ( var i = 0; i < parents.length; i++ ) {
         if (parents[i].name.trim() == attribute.parentText.trim()) {
-          var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount};
+          var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount, 'referenceCountSum': attribute.referenceCountSum};
           parents[i].children.push(obj);
           parents.push(obj);
           found = true;
@@ -178,31 +289,36 @@
       }
       if (!found) remainingAttributes.push(attribute);
     });
-    return traverseTree(json, remainingAttributes, parents, counter+1);
+    return traverseTree(json, remainingAttributes, parents, counter+1, useReferenceCount);
   }
 
-  function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts ) {
-    console.log('creating json, sttr: ', attributes);
+  function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts, useReferenceCount ) {
     isInterDimensional = dimensions.length > 1;
 
-    var json = {'name': 'Taxonomy', 'children': [], 'citationCount': 0};
+    var json = {'name': 'Taxonomy', 'children': [], 'citationCount': 0, 'referenceCountSum': 0};
     dimensions.forEach ( function ( dimension ) {
-      json.children.push({'name': dimension.text, 'children': [], 'citationCount': 0, 'size': 1000});
+      json.children.push({'name': dimension.text, 'children': [], 'citationCount': 0, 'referenceCountSum': 0});
     });
     var remainingAttributes = [];
     var orphanAttributes = [];
     var parents = [];
+    var minValue = 0;
+    var maxValue = 0;
     attributes.forEach ( function ( attribute ) {
       var found = false;
       for ( var i = 0; i < citationCounts.length; i++ ) {
         if (citationCounts[i].attribute == attribute.text) {
           attribute.citationCount = citationCounts[i].citationCount;
+          attribute.referenceCountSum = citationCounts[i].referenceCountSum;
+          if (useReferenceCount && attribute.referenceCountSum > maxValue) maxValue = attribute.referenceCountSum;
+          else if (!useReferenceCount && attribute.citationCount > maxValue) maxValue = attribute.citationCount;
           found = true;
           break;
         }
       }
       if (!found) {
         attribute.citationCount = 0;
+        attribute.referenceCountSum = 0;
       }
       if (!!attribute.parentText) attribute.parentText = attribute.parentText.split(',').shift();
       if (!attribute.dimension || attribute.dimension == '') orphanAttributes.push(attribute);
@@ -210,7 +326,7 @@
         var found = false;
         for ( var i = 0; i < json.children.length; i++ ) {
           if (json.children[i].name.trim() == attribute.dimension.trim()) {
-            var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount};
+            var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount, 'referenceCountSum': attribute.referenceCountSum};
             json.children[i].children.push(obj);
             parents.push(obj);
             found = true;
@@ -222,13 +338,12 @@
     });
     
     orphanAttributes.forEach ( function ( orphan ) {
-      var obj = {'name': orphan.text, 'children': [], 'citationCount': orphan.citationCount};
+      var obj = {'name': orphan.text, 'children': [], 'citationCount': orphan.citationCount, 'referenceCountSum': orphan.referenceCountSum};
       json.children.push(obj);
       parents.push(obj);
     });
-    
-    json = traverseTree(json, remainingAttributes, parents, 0);
-    showHierarchy(json);
+    json = traverseTree(json, remainingAttributes, parents, 0, useReferenceCount);
+    showHierarchy(json, minValue, maxValue);
   }
 
     function showDimension ( taxonomyID, dimension ) {
@@ -258,7 +373,6 @@
                   console.log('Cannot get attributes from DB.');
                   return;
                 }
-                console.log(attributes.response)
                 $.ajax
                   ({
                       type: "POST",
@@ -284,7 +398,14 @@
                                 console.log('Cannot get citation counts from DB.');
                                 return;
                               }
-                              createJSON(dimensions, !!attributes.response ? attributes.response : [], !!relations.response ? relations.response : [], !!relationTypes.response ? relationTypes.response : [], !!citationCounts.response ? citationCounts.response : []);
+                              $('#colorTheme').html('');
+                              for ( var i = 0; i < COLOR_GRADIENTS.length; i++ ) {
+                                $('#colorTheme').append('<option value="' + i + '">' + COLOR_GRADIENTS[i].name + '</option>');
+                              }
+                              $('#dataType').unbind().on('change', function () {
+                                createJSON(dimensions, !!attributes.response ? attributes.response : [], !!relations.response ? relations.response : [], !!relationTypes.response ? relationTypes.response : [], !!citationCounts.response ? citationCounts.response : [], this.value == 'referenceCount');
+                              });
+                              createJSON(dimensions, !!attributes.response ? attributes.response : [], !!relations.response ? relations.response : [], !!relationTypes.response ? relationTypes.response : [], !!citationCounts.response ? citationCounts.response : [], $('#dataType').val() == 'referenceCount');
                               displayedDimension = dimension;
                           });
                         });
