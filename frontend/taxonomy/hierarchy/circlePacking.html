@@ -73,6 +73,11 @@
 
   const COLOR_GRADIENTS =  [{name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'rainbow', colors: colorsRainbow}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
 
+  var color = d3.scale.linear()
+      .domain([-1, 5])
+      .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
+      .interpolate(d3.interpolateHcl);
+
   var isInterDimensional = true;
   var displayedDimension;
 
@@ -136,9 +141,9 @@
 
   function updateColorGradient ( svg, gradient, maxValue ) {
     var gradientID = "gradient-" + gradient.name + "-colors";
-    svg.selectAll(".node--leafnode")
+    svg.selectAll(".node")
       .transition().duration(1000)
-      .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.data.size)); });
+      .style("fill", function (d,i) { var classes = $(this).attr('class'); return (!!classes && classes.split('node--leafnode').length > 1) ? gradient.colorScale(gradient.colorInterpolate(d.data.size)) : color(d.depth); });
     updateColorLegend(gradientID, 300, 50, maxValue);
   }
 
@@ -183,11 +188,6 @@
         diameter = svg.attr("width"),
         g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 
-    var color = d3.scale.linear()
-        .domain([-1, 5])
-        .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
-        .interpolate(d3.interpolateHcl);
-
     var defs = svg.append("defs");
 
     COLOR_GRADIENTS.forEach ( function ( gradient ) {
@@ -216,7 +216,7 @@
         .data(nodes)
         .enter().append("circle")
           .attr("class", function(d) { return d.parent ? (d.data.children && d.data.children.length > 0) ? "node" : "node node--leafnode" : "node node--root"; })
-          .style("fill", function(d) { return (d.children && d.children.length > 0) ? color(d.depth) : 'lightgreen'; })
+          //.style("fill", function(d) { return (d.children && d.children.length > 0) ? color(d.depth) : 'lightgreen'; })
           .on("click", function(d) { if (focus !== d.parent) zoom(d.parent), d3.event.stopPropagation(); else if ($(this).attr("class").split('node--leafnode').length > 1) showCitations(d.data.name), d3.event.stopPropagation(); else if (focus !== d) zoom(d), d3.event.stopPropagation(); });
 
       var text = g.selectAll("text")
