@@ -1484,22 +1484,33 @@ text.active {
 */
 
     function order(value) {
-      var nodesTmpX = nodesX.slice(0);
-      var nodesTmpY = nodesY.slice(0);
-      var sortedNodes = sortNodes(value, nodesX, nodesY);
-      nodesX = sortedNodes.x;
-      nodesY = sortedNodes.y;
-      var rangeX = d3.range(m).sort( function ( a, b ) { return sortedNodes.x.indexOf(nodesTmpX[a]) - sortedNodes.x.indexOf(nodesTmpX[b]); });
-      var rangeY = d3.range(n).sort( function ( a, b ) { return sortedNodes.y.indexOf(nodesTmpY[a]) - sortedNodes.y.indexOf(nodesTmpY[b]); });
+/*
+      var labelsX = [];
+      var labelsY = [];
+      for ( var i = 0; i < nodesOriginalX.length; i++ ) {
+        labelsX.push(nodesX[i].text);
+      }
+      for ( var i = 0; i < nodesOriginalY.length; i++ ) {
+        labelsY.push(nodesY[i].text);
+      }
+      var sortedLabelsX = [];
+      var sortedLabelsY = [];
+      var sortedNodes = sortNodes(value, nodesOriginalX, nodesOriginalY);
+      nodesOriginalX = sortedNodes.x;
+      nodesOriginalY = sortedNodes.y;
+      var sortedNodesX = sortedNodes.x;
+      var sortedNodesY = sortedNodes.y;
+      for ( var i = 0; i < sortedNodesX.length; i++ ) {
+        sortedLabelsX.push(sortedNodesX[i].text);
+      }
+      for ( var i = 0; i < sortedNodesY.length; i++ ) {
+        sortedLabelsY.push(sortedNodesY[i].text);
+      }
+      var rangeX = d3.range(m).sort( function ( a, b ) { return sortedLabelsX.indexOf(labelsX[a]) - sortedLabelsX.indexOf(labelsX[b]); });
+      var rangeY = d3.range(n).sort( function ( a, b ) { return sortedLabelsY.indexOf(labelsY[a]) - sortedLabelsY.indexOf(labelsY[b]); });
       x.domain(rangeX);
       y.domain(rangeY);
-
-      for ( var i = 0; i < nodesX.length; i++ ) {
-        nodesX[i].indices = [];
-        nodesX[i].yPosition = x(i);
-        nodesY[i].indices = [];
-        nodesY[i].xPosition = y(i);
-      }
+*/
 /*
       var matrixTmpX = matrixX.slice(0);
       for ( var i = 0; i < matrixTmpX.length; i++ ) {
@@ -1520,6 +1531,7 @@ text.active {
         }
       }
 */
+/*
       var t = svg.transition().duration(2500);
 
       svg.selectAll(".rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
@@ -1547,7 +1559,7 @@ text.active {
     } 
 
     t.call(endall, function () {
-      console.log('x: ', nodesX, ', y: ', nodesY)
+
       var row = svg.selectAll(".row");
       addRowParentText(row);
       if (hasDimensionsX) addRowDimensionText(row);
@@ -1557,9 +1569,10 @@ text.active {
       addColumnParentText(column);
       if (hasDimensionsY) addColumnDimensionText(column);
       addColumnHandlers(column);
+      buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true);
     });
-      //if (!!buildingMatrix) return;
-      //buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true);
+*/
+      buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true);
     }
 
     var colorThemeIndex = $('#colorTheme')[0].value - 0;
