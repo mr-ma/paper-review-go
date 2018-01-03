@@ -55,24 +55,11 @@ text.active {
 </div>
 
 <form style="padding:10px;width:200px;">
-<div>
+<div hidden>
   <label for="showChildAttributes">Show child attributes</label>
   <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
   <label for="includeChildAttributes">Include child attributes</label>
   <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;" checked>
-</div>
-<label for = "filterAttributesButton">Filter</label>
-<div class="input-group class="form-control"">
-  <div class="input-group-btn">
-    <button  class="btn btn-default dropdown-toggle" id="filterAttributesButton" title="Filter Attributes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-placeholder="Please select">
-      <i class="glyphicon glyphicon-th-list" style="color:#4078c0;"></i>
-      <span>Filter</span>
-      <span class="caret" aria-hidden="true"></span>
-    </button>
-    <ul class="dropdown-menu" id="attributeDropdownMenu" style="max-height:500px;overflow-y:auto;">
-    </ul>
-    <input type="button" class="btn btn-default" id="refreshFilter" value="Refresh">
-  </div>
 </div>
 <label for="dataType">Data Type: </label><select class="form-control" id="dataType">
   <option value="citationCount" selected="selected">Citation count</option>
@@ -223,13 +210,15 @@ text.active {
       .style("text-anchor", "end");
   }
 
-  function updateColorGradient ( svg, gradient, maxValue ) {
+  function updateColorGradient ( svg, gradient, maxValue, withTransition ) {
     var gradientID = "gradient-" + gradient.name + "-colors";
-    svg.select(".cell")
-      .style("fill", "url(#" + gradientID + ")");
-    svg.selectAll(".cell")
-      .transition().duration(1000)
-      .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); });
+    //svg.select(".cell")
+    //  .style("fill", "url(#" + gradientID + ")");
+    var cells = svg.selectAll(".cell");
+    if (!!withTransition) {
+      cells.transition().duration(1000)
+           .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); });
+    } else cells.style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); });
     updateColorLegend(gradientID, 300, 50, maxValue);
   }
 
@@ -499,12 +488,12 @@ text.active {
     orders.push({
       name: d3.range(m).sort(function(a, b) { if (nodesY[a].text == '') return 1; if (nodesY[b].text == '') return -1; else return d3.ascending(nodesY[a].text.toLowerCase(), nodesY[b].text.toLowerCase()); }),
       count: d3.range(m).sort(function(a, b) { return nodesY[b].count - nodesY[a].count; }),
-      default: d3.range(n)
+      default: d3.range(m)
     });
     orders.push({
       name: d3.range(n).sort(function(a, b) { if (nodesX[a].text == '') return 1; if (nodesX[b].text == '') return -1; else return d3.ascending(nodesX[a].text.toLowerCase(), nodesX[b].text.toLowerCase()); }),
       count: d3.range(n).sort(function(a, b) { return nodesX[b].count - nodesX[a].count; }),
-      default: d3.range(m)
+      default: d3.range(n)
     });
 
     var maxAxisLength = Math.max(m, n);
@@ -825,11 +814,9 @@ text.active {
                 nodesX[i].indices[k] = rowIndex;
                 return '';
               }
-              if (!!selectedOrder && selectedOrder != 'default') {
-                parentsX = [];
-                for ( var l = 0; l < treeDepthX; l++ ) {
-                  parentsX.push([]);
-                }
+              parentsX.length = 0;
+              for ( var l = 0; l < treeDepthX; l++ ) {
+                parentsX.push([]);
               }
               for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
                 parentsX[k].push(nodesX[i].parents[l]);
@@ -1148,11 +1135,9 @@ text.active {
                 nodesY[i].indices[k] = columnIndex;
                 return '';
               }
-              if (!!selectedOrder && selectedOrder != 'default') {
-                parentsY = [];
-                for ( var l = 0; l < treeDepthY; l++ ) {
-                  parentsY.push([]);
-                }
+              parentsY.length = 0;
+              for ( var l = 0; l < treeDepthY; l++ ) {
+                parentsY.push([]);
               }
               for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
                 parentsY[k].push(nodesY[i].parents[l]);
@@ -1461,56 +1446,41 @@ text.active {
       d3.selectAll("text").classed("active", false);
     }
 
-    $('#order').unbind().on("change", function() {
-      order(this.value);
-    });
-/*
     function order(value) {
-      x.domain(orders[value]);
-
-      var t = svg.transition().duration(2500);
-
-      t.selectAll(".row")
-          .delay(function(d, i) { return x(i) * 4; })
-          .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
-        .selectAll(".cell")
-          .delay(function(d) { return x(d.x) * 4; })
-          .attr("x", function(d) { return x(d.x); });
-
-      t.selectAll(".column")
-          .delay(function(d, i) { return x(i) * 4; })
-          .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
-    }
-*/
-
-    function order(value) {
-/*
       var labelsX = [];
       var labelsY = [];
-      for ( var i = 0; i < nodesOriginalX.length; i++ ) {
+      for ( var i = 0; i < nodesX.length; i++ ) {
         labelsX.push(nodesX[i].text);
-      }
-      for ( var i = 0; i < nodesOriginalY.length; i++ ) {
         labelsY.push(nodesY[i].text);
+        nodesX[i].indices = [];
+        nodesY[i].indices = [];
       }
       var sortedLabelsX = [];
       var sortedLabelsY = [];
-      var sortedNodes = sortNodes(value, nodesOriginalX, nodesOriginalY);
-      nodesOriginalX = sortedNodes.x;
-      nodesOriginalY = sortedNodes.y;
+      var sortedNodes = sortNodes(value, nodesX, nodesY);
+      nodesX = sortedNodes.x;
+      nodesY = sortedNodes.y;
       var sortedNodesX = sortedNodes.x;
       var sortedNodesY = sortedNodes.y;
-      for ( var i = 0; i < sortedNodesX.length; i++ ) {
+      for ( var i = 0; i < nodesX.length; i++ ) {
         sortedLabelsX.push(sortedNodesX[i].text);
-      }
-      for ( var i = 0; i < sortedNodesY.length; i++ ) {
         sortedLabelsY.push(sortedNodesY[i].text);
       }
-      var rangeX = d3.range(m).sort( function ( a, b ) { return sortedLabelsX.indexOf(labelsX[a]) - sortedLabelsX.indexOf(labelsX[b]); });
-      var rangeY = d3.range(n).sort( function ( a, b ) { return sortedLabelsY.indexOf(labelsY[a]) - sortedLabelsY.indexOf(labelsY[b]); });
+      var rangeX = d3.range(n).sort( function ( a, b ) {
+        if (labelsX[a] == '' && labelsX[b] == '') return 0;
+        if (labelsX[a] == '') return 1;
+        if (labelsX[b] == '') return -1;
+        return sortedLabelsX.indexOf(labelsX[a]) - sortedLabelsX.indexOf(labelsX[b]);
+      });
+      var rangeY = d3.range(m).sort( function ( a, b ) {
+        if (labelsY[a] == '' && labelsY[b] == '') return 0;
+        if (labelsY[a] == '') return 1;
+        if (labelsY[b] == '') return -1;
+        return sortedLabelsY.indexOf(labelsY[a]) - sortedLabelsY.indexOf(labelsY[b]);
+      });
       x.domain(rangeX);
       y.domain(rangeY);
-*/
+
 /*
       var matrixTmpX = matrixX.slice(0);
       for ( var i = 0; i < matrixTmpX.length; i++ ) {
@@ -1531,23 +1501,25 @@ text.active {
         }
       }
 */
-/*
+
       var t = svg.transition().duration(2500);
 
       svg.selectAll(".rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
 
       t.selectAll(".row")
-          .delay(function(d, i) { return y(i) * 1; }) // * 4
-          .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
-          .attr("y", function(d) { return y(d.y); }) // TODO remove?
+          //.filter(function (d, i) { return nodesX[i].text != ''; })
+          .delay(function(d, i) { return x(i) * 1; }) // * 4
+          .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+          .attr("y", function(d) { return x(d.y); }) // TODO remove?
         .selectAll(".cell")
-          .delay(function(d) { return x(d.x) * 1; })
-          .attr("x", function(d) { return x(d.x); });
+          .delay(function(d) { return y(d.x) * 1; })
+          .attr("x", function(d) { return y(d.x); });
 
       t.selectAll(".column")
-          .delay(function(d, i) { return x(i) * 1; })
-          .attr("x", function(d) { return x(d.x); })
-          .attr("transform", function(d, i) { return "translate(" + x(i) + ",0)rotate(-90)"; });
+          //.filter(function (d, i) { return nodesY[i].text != ''; })
+          .delay(function(d, i) { return y(i) * 1; })
+          .attr("x", function(d) { return y(d.x); })
+          .attr("transform", function(d, i) { return "translate(" + y(i) + ",0)rotate(-90)"; });
 
     function endall(transition, callback) { 
       if (typeof callback !== "function") throw new Error("Wrong callback in endall");
@@ -1569,18 +1541,19 @@ text.active {
       addColumnParentText(column);
       if (hasDimensionsY) addColumnDimensionText(column);
       addColumnHandlers(column);
-      buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true);
+      buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL, true);
     });
-*/
-      buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true);
+      //buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true);
     }
 
     var colorThemeIndex = $('#colorTheme')[0].value - 0;
-    if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[colorThemeIndex], maxValue);
-
+    if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[colorThemeIndex], maxValue, false);
     $('#colorTheme').unbind().on('change', function ( e ) {
       var index = this.value - 0;
-      if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue);
+      if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue, true);
+    });
+    $('#order').unbind().on("change", function() {
+      order(this.value);
     });
     buildingMatrix = false;
   }

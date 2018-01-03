@@ -943,7 +943,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 			rows, err := stmt.Query()
 			defer rows.Close()
 			*/
-			dbRef.Exec("CALL insertallparentsperattribute();")
+			dbRef.Exec("CALL insertallchildrenperattribute();")
 			defer dbRef.Close()
 			future <- model.Result{Success: true}
 		}()
