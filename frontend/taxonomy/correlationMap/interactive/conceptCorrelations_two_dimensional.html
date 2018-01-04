@@ -861,7 +861,8 @@ text.active {
               lastParentsX = nodesX[i].parents;
               shownTextsX = lastParentsX;
               if (!hasParentsX) return -margin.left + 10;
-              var factor = Math.max(1, parentsLength);
+              if (parentsLength > 0) parentsLength++;
+              var factor = Math.max(1, treeDepthX - parentsLength);
               return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
             }
             var counter = 0;
@@ -1182,7 +1183,8 @@ text.active {
               lastParentsY = nodesY[i].parents;
               shownTextsY = lastParentsY;
               if (!hasParentsY) return margin.top - 10;
-              var factor = Math.max(1, parentsLength);
+              if (parentsLength > 0) parentsLength++;
+              var factor = Math.max(1, treeDepthY - parentsLength);
               return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
             }
             var counter = 0;

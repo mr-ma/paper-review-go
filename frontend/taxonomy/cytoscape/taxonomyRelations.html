@@ -485,7 +485,7 @@
     Promise.all(promises)
       .then ( function ( results ) {
         console.log('Removed ' + results.length + ' attribute' + (results.length > 1 ? 's' : '') + ' successfully.');
-        selecteds.forEach ( function ( selected ) {
+        selecteds.filter( function ( entry ) { return entry.data('table') == 'attribute'; }).forEach ( function ( selected ) {
           var api = selected.qtip('api');
           api.destroy();
           api.disable();
@@ -648,7 +648,6 @@
         handleErrorHelper('Cannot get citations from DB.');
         return;
       }
-      console.log("papers: ", allCitations.response);
       $.ajax
         ({
           type: "POST",
@@ -662,7 +661,6 @@
               handleErrorHelper('Cannot get citations of attribute "' + text + '" from DB.');
               return;
             }
-            console.log("papers for attr: ", citationsPerAttribute.response);
             loadCitationMappingMultiselect(!!citationsPerAttribute.response ? citationsPerAttribute.response : [], !!allCitations.response ? allCitations.response : [], 'Citation mapping of "' + text + '"', function ( mappedCitations ) {
               $.ajax
                 ({
@@ -743,7 +741,6 @@
                             chooseParentRelations(parentRelations.response, function ( parentResults ) {
                               chooseChildRelations(childRelations.response, function ( childResults ) {
                                 chooseCitationMappings(attributeCoverage.response, function ( citationResults ) {
-                                  console.log('citationResults[0]: ', citationResults[0], ', citationResults[1]: ', citationResults[1])
                                   $.ajax
                                     ({
                                         type: "POST",
@@ -783,7 +780,7 @@
     $('#defaultModalForm').unbind().on('submit', function ( evt ) {
       evt.preventDefault();
       $('#defaultModalButton').prop('disabled', true);
-      var deleteConfirmation = $('#deleteConfirmation').val();
+      var deleteConfirmation = $('#defaultModalText').val();
       if (deleteConfirmation.toLowerCase().trim() != (selected.data('id')).toLowerCase().trim()) {
         handleErrorHelper('Type the name of the item to delete it. (attributeSrc_attributeDest for edges).');
         $('#defaultModalButton').prop('disabled', false);
@@ -932,7 +929,6 @@
     };
     //registerContextMenus();
     //cxtmenu( cytoscape );
-    console.log('screen width: ' + $(document).width() + ', height: ' + $(document).height())
     cy = cytoscape({  
       container: document.getElementById('cy'),
       elements: items,
@@ -1052,8 +1048,8 @@
         content: relationType.text, // html/text content to be displayed in the menu
         title: relationType.comment,
         select: function(ele){ // a function to execute when the command is selected
-          if (!ele) return;
-          if (ele.data('relation').split(relationType.text).length > 1) return;
+          var relation = ele.data('relation');
+          if (!!relation && relation.split(relationType.text).length > 1) return;
           var sourceID = ele.data('source');
           var targetID = ele.data('target');
           $.ajax
