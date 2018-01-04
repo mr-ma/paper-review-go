@@ -92,8 +92,6 @@ text.active {
   const COLOR_GRADIENTS =  [{name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'rainbow', colors: colorsRainbow}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
 
   const FONT_SIZE = '8pt';
-  const SHORTEN_VALUE = 3;
-  const SHORTEN_VALUE_ROTATION = 4;
 
   function buildParentTreeHelper ( attributes ) {
     var roots = [];
@@ -300,6 +298,7 @@ text.active {
     var nodesOriginalX = nodesX.slice(0);
     var nodesOriginalY = nodesY.slice(0);
 
+/*
     if (n > m) {
       for ( var i = 0; i < (n - m); i++ ) {
         nodesY.push({id: -1, text: '', parentText: '', dimension: ''});
@@ -311,6 +310,7 @@ text.active {
       }
       n = m;
     }
+*/
 
     nodesX.forEach ( function (node, i) {
       node.index = i;
@@ -345,20 +345,10 @@ text.active {
     });
 */
 
-    var left = 250;
-    var top = 250;
-    var svgMarginLeft = 100;
-    var svgMarginTop = 100;
-
     var selectedOrder = $('#order').val();
     if (!selectedOrder || selectedOrder == 'default') {
       nodesX.sort (sortDefaultX);
       nodesY.sort (sortDefaultY);
-    } else {
-      left = 350;
-      top = 350;
-      svgMarginLeft = 0;
-      svgMarginTop = 0;
     }
 
     correlations.response.forEach(function(link) {
@@ -446,9 +436,9 @@ text.active {
     console.log('max value: ' + maxValue);
 
     var minValue = 0;
-    var margin = {top: top, right: 0, bottom: 30, left: left}, // left/top: 240
-        width =  nodesY.length * 20, // 1440 or 4500
-        height = nodesX.length * 20; // 1440 or 4500
+    var margin = {top: 500, right: 0, bottom: 30, left: 500}, // left/top: 240
+        width =  Math.min(2000, nodesY.length * 25), // 1440 or 4500
+        height = Math.min(2000, nodesX.length * 25); // 1440 or 4500
 
     function getXPosition ( d ) {
       var sum = 0;
@@ -477,8 +467,7 @@ text.active {
     var svg = d3.select("body").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
-        .style("margin-left", svgMarginLeft + "px")
-        .style("margin-top", svgMarginTop + "px")
+        //.style("margin-left", margin.left + "px")
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -546,10 +535,8 @@ text.active {
     var heightPerCell = height / nodesX.length;
     var widthPerCell = width / nodesY.length;
 
-    //var marginLeft = getMaxNameLength(nodesX) * 3;
-    //var marginTop = getMaxNameLength(nodesY) * 3 + 5;
-    var marginLeft = 100;
-    var marginTop = 105;
+    var marginLeft = getMaxNameLength(nodesX) * 3;
+    var marginTop = getMaxNameLength(nodesY) * 3 + 5;
 
     var heightPerParentCell = (margin.top-marginTop)/(treeDepthY+1);
     var widthPerParentCell = (margin.left-marginLeft)/(treeDepthX+1);
@@ -557,8 +544,72 @@ text.active {
     if (!hasDimensionsX && !hasParentsX) margin.left = marginLeft*2;
     if (!hasDimensionsY && !hasParentsY) margin.top = marginTop*2;
 
+    function addCluster () {
+      var dimension = 'Defense view';
+      $.ajax
+        ({
+          type: "POST",
+          url: 'attributeClusterPerDimension',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({'taxonomy_id': 1, dimension: dimension}),
+          success: function ( cluster ) {
+            if (!cluster || !cluster.response) {
+              handleError('Cannot get attribute cluster from DB for dimension: "' + dimension + '".');
+              return;
+            }
+            console.log('cluster: ', cluster.response);
+            return;
+            var svg = d3.select("svg"),
+                width = +svg.attr("width"),
+                height = +svg.attr("height"),
+                g = svg.append("g").attr("transform", "translate(40,0)");
+
+            var cluster = d3.cluster()
+                .size([height, width - 160]);
+
+            var stratify = d3.stratify()
+                .parentId(function(d) { return d.id.substring(0, d.id.lastIndexOf(".")); });
+              if (error) throw error;
+
+              var root = stratify(data)
+                  .sort(function(a, b) { return (a.height - b.height) || a.id.localeCompare(b.id); });
+
+              cluster(root);
+
+              var link = g.selectAll(".link")
+                  .data(root.descendants().slice(1))
+                .enter().append("path")
+                  .attr("class", "link")
+                  .attr("d", function(d) {
+                    return "M" + d.y + "," + d.x
+                        + "C" + (d.parent.y + 100) + "," + d.x
+                        + " " + (d.parent.y + 100) + "," + d.parent.x
+                        + " " + d.parent.y + "," + d.parent.x;
+                  });
+
+              var node = g.selectAll(".node")
+                  .data(root.descendants())
+                .enter().append("g")
+                  .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+                  .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+
+              node.append("circle")
+                  .attr("r", 2.5);
+
+              node.append("text")
+                  .attr("dy", 3)
+                  .attr("x", function(d) { return d.children ? -8 : 8; })
+                  .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
+                  .text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
+        }
+      });
+    }
+    addCluster();
+/*
+
     svg.append("line")
-      .attr("class", "line")
       .attr("x1", -margin.left + 10)
       .attr("x2", 0)
       .attr("y1", height)
@@ -567,7 +618,6 @@ text.active {
       .style("stroke", "black");
 
     svg.append("line")
-      .attr("class", "line")
       .attr("x1", -margin.left + 10)
       .attr("x2", -margin.left + 10)
       .attr("y1", 0)
@@ -577,7 +627,6 @@ text.active {
 
     for ( var i = 0; i < treeDepthX; i++ ) {
       svg.append("line")
-        .attr("class", "line")
         .attr("x1", -margin.left + (i+1)*widthPerParentCell)
         .attr("x2", -margin.left + (i+1)*widthPerParentCell)
         .attr("y1", 0)
@@ -587,7 +636,6 @@ text.active {
     }
 
     svg.append("line")
-      .attr("class", "line")
       .attr("x1", width)
       .attr("x2", width)
       .attr("y1", -margin.top + 10)
@@ -596,7 +644,6 @@ text.active {
       .style("stroke", "black");
 
     svg.append("line")
-      .attr("class", "line")
       .attr("x1", 0)
       .attr("x2", width)
       .attr("y1", -margin.top + 10)
@@ -606,7 +653,6 @@ text.active {
 
     for ( var i = 0; i < treeDepthY; i++ ) {
       svg.append("line")
-        .attr("class", "line")
         .attr("x1", 0)
         .attr("x2", width)
         .attr("y1", -margin.top + (i+1)*heightPerParentCell)
@@ -657,6 +703,7 @@ text.active {
         .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
 
     var maxNodeAmount = Math.max(nodesX.length, nodesY.length);
+/*
 
     function filterDimension ( elm, dimension ) {
       var newNodesX = [];
@@ -773,7 +820,7 @@ text.active {
             }
             return nodesX[i].text;
           })
-          .attr("transform", function (d, i) { return "translate(-105,0)"; });
+          .attr("transform", function (d, i) { return "translate(-120,0)"; });
     }
 
     function addRowParentText ( row ) {
@@ -805,18 +852,14 @@ text.active {
               }
               if (index < 0) {
                 if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-                  if (counter <= 1) {//if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+                  if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
                     lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                    if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > SHORTEN_VALUE) {
-                      lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE) + '...');
+                    if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > 12) {
+                      lastTextRef.text(lastValueX.substr(0, 12) + '...');
                       lastTextRef.attr('data-fulltext', lastValueX);
                     }
                   } else {
                     lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                    if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR && lastValueX.length > SHORTEN_VALUE_ROTATION) {
-                      lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                      lastTextRef.attr('data-fulltext', lastValueX);
-                    }
                   }
                 }
                 lastTextRef = null;
@@ -829,6 +872,7 @@ text.active {
                   parentsX.push([]);
                 }
               */
+              /*
               }
               if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
               else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
@@ -847,18 +891,14 @@ text.active {
                 parentsX[k].push(nodesX[i].parents[l]);
               }
               if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-                if (counter <= 1) {//if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+                if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                  if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > SHORTEN_VALUE) {
-                    lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE) + '...');
+                  if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > 12) {
+                    lastTextRef.text(lastValueX.substr(0, 12) + '...');
                     lastTextRef.attr('data-fulltext', lastValueX);
                   }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                  if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR && lastValueX.length > SHORTEN_VALUE_ROTATION) {
-                    lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                    lastTextRef.attr('data-fulltext', lastValueX);
-                  }
                 }
               }
               lastTextRef = $(this);
@@ -869,18 +909,14 @@ text.active {
               return value;
             });
         if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-          if (counter <= 1) {//if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+          if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > SHORTEN_VALUE) {
-                  lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE) + '...');
+                if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > 12) {
+                  lastTextRef.text(lastValueX.substr(0, 12) + '...');
                   lastTextRef.attr('data-fulltext', lastValueX);
                 }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-            if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR && lastValueX.length > SHORTEN_VALUE_ROTATION) {
-              lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-              lastTextRef.attr('data-fulltext', lastValueX);
-            }
           }
           lastTextRef = null;
         }
@@ -970,18 +1006,14 @@ text.active {
               return '';
             } else {
               if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-                if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-                  if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE) {
-                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE) + '...');
+                  if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > 12) {
+                    lastTextRef.text(lastDimension.substr(0, 12) + '...');
                     lastTextRef.attr('data-fulltext', lastDimension);
                   }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
-                  if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION) {
-                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                    lastTextRef.attr('data-fulltext', lastDimension);
-                  }
                 }
               }
               lastTextRef = null;
@@ -991,18 +1023,14 @@ text.active {
             var value = nodesX[i].dimension;
             if (!value || value == '') return '';
             if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-              if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+              if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
                 lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-                if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE) {
-                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE) + '...');
+                if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > 12) {
+                  lastTextRef.text(lastDimension.substr(0, 12) + '...');
                   lastTextRef.attr('data-fulltext', lastDimension);
                 }
               } else {
                 lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
-                if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION) {
-                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                  lastTextRef.attr('data-fulltext', lastDimension);
-                }
               }
             }
             lastTextRef = $(this);
@@ -1011,18 +1039,14 @@ text.active {
             return value.split(' ').shift();
           });
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-          if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+          if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-            if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE) {
-              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE) + '...');
+            if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > 12) {
+              lastTextRef.text(lastDimension.substr(0, 12) + '...');
               lastTextRef.attr('data-fulltext', lastDimension);
             }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
-            if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION) {
-              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-              lastTextRef.attr('data-fulltext', lastDimension);
-            }
           }
           lastTextRef = null;
         }
@@ -1119,7 +1143,7 @@ text.active {
             }
             return nodesY[i].text;
           })
-          .attr("transform", function (d, i) { return "translate(105)"; }); // (-30,5)
+          .attr("transform", function (d, i) { return "translate(120)"; }); // (-30,5)
     }
 
     function addColumnParentText ( column ) {
@@ -1151,18 +1175,14 @@ text.active {
               }
               if (index < 0) {
                 if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-                  if (counter <= 1) { // if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+                  if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
                     lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)"});
-                    if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > SHORTEN_VALUE) {
-                      lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE) + '...');
+                    if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > 12) {
+                      lastTextRef.text(lastValueY.substr(0, 12) + '...');
                       lastTextRef.attr('data-fulltext', lastValueY);
                     }
                   } else {
                     lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
-                    if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR && lastValueY.length > SHORTEN_VALUE_ROTATION) {
-                      lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                      lastTextRef.attr('data-fulltext', lastValueY);
-                    }
                   }
                 }
                 lastTextRef = null;
@@ -1175,6 +1195,7 @@ text.active {
                   parentsY.push([]);
                 }
               */
+              /*
               }
               if (nodesY[i].parents.length > k) var value = nodesY[i].parents[k];
               else if (nodesY[i].parents.length > 0) var value = nodesY[i].parents[nodesY[i].parents.length-1];
@@ -1193,18 +1214,14 @@ text.active {
                 parentsY[k].push(nodesY[i].parents[l]);
               }
               if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-                if (counter <= 1) {//if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+                if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)"});
-                  if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > SHORTEN_VALUE) {
-                    lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE) + '...');
+                  if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > 12) {
+                    lastTextRef.text(lastValueY.substr(0, 12) + '...');
                     lastTextRef.attr('data-fulltext', lastValueY);
                   }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
-                  if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR && lastValueY.length > SHORTEN_VALUE_ROTATION) {
-                    lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                    lastTextRef.attr('data-fulltext', lastValueY);
-                  }
                 }
               }
               lastTextRef = $(this);
@@ -1215,18 +1232,14 @@ text.active {
               return value;
             });
         if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-          if (counter <= 1) {//if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+          if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)"});
-            if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > SHORTEN_VALUE) {
-              lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE) + '...');
+            if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > 12) {
+              lastTextRef.text(lastValueY.substr(0, 12) + '...');
               lastTextRef.attr('data-fulltext', lastValueY);
             }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
-            if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR && lastValueY.length > SHORTEN_VALUE_ROTATION) {
-              lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-              lastTextRef.attr('data-fulltext', lastValueY);
-            }
           }
           lastTextRef = null;
         }
@@ -1317,18 +1330,14 @@ text.active {
               return '';
             } else {
               if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-                if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
-                  if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE) {
-                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE) + '...');
+                  if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > 12) {
+                    lastTextRef.text(lastDimension.substr(0, 12) + '...');
                     lastTextRef.attr('data-fulltext', lastDimension);
                   }
                 } else {
                   lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
-                  if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION) {
-                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                    lastTextRef.attr('data-fulltext', lastDimension);
-                  }
                 }
               }
               lastTextRef = null;
@@ -1338,18 +1347,14 @@ text.active {
             var value = nodesY[i].dimension;
             if (!value || value == '') return '';
             if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-              if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+              if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
                 lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
-                if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE) {
-                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE) + '...');
+                if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > 12) {
+                  lastTextRef.text(lastDimension.substr(0, 12) + '...');
                   lastTextRef.attr('data-fulltext', lastDimension);
                 }
               } else {
                 lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
-                if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION) {
-                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-                  lastTextRef.attr('data-fulltext', lastDimension);
-                }
               }
             }
             lastTextRef = $(this);
@@ -1358,18 +1363,14 @@ text.active {
             return value.split(' ').shift();
           });
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-          if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+          if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
-            if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE) {
-              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE) + '...');
+            if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > 12) {
+              lastTextRef.text(lastDimension.substr(0, 12) + '...');
               lastTextRef.attr('data-fulltext', lastDimension);
             }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
-            if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION) {
-              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION) + '...');
-              lastTextRef.attr('data-fulltext', lastDimension);
-            }
           }
           lastTextRef = null;
         }
@@ -1449,6 +1450,7 @@ text.active {
     addColumnParentText(column);
     if (hasDimensionsY) addColumnDimensionText(column);
     addColumnHandlers(column);
+*/
 
     function row(row) {
       var cell = d3.select(this).selectAll(".cell")
@@ -1575,7 +1577,7 @@ text.active {
 
       var t = svg.transition().duration(3000);
 
-      svg.selectAll(".line,.rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
+      svg.selectAll(".rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
 
       const TRANSITION_FACTOR = 2;
 

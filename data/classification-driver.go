@@ -13,6 +13,8 @@ type ClassificationDriver interface {
 	ExportCorrelations([]model.Attribute, int64) ([]model.Paper, error)
 	GetAttributesPerDimension(int64, string) ([]model.Attribute, error)
 	GetLeafAttributesPerDimension(int64, string) ([]model.Attribute, error)
+	GetAttributeChildren(string, string, model.AttributeCluster) ([]model.AttributeCluster)
+	GetAttributeClusterPerDimension(int64, string) ([]model.AttributeCluster, error)
 	GetAllChildrenAttributes(int64, string) ([]model.Attribute, error)
 	GetAllChildrenLeafAttributes(int64, string) ([]model.Attribute, error)
 	GetIntermediateAttributes(int64, int64, int64) ([]model.Attribute, error)
@@ -740,6 +742,60 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		defer rows.Close()
 		defer dbRef.Close()
 		return attributes, err
+		}
+
+	func (d MySQLDriver) GetAttributeChildren(taxonomyIdStr string, dimension string, cluster model.AttributeCluster) (clusters []model.AttributeCluster){
+		dbRef, err := d.OpenDB()
+		checkErr(err)
+		destAttributeIdStr := strconv.Itoa(cluster.ID)
+		// Get child attributes
+		db, stmt, err := d.Query("select distinct attribute.id_attribute, attribute.text from attribute inner join taxonomy_relation on (taxonomy_relation.id_dest_attribute = " + destAttributeIdStr + " and attribute.id_attribute = taxonomy_relation.id_src_attribute and taxonomy_relation.id_taxonomy = " + taxonomyIdStr + " and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = \"" + dimension + "\"));")
+		defer stmt.Close()
+		defer db.Close()
+		rows, err := stmt.Query()
+		checkErr(err)
+		for rows.Next() {
+			a := model.AttributeCluster{}
+			rows.Scan(&a.ID,&a.Text)
+			clusters = append(clusters, a)
+		}
+		rows.Close()
+		dbRef.Close()
+		for _, elem := range clusters {
+			tmp := d.GetAttributeChildren(taxonomyIdStr, dimension, elem)
+			elem.Children = []model.AttributeCluster{}
+			for _, elem2 := range tmp {
+				elem.Children = append(elem.Children, elem2)
+			}
+		}
+		return clusters
+		}
+
+	func (d MySQLDriver) GetAttributeClusterPerDimension(taxonomyId int64, dimension string) (clusters []model.AttributeCluster, err error){
+		dbRef, err := d.OpenDB()
+		checkErr(err)
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		// Get root attributes
+		db, stmt, err := d.Query("select distinct attr.id_attribute, attr.text from (select distinct attribute.id_attribute, attribute.text from attribute inner join taxonomy_dimension on (attribute.id_attribute = taxonomy_dimension.id_attribute and taxonomy_dimension.id_taxonomy = " + taxonomyIdStr + ") inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension and dimension.text = \"" + dimension + "\")) as attr left outer join taxonomy_relation on (attr.id_attribute = taxonomy_relation.id_src_attribute and taxonomy_relation.id_taxonomy = " + taxonomyIdStr + " and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = \"" + dimension + "\")) where taxonomy_relation.id_taxonomy_relation is null;")
+		defer stmt.Close()
+		defer db.Close()
+		rows, err := stmt.Query()
+		checkErr(err)
+		for rows.Next() {
+			a := model.AttributeCluster{}
+			rows.Scan(&a.ID,&a.Text)
+			clusters = append(clusters, a)
+		}
+		rows.Close()
+		dbRef.Close()
+		for _, elem := range clusters {
+			tmp := d.GetAttributeChildren(taxonomyIdStr, dimension, elem)
+			elem.Children = []model.AttributeCluster{}
+			for _, elem2 := range tmp {
+				elem.Children = append(elem.Children, elem2)
+			}
+		}
+		return clusters, err
 		}
 
 	func (d MySQLDriver) GetAllChildrenAttributes(taxonomyId int64, parent string) (attributes []model.Attribute, err error){

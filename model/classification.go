@@ -187,6 +187,12 @@ type ConceptCorrelation struct {
   Value int `json:"value"`
 }
 
+type AttributeCluster struct {
+  ID int `json:"id"`
+  Text string `json:"text"`
+  Children []AttributeCluster `json:"children"`
+}
+
 type AttributeCoverage struct {
   AttributeName string `json:"attributeName"`
   PaperName string `json:"paperName"`

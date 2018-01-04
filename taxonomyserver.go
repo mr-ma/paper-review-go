@@ -54,6 +54,7 @@ func main() {
 	mux.Handle("POST", "/correlation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCorrelationHandler), "getCorrelationHandler", nil)))
 	mux.Handle("POST", "/attributesPerDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributesPerDimensionHandler), "getAttributesPerDimensionHandler", nil)))
 	mux.Handle("POST", "/leafAttributesPerDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getLeafAttributesPerDimensionHandler), "getLeafAttributesPerDimensionHandler", nil)))
+	mux.Handle("POST", "/attributeClusterPerDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeClusterPerDimensionHandler), "getAttributeClusterPerDimensionHandler", nil)))
 	mux.Handle("POST", "/allChildrenAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllChildrenAttributesHandler), "getAllChildrenAttributesHandler", nil)))
 	mux.Handle("POST", "/allChildrenLeafAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAllChildrenLeafAttributesHandler), "getAllChildrenLeafAttributesHandler", nil)))
 	mux.Handle("POST", "/attributeRelations", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeRelationsHandler), "getAttributeRelationsHandler", nil)))
@@ -394,6 +395,10 @@ func main() {
 		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_two_dimensional.html")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/conceptCorrelationMatrix2DCluster", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_two_dimensional_cluster.html")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/conceptCorrelationMatrix3D", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_three_dimensional.html")
 		fmt.Fprintf(w, "%s", p)
@@ -541,6 +546,14 @@ func getLeafAttributesPerDimensionHandler(u *url.URL, h http.Header, attributesP
 	checkErr(err)
 	return http.StatusOK, nil,
 		&MyResponse{"0", len(attributes), attributes}, nil
+}
+func getAttributeClusterPerDimensionHandler(u *url.URL, h http.Header, attributeClusterPerDimensionRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	clusters, err := driver.GetAttributeClusterPerDimension(
+		attributeClusterPerDimensionRequest.TaxonomyID, attributeClusterPerDimensionRequest.Dimension)
+	checkErr(err)
+	return http.StatusOK, nil,
+		&MyResponse{"0", len(clusters), clusters}, nil
 }
 func getAllChildrenAttributesHandler(u *url.URL, h http.Header, allChildrenAttributesRequest *model.AllChildrenAttributesRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
