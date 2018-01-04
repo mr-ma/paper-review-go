@@ -1504,22 +1504,24 @@ text.active {
       }
 */
 
-      var t = svg.transition().duration(2500);
+      var t = svg.transition().duration(3000);
 
       svg.selectAll(".rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
 
+      const TRANSITION_FACTOR = 2;
+
       t.selectAll(".row")
           //.filter(function (d, i) { return nodesX[i].text != ''; })
-          .delay(function(d, i) { return x(i) * 1; }) // * 4
+          .delay(function(d, i) { return x(i) * TRANSITION_FACTOR; }) // * 4
           .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
           .attr("y", function(d) { return x(d.y); }) // TODO remove?
         .selectAll(".cell")
-          .delay(function(d) { return y(d.x) * 1; })
+          .delay(function(d) { return y(d.x) * TRANSITION_FACTOR; })
           .attr("x", function(d) { return y(d.x); });
 
       t.selectAll(".column")
           //.filter(function (d, i) { return nodesY[i].text != ''; })
-          .delay(function(d, i) { return y(i) * 1; })
+          .delay(function(d, i) { return y(i) * TRANSITION_FACTOR; })
           .attr("x", function(d) { return y(d.x); })
           .attr("transform", function(d, i) { return "translate(" + y(i) + ",0)rotate(-90)"; });
 

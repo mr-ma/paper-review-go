@@ -18,6 +18,13 @@
 
     <!-- promises -->
     <script src="bluebird.min.js"></script>
+
+    <link href="d3-context-menu.css" type="text/css" rel="stylesheet"/>
+    <script src="d3-context-menu.js"></script>
+
+    <link href="d3-tip.css" type="text/css" rel="stylesheet"/>
+    <script src='d3-tip.js'></script>
+
     <script src="error.js"></script>
     <style>
 
@@ -188,6 +195,13 @@
         diameter = svg.attr("width"),
         g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 
+    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) {
+      var text = d.data.name;
+      if (!!d.data.size) text += ': ' + d.data.size;
+      return text;
+    });
+    svg.call(d3Tip);
+
     var defs = svg.append("defs");
 
     COLOR_GRADIENTS.forEach ( function ( gradient ) {
@@ -217,7 +231,9 @@
         .enter().append("circle")
           .attr("class", function(d) { return d.parent ? (d.data.children && d.data.children.length > 0) ? "node" : "node node--leafnode" : "node node--root"; })
           //.style("fill", function(d) { return (d.children && d.children.length > 0) ? color(d.depth) : 'lightgreen'; })
-          .on("click", function(d) { if (focus !== d.parent) zoom(d.parent), d3.event.stopPropagation(); else if ($(this).attr("class").split('node--leafnode').length > 1) showCitations(d.data.name), d3.event.stopPropagation(); else if (focus !== d) zoom(d), d3.event.stopPropagation(); });
+          .on("click", function(d) { if (focus !== d.parent) zoom(d.parent), d3.event.stopPropagation(); else if ($(this).attr("class").split('node--leafnode').length > 1) showCitations(d.data.name), d3.event.stopPropagation(); else if (focus !== d) zoom(d), d3.event.stopPropagation(); })
+          .on("mouseover", function (d) { d3Tip.show(d); })
+          .on("mouseout", function (d) { d3Tip.hide(d); });
 
       var text = g.selectAll("text")
         .data(nodes)

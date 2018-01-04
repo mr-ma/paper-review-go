@@ -40,50 +40,24 @@ text.active {
 </header>
 <body>
 
+
 <div style="margin-left:20px;margin-top:50px;">
-
-<ul class="nav nav-tabs tabs-up" id="tabsContainer">
-  <li><a href="javascript:void(0)" name="parent" data-target="#parentFrame" class="media_node active span" id="parent" data-toggle="tabajax" rel="tooltip">Parent</a></li>
-  <li><a href="javascript:void(0)" name="Number of children" data-target="#numChildrenFrame" class="media_node active span" id="numChildren" data-toggle="tabajax" rel="tooltip">Number of children</a></li>
-</ul>
-
-<div class="tab-content" style="width:200px;">
-  <div class="tab-pane fade in active" id="parentFrame">
-    <label for="parents1">x property: </label>
-    <select class="form-control" id="parents2" hidden>
-    </select>
-    <label for="parents2">y property: </label>
-    <select class="form-control" id="parents1" hidden>
-    </select>
-  </div>
-  <div class="tab-pane fade in" id="numChildrenFrame" hidden>
-    <form>
-      <label for="maxChildren">Min children: </label><input type="text" class="form-control" id="minChildren">
-      <label for="maxChildren">Max children: </label><input type="text" class="form-control" id="maxChildren">
+    <form style="width:165px;">
+      <label for="parents1">x property: </label>
+      <select class="form-control" id="parents2" hidden>
+      </select>
+      <label for="parents2">y property: </label>
+      <select class="form-control" id="parents1" hidden>
+      </select>
     </form>
-  </div>
 </div>
 
 <form style="padding:10px;width:200px;">
-
-<div>
+<div hidden>
   <label for="showChildAttributes">Show child attributes</label>
   <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
   <label for="includeChildAttributes">Include child attributes</label>
   <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;" checked>
-</div>
-<label for = "filterAttributesButton">Filter</label>
-<div class="input-group class="form-control"">
-  <div class="input-group-btn">
-    <button  class="btn btn-default dropdown-toggle" id="filterAttributesButton" title="Filter Attributes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-placeholder="Please select">
-      <i class="glyphicon glyphicon-th-list" style="color:#4078c0;"></i>
-      <span>Filter</span>
-      <span class="caret" aria-hidden="true"></span>
-    </button>
-    <ul class="dropdown-menu" id="attributeDropdownMenu" style="max-height:500px;overflow-y:auto;">
-    </ul>
-    <input type="button" class="btn btn-default" id="refreshFilter" value="Refresh">
-  </div>
 </div>
 <label for="dataType">Data Type: </label><select class="form-control" id="dataType">
   <option value="citationCount" selected="selected">Citation count</option>
@@ -91,9 +65,9 @@ text.active {
 </select>
 <label for="order">Order by: </label><select class="form-control" id="order">
   <option value="default" selected="selected"></option>
+  <option value="name">by Name</option>
   <option value="count">by Value</option>
 </select>
-</form>
 </div>
 
 <div id="graph"></div>
