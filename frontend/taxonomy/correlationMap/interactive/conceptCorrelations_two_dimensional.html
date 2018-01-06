@@ -300,6 +300,8 @@ text.active {
     var nodesOriginalX = nodesX.slice(0);
     var nodesOriginalY = nodesY.slice(0);
 
+/*
+    // making the matrix quadratic
     if (n > m) {
       for ( var i = 0; i < (n - m); i++ ) {
         nodesY.push({id: -1, text: '', parentText: '', dimension: ''});
@@ -311,6 +313,7 @@ text.active {
       }
       n = m;
     }
+*/
 
     nodesX.forEach ( function (node, i) {
       node.index = i;
@@ -345,18 +348,50 @@ text.active {
     });
 */
 
-    var left = 250;
-    var top = 250;
-    var svgMarginLeft = 100;
-    var svgMarginTop = 100;
+    var hasDimensionsX = hasDimensions(nodesX);
+    var hasDimensionsY = hasDimensions(nodesY);
+
+    var treeDepthX = getTreeDepth(nodesX);
+    var treeDepthY = getTreeDepth(nodesY);
+    var hasParentsX = treeDepthX > 0;
+    var hasParentsY = treeDepthY > 0;
+    if (hasDimensionsX) treeDepthX++;
+    if (hasDimensionsY) treeDepthY++;
+
+    //var marginLeft = getMaxNameLength(nodesX) * 3;
+    //var marginTop = getMaxNameLength(nodesY) * 3 + 5;
+    var marginLeft = 100;
+    var marginTop = 105;
+
+    var textTransformFactorX = 105;
+    var textTransformFactorY = 105;
+
+    if (!hasDimensionsX && !hasParentsX) {
+      marginLeft = 150;
+      textTransformFactorX = 125;
+    }
+    if (!hasDimensionsY && !hasParentsY) {
+      marginTop = 150;
+      textTransformFactorY = 125;
+    }
+
+    console.log('treedepthX: ' + treeDepthX + ', treeDepthY: ' + treeDepthY)
+
+    var left = marginLeft + treeDepthX * 35;
+    var sortedLeft = marginLeft + treeDepthX * 60;
+    var top = marginTop + treeDepthY * 35;
+    var sortedTop = marginTop + treeDepthY * 60;
+
+    var svgMarginLeft = sortedLeft - left;
+    var svgMarginTop = sortedTop - top;
 
     var selectedOrder = $('#order').val();
     if (!selectedOrder || selectedOrder == 'default') {
       nodesX.sort (sortDefaultX);
       nodesY.sort (sortDefaultY);
     } else {
-      left = 350;
-      top = 350;
+      left = sortedLeft;
+      top = sortedTop;
       svgMarginLeft = 0;
       svgMarginTop = 0;
     }
@@ -428,7 +463,7 @@ text.active {
       buildingMatrix = false;
       return buildMatrix({response: sortedNodes.x}, {response: sortedNodes.y}, correlations, maxValue, onClickURL, false);
     }
-    var labelText = ($('#dataType')[0].value == 'referenceCount') ? ' references' : ' citations';
+    var labelText = ($('#dataType')[0].value == 'referenceCount') ? ' reference' : ' citation';
     if (maxValue < 0) {
       maxValue = 0;
       for ( var i = 0; i < matrixX.length; i++ ) {
@@ -449,6 +484,8 @@ text.active {
     var margin = {top: top, right: 0, bottom: 30, left: left}, // left/top: 240
         width =  nodesY.length * 20, // 1440 or 4500
         height = nodesX.length * 20; // 1440 or 4500
+
+    console.log("width: " + width + ', height: ' + height)
 
     function getXPosition ( d ) {
       var sum = 0;
@@ -482,6 +519,8 @@ text.active {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    console.log('margin.left: ' + margin.left + ', margin.top: ' + margin.top)
+
     var defs = svg.append("defs");
 
     COLOR_GRADIENTS.forEach ( function ( gradient ) {
@@ -492,10 +531,13 @@ text.active {
       }
     });
 
-    var x = d3.scale.ordinal().rangeBands([0, width]),
-        y = d3.scale.ordinal().rangeBands([0, height]),
-        z = d3.scale.linear().domain([0, 4]).clamp(true),
+    var maxScale = Math.max(width, height);
+    var x = d3.scale.ordinal().domain(d3.range(n)).rangeBands([0, maxScale]),
+        y = d3.scale.ordinal().domain(d3.range(m)).rangeBands([0, maxScale]),
+        z = d3.scale.linear().clamp(true),
         c = d3.scale.category10().domain(d3.range(10));
+
+    if (maxValue > 4) z.domain([0, 4]);
 
     var orders = [];
     orders.push({
@@ -515,18 +557,8 @@ text.active {
     x.domain(d3.range(maxAxisLength));
     y.domain(d3.range(maxAxisLength));
 
-    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { if (!!d.fullText) { if (d.fullText == -1) return ''; return d.fullText; } return '' + d.z + labelText; });
+    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { if (!!d.fullText) { if (d.fullText == -1) return ''; return d.fullText; } return '' + d.z + (d.z > 1 ? labelText + 's' : labelText); });
     svg.call(d3Tip);
-
-    var hasDimensionsX = hasDimensions(nodesX);
-    var hasDimensionsY = hasDimensions(nodesY);
-
-    var treeDepthX = getTreeDepth(nodesX);
-    var treeDepthY = getTreeDepth(nodesY);
-    var hasParentsX = treeDepthX > 0;
-    var hasParentsY = treeDepthY > 0;
-    if (hasDimensionsX) treeDepthX++;
-    if (hasDimensionsY) treeDepthY++;
 /*
     for ( var i = 0; i < 1; i++ ) {
       var marginLeft = margin.left / (i+1) - 10;
@@ -546,16 +578,8 @@ text.active {
     var heightPerCell = height / nodesX.length;
     var widthPerCell = width / nodesY.length;
 
-    //var marginLeft = getMaxNameLength(nodesX) * 3;
-    //var marginTop = getMaxNameLength(nodesY) * 3 + 5;
-    var marginLeft = 100;
-    var marginTop = 105;
-
     var heightPerParentCell = (margin.top-marginTop)/(treeDepthY+1);
     var widthPerParentCell = (margin.left-marginLeft)/(treeDepthX+1);
-
-    if (!hasDimensionsX && !hasParentsX) margin.left = marginLeft*2;
-    if (!hasDimensionsY && !hasParentsY) margin.top = marginTop*2;
 
     svg.append("line")
       .attr("class", "line")
@@ -654,7 +678,7 @@ text.active {
         .data(matrixY)
       .enter().append("g")
         .attr("class", "column")
-        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+        .attr("transform", function(d, i) { return "translate(" + y(i) + ")rotate(-90)"; });
 
     var maxNodeAmount = Math.max(nodesX.length, nodesY.length);
 
@@ -755,7 +779,7 @@ text.active {
       },
     ];
 
-    const ROTATION_FACTOR = 8;
+    const ROTATION_FACTOR = 6;
 
     function addRowText ( row ) {
       row.append("text")
@@ -773,7 +797,7 @@ text.active {
             }
             return nodesX[i].text;
           })
-          .attr("transform", function (d, i) { return "translate(-105,0)"; });
+          .attr("transform", function (d, i) { return "translate(-" + textTransformFactorX + ",0)"; });
     }
 
     function addRowParentText ( row ) {
@@ -833,7 +857,13 @@ text.active {
               if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
               else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
               else var value = '';
-              if (!value || value == '') return '';
+              if (!value || value == '') {
+                parentsX.length = 0;
+                for ( var l = 0; l < treeDepthX; l++ ) {
+                  parentsX.push([]);
+                }
+                return '';
+              }
               value = nodesX[i].parents[k];
               if (!value || value == '' || checkForOccurrence(parentsX, value) > k) {
                 nodesX[i].indices[k] = rowIndex;
@@ -891,11 +921,18 @@ text.active {
           .attr("x1", function ( a, i ) {
             if (i == 0 || lastParentsX.length == 0 || nodesX[i].parents.length == 0) {
               var parentsLength = !!lastParentsX ? lastParentsX.length : 0;
+              if (nodesX[i].parents.length < parentsLength) parentsLength = nodesX[i].parents.length;
               lastParentsX = nodesX[i].parents;
               shownTextsX = lastParentsX;
               if (!hasParentsX) return -margin.left + 10;
-              if (parentsLength > 0) parentsLength++;
-              var factor = Math.max(1, treeDepthX - parentsLength);
+              parentsLength++;
+              var factor = Math.max(1, parentsLength);
+              if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+              else {
+                for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
+                  shownTextsX[l] = nodesX[i].parents[l];
+                }
+              }
               return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
             }
             var counter = 0;
@@ -903,17 +940,17 @@ text.active {
             for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
               var index = nodesX[i].parents.indexOf(lastParentsX[k]);
               if (index < 0) {
-                var maxIndex = -1;
+                var maxIndex = Infinity;
                 if (k < lastParentsX.length && sameParents.length > 0) {
                   sameParents.forEach ( function ( sameParent ) {
                     var s = shownTextsX.indexOf(sameParent);
-                    if (s > maxIndex) maxIndex = s;
+                    if (s < maxIndex) maxIndex = s;
                   });
                 }
-                if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
+                if (maxIndex < 0) maxIndex = 0;
+                if (maxIndex > shownTextsX.length-1) maxIndex = 0;
                 var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
                 if (parentsDiff > 0) {
-                  parentsDiff++;
                   var parentsLength = nodesX[i].parents.length;
                 } else {
                   parentsDiff = -parentsDiff;
@@ -924,16 +961,35 @@ text.active {
                   shownTextsX = lastParentsX;
                   if (parentsLength == 0) parentsLength++;
                   var factor = Math.max(1, treeDepthX - parentsLength);
+                  if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+                  else {
+                    for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
+                      shownTextsX[l] = nodesX[i].parents[l];
+                    }
+                  }
                   return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
                 }
-                if (treeDepthX - maxIndex + counter - parentsDiff >= treeDepthX) maxIndex++;
-                if (parentsDiff > 1) parentsDiff++;
-                var result = -margin.left + (treeDepthX - maxIndex + counter - parentsDiff)*widthPerParentCell + ((treeDepthX - maxIndex + counter - parentsDiff) == 0 ? 10 : 0);
+                if (parentsDiff == 0) parentsDiff++;
+                if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
+                //if (counter > maxIndex) maxIndex = shownTextsX.length - maxIndex; // TODO
+                //if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
+                var result = -margin.left + (treeDepthX - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsX = nodesX[i].parents;
                 if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+                else {
+                  for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
+                    shownTextsX[l] = nodesX[i].parents[l];
+                  }
+                }
                 return result;
               } else sameParents.push(lastParentsX[k]);
               counter++;
+            }
+            if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+            else {
+              for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
+                shownTextsX[l] = nodesX[i].parents[l];
+              }
             }
             var parentCounter = 0;
             if (i > 1) {
@@ -1055,7 +1111,7 @@ text.active {
               counter = 0;
               return 0;
             }
-            counter++;
+            counter++;  
             if (nodesX[i].dimension == lastDimension) {
               return -margin.left + widthPerParentCell;
             }
@@ -1066,6 +1122,9 @@ text.active {
           .attr("class", "rowParentLine")
           .attr("stroke-width", "1")
           .style("stroke", "black");    
+    }
+    function addRowDimensionColors ( row ) {
+
     }
     function addRowHandlers ( row ) {
       row.selectAll('text')
@@ -1090,9 +1149,8 @@ text.active {
           if (text.split('...').length > 1) {
             if (!fullText) return;
             text = fullText;
-          }
+          } else if (i >= treeDepthX && hasDimensionsX) text += ' view';
           if (!selectize1) return;
-          if (i > treeDepthX) text += ' view';
           if (parents.indexOf(text) < 0) return;
           selectize1.setValue(text, false);
         })
@@ -1100,7 +1158,10 @@ text.active {
     }
     addRowText(row);
     addRowParentText(row);
-    if (hasDimensionsX) addRowDimensionText(row);
+    if (hasDimensionsX) {
+      addRowDimensionText(row);
+      addRowDimensionColors(row);
+    }
     addRowHandlers(row);
 
     function addColumnText ( column ) {
@@ -1119,7 +1180,7 @@ text.active {
             }
             return nodesY[i].text;
           })
-          .attr("transform", function (d, i) { return "translate(105)"; }); // (-30,5)
+          .attr("transform", function (d, i) { return "translate(" + textTransformFactorY + ")"; }); // (-30,5)
     }
 
     function addColumnParentText ( column ) {
@@ -1179,7 +1240,13 @@ text.active {
               if (nodesY[i].parents.length > k) var value = nodesY[i].parents[k];
               else if (nodesY[i].parents.length > 0) var value = nodesY[i].parents[nodesY[i].parents.length-1];
               else var value = '';
-              if (!value || value == '') return '';
+              if (!value || value == '') {
+                parentsY.length = 0;
+                for ( var l = 0; l < treeDepthY; l++ ) {
+                  parentsY.push([]);
+                }
+                return '';
+              }
               value = nodesY[i].parents[k];
               if (!value || value == '' || checkForOccurrence(parentsY, value) > k) {
                 nodesY[i].indices[k] = columnIndex;
@@ -1237,11 +1304,18 @@ text.active {
           .attr("x1", function ( a, i ) {
             if (i == 0 || lastParentsY.length == 0 || nodesY[i].parents.length == 0) {
               var parentsLength = !!lastParentsY ? lastParentsY.length : 0;
+              if (nodesY[i].parents.length < parentsLength) parentsLength = nodesY[i].parents.length;
               lastParentsY = nodesY[i].parents;
               shownTextsY = lastParentsY;
               if (!hasParentsY) return margin.top - 10;
-              if (parentsLength > 0) parentsLength++;
-              var factor = Math.max(1, treeDepthY - parentsLength);
+              parentsLength++;
+              var factor = Math.max(1, parentsLength);
+              if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+              else {
+                for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
+                  shownTextsY[l] = nodesY[i].parents[l];
+                }
+              }
               return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
             }
             var counter = 0;
@@ -1249,20 +1323,21 @@ text.active {
             for ( var k = lastParentsY.length-1; k >= 0; k-- ) {
               var index = nodesY[i].parents.indexOf(lastParentsY[k]);
               if (index < 0) {
-                var maxIndex = -1;
+                var maxIndex = Infinity;
                 if (k < lastParentsY.length && sameParents.length > 0) {
                   sameParents.forEach ( function ( sameParent ) {
                     var s = shownTextsY.indexOf(sameParent);
-                    if (s > maxIndex) maxIndex = s;
+                    if (s < maxIndex) maxIndex = s;
                   });
                 }
-                if (maxIndex < lastParentsY.length) maxIndex = lastParentsY.length-1;
+                if (maxIndex > shownTextsY.length-1) maxIndex = 0;
                 var parentsDiff = nodesY[i].parents.length - lastParentsY.length;
                 if (parentsDiff > 0) {
                   parentsDiff++;
                   var parentsLength = nodesY[i].parents.length;
                 } else {
                   parentsDiff = -parentsDiff;
+                  if (parentsDiff > 1) parentsDiff--;
                   var parentsLength = lastParentsY.length;
                 }
                 if (counter == 0) {
@@ -1270,16 +1345,36 @@ text.active {
                   shownTextsY = lastParentsY;
                   if (parentsLength == 0) parentsLength++;
                   var factor = Math.max(1, treeDepthY - parentsLength);
+                  if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+                  else {
+                    for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
+                      shownTextsY[l] = nodesY[i].parents[l];
+                    }
+                  }
                   return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
                 }
-                if (treeDepthY - maxIndex + counter - parentsDiff >= treeDepthY) maxIndex++;
-                if (parentsDiff > 1) parentsDiff++;
-                var result = margin.top - (treeDepthY - maxIndex + counter - parentsDiff)*heightPerParentCell - ((treeDepthY - maxIndex + counter - parentsDiff) == 0 ? 10 : 0);
+                if (parentsDiff == 0) parentsDiff++;
+                if (maxIndex > nodesY[i].parents.length-1) parentsDiff--;
+                //if (counter > maxIndex) maxIndex = shownTextsY.length - maxIndex; // TODO
+                //if (maxIndex < lastParentsY.length) maxIndex = lastParentsY.length-1;
+                //if (treeDepthY - maxIndex + counter - parentsDiff >= treeDepthY) maxIndex++;
+                var result = margin.top - (treeDepthY - (maxIndex - parentsDiff + 1))*heightPerParentCell - (treeDepthY - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsY = nodesY[i].parents;
                 if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+                else {
+                  for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
+                    shownTextsY[l] = nodesY[i].parents[l];
+                  }
+                }
                 return result;
               } else sameParents.push(lastParentsY[k]);
               counter++;
+            }
+            if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+            else {
+              for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
+                shownTextsY[l] = nodesY[i].parents[l];
+              }
             }
             var parentCounter = 0;
             if (i > 1) {
@@ -1437,9 +1532,8 @@ text.active {
           if (text.split('...').length > 1) {
             if (!fullText) return;
             text = fullText;
-          }
+          } else if (i >= treeDepthY && hasDimensionsY) text += ' view';
           if (!selectize2) return;
-          if (i > treeDepthY) text += ' view';
           if (parents.indexOf(text) < 0) return;
           selectize2.setValue(text, false);
         })
@@ -1456,7 +1550,7 @@ text.active {
           .enter().append("rect")
           .attr("class", "cell")
           .attr("x", function(d) { return x(d.x); })
-          .attr("width", x.rangeBand())
+          .attr("width", y.rangeBand())
           .attr("height", x.rangeBand())
           .style("fill-opacity", function(d) { return z(d.z); })
           .on("mouseover", mouseover)
@@ -1522,8 +1616,10 @@ text.active {
       var labelsY = [];
       for ( var i = 0; i < nodesX.length; i++ ) {
         labelsX.push(nodesX[i].text);
-        labelsY.push(nodesY[i].text);
         nodesX[i].indices = [];
+      }
+      for ( var i = 0; i < nodesY.length; i++ ) {
+        labelsY.push(nodesY[i].text);
         nodesY[i].indices = [];
       }
       var sortedLabelsX = [];
@@ -1535,6 +1631,8 @@ text.active {
       var sortedNodesY = sortedNodes.y;
       for ( var i = 0; i < nodesX.length; i++ ) {
         sortedLabelsX.push(sortedNodesX[i].text);
+      }
+      for ( var i = 0; i < nodesY.length; i++ ) {
         sortedLabelsY.push(sortedNodesY[i].text);
       }
       var rangeX = d3.range(n).sort( function ( a, b ) {
@@ -1549,8 +1647,8 @@ text.active {
         if (labelsY[b] == '') return -1;
         return sortedLabelsY.indexOf(labelsY[a]) - sortedLabelsY.indexOf(labelsY[b]);
       });
-      x.domain(rangeX);
-      y.domain(rangeY);
+      x.domain(rangeX).rangeBands([0, height]);
+      y.domain(rangeY).rangeBands([0, width]);
 
 /*
       var matrixTmpX = matrixX.slice(0);
