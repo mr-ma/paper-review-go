@@ -68,7 +68,7 @@ text.active {
   <option value="name">by Name</option>
   <option value="count">by Value</option>
 </select>
-</div>
+</form>
 
 <div id="graph"></div>
 
@@ -299,8 +299,6 @@ text.active {
   var zLabel = 'Number of citations';
   var zLabelText = onClickURL == 'citationDetails' ? ' references' : ' citations';
   if (maxValue < 0) {
-    zLabel = 'Sum of references';
-    zLabelText = ' references';
     maxValue = 0;
     for ( var i = 0; i < matrixX.length; i++ ) {
       for ( var j = 0; j < matrixX[i].values.length; j++ ) {
@@ -436,10 +434,12 @@ text.active {
       }
     }
 
+    console.log('max value: ' + maxValue)
+
     // specify options
     var options = {
-      width:  '1600px',
-      height: '1600px',
+      width:  '1000px',
+      height: '1000px',
       style: 'bar-color', // surface
       valueMin: 0,
       valueMax: maxValue,
@@ -479,7 +479,7 @@ text.active {
   drawVisualization();
   $('#order').unbind().on('change', function ( e ) {
     if (this.value != 'count') return;
-    buildMatrix(attributesX, attributesY, correlations, originalMaxValue, onClickURL, true);
+    buildMatrix(attributesX, attributesY, correlations, -1, onClickURL, true);
   });
 
   }

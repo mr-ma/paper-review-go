@@ -92,6 +92,7 @@ text.active {
   const COLOR_GRADIENTS =  [{name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'rainbow', colors: colorsRainbow}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
 
   const FONT_SIZE = '8pt';
+  const ROTATION_FACTOR = 7;
   const SHORTEN_VALUE = 3;
   const SHORTEN_VALUE_ROTATION = 4;
 
@@ -779,8 +780,6 @@ text.active {
       },
     ];
 
-    const ROTATION_FACTOR = 6;
-
     function addRowText ( row ) {
       row.append("text")
           .attr("class", "rowText")
@@ -928,11 +927,6 @@ text.active {
               parentsLength++;
               var factor = Math.max(1, parentsLength);
               if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-              else {
-                for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
-                  shownTextsX[l] = nodesX[i].parents[l];
-                }
-              }
               return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
             }
             var counter = 0;
@@ -962,35 +956,20 @@ text.active {
                   if (parentsLength == 0) parentsLength++;
                   var factor = Math.max(1, treeDepthX - parentsLength);
                   if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-                  else {
-                    for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
-                      shownTextsX[l] = nodesX[i].parents[l];
-                    }
-                  }
                   return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
                 }
                 if (parentsDiff == 0) parentsDiff++;
-                if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
+                //if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
                 //if (counter > maxIndex) maxIndex = shownTextsX.length - maxIndex; // TODO
                 //if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
                 var result = -margin.left + (treeDepthX - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsX = nodesX[i].parents;
                 if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-                else {
-                  for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
-                    shownTextsX[l] = nodesX[i].parents[l];
-                  }
-                }
                 return result;
               } else sameParents.push(lastParentsX[k]);
               counter++;
             }
             if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-            else {
-              for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
-                shownTextsX[l] = nodesX[i].parents[l];
-              }
-            }
             var parentCounter = 0;
             if (i > 1) {
               for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
@@ -1311,11 +1290,6 @@ text.active {
               parentsLength++;
               var factor = Math.max(1, parentsLength);
               if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
-              else {
-                for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
-                  shownTextsY[l] = nodesY[i].parents[l];
-                }
-              }
               return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
             }
             var counter = 0;
@@ -1346,36 +1320,21 @@ text.active {
                   if (parentsLength == 0) parentsLength++;
                   var factor = Math.max(1, treeDepthY - parentsLength);
                   if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
-                  else {
-                    for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
-                      shownTextsY[l] = nodesY[i].parents[l];
-                    }
-                  }
                   return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
                 }
                 if (parentsDiff == 0) parentsDiff++;
-                if (maxIndex > nodesY[i].parents.length-1) parentsDiff--;
+                //if (maxIndex > nodesY[i].parents.length-1) parentsDiff--;
                 //if (counter > maxIndex) maxIndex = shownTextsY.length - maxIndex; // TODO
                 //if (maxIndex < lastParentsY.length) maxIndex = lastParentsY.length-1;
                 //if (treeDepthY - maxIndex + counter - parentsDiff >= treeDepthY) maxIndex++;
                 var result = margin.top - (treeDepthY - (maxIndex - parentsDiff + 1))*heightPerParentCell - (treeDepthY - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsY = nodesY[i].parents;
                 if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
-                else {
-                  for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
-                    shownTextsY[l] = nodesY[i].parents[l];
-                  }
-                }
                 return result;
               } else sameParents.push(lastParentsY[k]);
               counter++;
             }
             if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
-            else {
-              for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
-                shownTextsY[l] = nodesY[i].parents[l];
-              }
-            }
             var parentCounter = 0;
             if (i > 1) {
               for ( var k = lastParentsY.length-1; k >= 0; k-- ) {

@@ -1010,6 +1010,7 @@
     };
     //registerContextMenus();
     //cxtmenu( cytoscape );
+    var cxtmenus = [];
     cy = cytoscape({  
       container: document.getElementById('cy'),
       elements: items,
@@ -1065,7 +1066,7 @@
       },
       enabled: true // whether the command is selectable
     });
-    cy.cxtmenu({
+    cxtmenus.push(cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
       selector: '.parent,.child', // elements matching this Cytoscape.js selector will trigger cxtmenus
       commands: nodeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
@@ -1082,7 +1083,7 @@
       itemTextShadowColor: 'black', // the text shadow colour of the command's content
       zIndex: 9999, // the z-index of the ui div
       atMouse: false // draw menu at mouse position
-    });
+    }));
     var edgeCommands = [];
     edgeCommands.push({
       fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
@@ -1134,7 +1135,7 @@
         enabled: true // whether the command is selectable
       });
     });
-    cy.cxtmenu({
+    cxtmenus.push(cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
       selector: 'edge', // elements matching this Cytoscape.js selector will trigger cxtmenus
       commands: edgeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
@@ -1151,7 +1152,7 @@
       itemTextShadowColor: 'black', // the text shadow colour of the command's content
       zIndex: 9999, // the z-index of the ui div
       atMouse: false // draw menu at mouse position
-    });
+    }));
     var dimensionCommands = [];
     dimensionCommands.push({
       fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
@@ -1203,7 +1204,7 @@
         enabled: true // whether the command is selectable
       });
     }
-    cy.cxtmenu({
+    cxtmenus.push(cy.cxtmenu({
       menuRadius: 100, // the radius of the circular menu in pixels
       selector: '.dimension', // elements matching this Cytoscape.js selector will trigger cxtmenus
       commands: dimensionCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
@@ -1220,7 +1221,7 @@
       itemTextShadowColor: 'black', // the text shadow colour of the command's content
       zIndex: 9999, // the z-index of the ui div
       atMouse: true // draw menu at mouse position
-    });
+    }));
     var ur = cy.undoRedo();
     $(document).off("keydown").on("keydown", function (e) {
       if(e.which === 46) { // delete
@@ -1321,6 +1322,9 @@
         var api = node.qtip('api');
         api.destroy();
         api.disable();
+      });
+      cxtmenus.forEach ( function ( cxtmenu ) {
+        cxtmenu.destroy();
       });
       cy.destroy();
       if (isInterDimensional) {
