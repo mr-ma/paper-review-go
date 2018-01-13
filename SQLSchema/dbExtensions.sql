@@ -88,7 +88,7 @@ INSERT IGNORE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relati
 ALTER TABLE taxonomy_relation ADD COLUMN edgeBendPoints longtext;
 
 ALTER TABLE paper ADD COLUMN referenceCount int(20) DEFAULT "0";
-ALTER TABLE mapping ADD COLUMN referenceCount int(20) DEFAULT "0";
+ALTER TABLE mapping ADD COLUMN occurrenceCount int(20) DEFAULT "1";
 
 ALTER TABLE attribute ADD UNIQUE KEY attribute_text_UNIQUE (text);
 ALTER TABLE mapping ADD UNIQUE KEY mapping_id_paper_id_attribute_UNIQUE (id_paper, id_attribute);

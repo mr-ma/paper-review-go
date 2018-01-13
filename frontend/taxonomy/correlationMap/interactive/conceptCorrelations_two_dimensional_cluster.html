@@ -19,8 +19,32 @@ text.active {
   fill: red;
 }
 
+.node circle {
+  fill: #999;
+}
+
+.node text {
+  font: 10px sans-serif;
+}
+
+.node--internal circle {
+  fill: #555;
+}
+
+.node--internal text {
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.link {
+  fill: none;
+  stroke: #555;
+  stroke-opacity: 0.4;
+  stroke-width: 1.5px;
+}
+
 </style>
     <script type="text/javascript" src="d3.min.js"></script>
+    <script type="text/javascript" src="d3-hierarchy.v1.min.js"></script>
     <script src="jquery.min.js"></script>
 
     <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
@@ -42,7 +66,6 @@ text.active {
     <script src="error.js"></script>
 </header>
 <body>
-
 <div style="margin-left:20px;margin-top:50px;">
     <form style="width:165px;">
       <label for="parents1">x property: </label>
@@ -74,7 +97,6 @@ text.active {
 </form>
 <div id="colorLegend" style="margin-left:10px;"></div>
 </div>
-
 <script>
   var totalNumberOfCitations, maxReferenceCount;
   var selectize1, selectize2;
@@ -281,6 +303,14 @@ text.active {
     return {x: nodesX, y: nodesY};
   }
 
+  function convertData ( data, result ) {
+    if (!data) return result;
+    data.children.forEach ( function ( child ) {
+      result[child.text] = convertData(child, {});
+    });
+    return result;
+  }
+
   function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL, sortValues ) {
     if (!!buildingMatrix) return;
     buildingMatrix = true;
@@ -463,7 +493,7 @@ text.active {
       nodesY[i].xPosition = getXPosition({x: i});
     }
 
-    d3.selectAll("svg").remove();
+    //d3.selectAll('svg').remove();
     var svg = d3.select("body").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -481,10 +511,13 @@ text.active {
       }
     });
 
-    var x = d3.scale.ordinal().rangeBands([0, width]),
-        y = d3.scale.ordinal().rangeBands([0, height]),
-        z = d3.scale.linear().domain([0, 4]).clamp(true),
+    var maxScale = Math.max(width, height);
+    var x = d3.scale.ordinal().domain(d3.range(n)).rangeBands([0, maxScale]),
+        y = d3.scale.ordinal().domain(d3.range(m)).rangeBands([0, maxScale]),
+        z = d3.scale.linear().clamp(true),
         c = d3.scale.category10().domain(d3.range(10));
+
+    if (maxValue > 4) z.domain([0, 4]);
 
     var orders = [];
     orders.push({
@@ -544,7 +577,7 @@ text.active {
     if (!hasDimensionsX && !hasParentsX) margin.left = marginLeft*2;
     if (!hasDimensionsY && !hasParentsY) margin.top = marginTop*2;
 
-    function addCluster () {
+    function getClusterData ( callback ) {
       var dimension = 'Defense view';
       $.ajax
         ({
@@ -554,59 +587,100 @@ text.active {
           contentType:'application/json',
           async: true,
           data: JSON.stringify({'taxonomy_id': 1, dimension: dimension}),
-          success: function ( cluster ) {
-            if (!cluster || !cluster.response) {
-              handleError('Cannot get attribute cluster from DB for dimension: "' + dimension + '".');
+          success: function ( clusters ) {
+            if (!clusters || !clusters.response) {
+              handleError('Cannot get cluster data from DB.');
               return;
             }
-            console.log('cluster: ', cluster.response);
-            return;
-            var svg = d3.select("svg"),
-                width = +svg.attr("width"),
-                height = +svg.attr("height"),
-                g = svg.append("g").attr("transform", "translate(40,0)");
-
-            var cluster = d3.cluster()
-                .size([height, width - 160]);
-
-            var stratify = d3.stratify()
-                .parentId(function(d) { return d.id.substring(0, d.id.lastIndexOf(".")); });
-              if (error) throw error;
-
-              var root = stratify(data)
-                  .sort(function(a, b) { return (a.height - b.height) || a.id.localeCompare(b.id); });
-
-              cluster(root);
-
-              var link = g.selectAll(".link")
-                  .data(root.descendants().slice(1))
-                .enter().append("path")
-                  .attr("class", "link")
-                  .attr("d", function(d) {
-                    return "M" + d.y + "," + d.x
-                        + "C" + (d.parent.y + 100) + "," + d.x
-                        + " " + (d.parent.y + 100) + "," + d.parent.x
-                        + " " + d.parent.y + "," + d.parent.x;
-                  });
-
-              var node = g.selectAll(".node")
-                  .data(root.descendants())
-                .enter().append("g")
-                  .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-                  .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-
-              node.append("circle")
-                  .attr("r", 2.5);
-
-              node.append("text")
-                  .attr("dy", 3)
-                  .attr("x", function(d) { return d.children ? -8 : 8; })
-                  .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
-                  .text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
-        }
+            try {
+              var response = clusters.response.replace(/\\/g, '').replace(/\"{/g, '{').replace(/}\"/g, '}').replace(/\[\"/g, '[').replace(/\"\]/g, ']');
+              console.log(response)
+              var result = JSON.parse(response);
+              callback(result);
+            } catch ( err ) {
+              console.log('JSON parse error: ', err);
+            }
+          }
       });
     }
-    addCluster();
+
+    function addCluster ( data ) {
+      console.log(data);
+      if (!data) {
+        handleError('Cannot get cluster root from DB.');
+        return;
+      }
+
+
+    var height = 600;
+    var width = 600;
+
+    d3.selectAll("svg").remove(); // TODO
+    var svg = d3.select("body").append("svg")
+              .attr("width", width)
+              .attr("height", height);
+    var g = svg.append("g").attr("transform", "translate(100,0)");
+
+  var rootData = d3.hierarchy(data)
+      .sum(function(d) { return d.children.length > 0 ? d.children.length : 1; })
+      .sort(function(a, b) { return (a.data.children.length - b.data.children.length) || a.data.text.localeCompare(b.data.text); });
+
+var tree = d3.cluster()
+    .size([height, width - 160]);
+
+  tree(rootData);
+
+  console.log('root: ', rootData.descendants())
+
+  var link = g.selectAll(".link").data(rootData.descendants().slice(1))
+      .enter().append("path")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        /*
+        for ( var i = 0; i < nodesX[i].length; i++ ) {
+          if (nodesX[i].text == d.data.text) {
+            //console.log(d.data.text)
+            //var y = x(i);
+
+          }
+        }
+        return '';
+        */
+        if (!d.parent) return '';
+        return "M" + d.y + "," + d.x
+            + "C" + (d.parent.y + 100) + "," + d.x
+            + " " + (d.parent.y + 100) + "," + d.parent.x
+            + " " + d.parent.y + "," + d.parent.x;
+      });
+
+  var node = g.selectAll(".node")
+      .data(rootData.descendants())
+    .enter().append("g")
+      .attr("class", function(d) { return "node" + (d.data.children.length > 0 ? " node--internal" : " node--leaf"); })
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+
+  node.append("circle")
+      .attr("r", 2.5);
+
+  node.append("text")
+      .attr("dy", 3)
+      .attr("x", function(d) { return d.data.children.length > 0 ? -8 : 8; })
+      .style("text-anchor", function(d) { return d.data.children.length > 0 ? "end" : "start"; })
+      .text(function(d, i) { 
+        return d.data.text;
+      });
+  /*
+  $('.node').each ( function ( index, entry ) {
+    if ($(entry).attr('class').split('node--leaf').length <= 1) $(entry).hide();
+  })
+  */
+}
+
+    getClusterData( function ( result ) {
+      if (!result) return;
+      addCluster(result);
+    });
+    return;
 /*
 
     svg.append("line")
@@ -703,7 +777,6 @@ text.active {
         .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
 
     var maxNodeAmount = Math.max(nodesX.length, nodesY.length);
-/*
 
     function filterDimension ( elm, dimension ) {
       var newNodesX = [];
@@ -872,7 +945,6 @@ text.active {
                   parentsX.push([]);
                 }
               */
-              /*
               }
               if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
               else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
@@ -1122,10 +1194,12 @@ text.active {
         })
         .on("contextmenu", d3.contextMenu(menu));
     }
+/*
     addRowText(row);
     addRowParentText(row);
     if (hasDimensionsX) addRowDimensionText(row);
     addRowHandlers(row);
+*/
 
     function addColumnText ( column ) {
       column.append("text")
@@ -1195,7 +1269,6 @@ text.active {
                   parentsY.push([]);
                 }
               */
-              /*
               }
               if (nodesY[i].parents.length > k) var value = nodesY[i].parents[k];
               else if (nodesY[i].parents.length > 0) var value = nodesY[i].parents[nodesY[i].parents.length-1];
@@ -1446,6 +1519,7 @@ text.active {
         })
         .on("contextmenu", d3.contextMenu(menu));
     }
+/*
     addColumnText(column);
     addColumnParentText(column);
     if (hasDimensionsY) addColumnDimensionText(column);
@@ -1630,6 +1704,7 @@ text.active {
     $('#order').unbind().on("change", function() {
       order(this.value);
     });
+    //row.append("g").attr("class", "cluster");
     buildingMatrix = false;
   }
 

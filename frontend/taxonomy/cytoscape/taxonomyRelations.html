@@ -68,6 +68,7 @@
 </head>
 <body>
   <div>
+    <input type="button" class="btn btn-success" id="export" value="Export">
     <input type="button" class="btn btn-primary" id="getEdges" value="Save positions">
     <input type="button" class="btn btn-primary" id="merge" value="Merge nodes">
   </div>
@@ -1431,6 +1432,16 @@
         cy.elements().trigger('qtiphide');
         qtipShown = false;
       }
+    });
+    $('#export').unbind().click ( function () {
+      var pngFile = cy.png({full: true});
+      var dataLink = document.createElement('a');
+      dataLink.download = 'TaxonomyRelations.png';
+      dataLink.href = pngFile;
+      document.body.appendChild(dataLink);
+      dataLink.click();
+      document.body.removeChild(dataLink);
+      delete dataLink;
     });
     /*
     cy.$('.parent,.child').on('click', function ( e ) {

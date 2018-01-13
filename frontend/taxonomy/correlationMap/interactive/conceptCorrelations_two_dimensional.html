@@ -19,6 +19,17 @@ text.active {
   fill: red;
 }
 
+.progress {
+    position: relative;
+}
+
+.progress span {
+    position: absolute;
+    display: block;
+    width: 100%;
+    color: black;
+ }
+
 </style>
     <script type="text/javascript" src="d3.min.js"></script>
     <script src="jquery.min.js"></script>
@@ -33,15 +44,27 @@ text.active {
     <script type="text/javascript" src="selectize.min.js"></script>
     <link href="selectize.bootstrap3.css" rel="stylesheet" type="text/css">
 
+    <script type="text/javascript" src="bootstrap-waitingfor.min.js"></script>
+
     <link href="d3-context-menu.css" type="text/css" rel="stylesheet"/>
     <script src="d3-context-menu.js"></script>
 
     <link href="d3-tip.css" type="text/css" rel="stylesheet"/>
     <script src='d3-tip.js'></script>
 
+    <script type="text/javascript" src="lodash.core.js"></script>
+    <script type="text/javascript" src="compare-strings.js"></script>
+
+    <script type="text/javascript" src="pdf.min.js"></script>
+    <script type="text/javascript" src="FileSaver.min.js"></script>
+    <script type="text/javascript" src="fileUploader.js"></script>
+
     <script src="error.js"></script>
 </header>
 <body>
+
+<input id="upload-input" type="file" name="uploads[]" multiple="multiple" style="display:none;">
+<input id="upload-input-image" type="file" name="uploads[]" multiple="multiple" style="display:none;">
 
 <div style="margin-left:20px;margin-top:50px;">
     <form style="width:165px;">
@@ -71,6 +94,13 @@ text.active {
   <option value="count">by Value</option>
 </select>
 <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
+<input type="button" class="btn btn-success" id="export" style="margin-top:15px;" value="Export">
+<div style="margin-top:15px;">
+  <input type="text" id="importMinSimilarity" value="" style="width:50px;" title="Min similarity">
+</div>
+<div>
+  <input type="button" class="btn btn-success" id="import" style="margin-top:15px;" value="Import">
+</div>
 </form>
 <div id="colorLegend" style="margin-left:10px;"></div>
 </div>
@@ -81,6 +111,7 @@ text.active {
   var parents = [];
   var buildingMatrix = false;
 
+  const BACKGROUND_COLOR = 'rgb(28, 181, 224)';
   const colorsBlue = ["#1CB5E0", "#189ECC", "#1587B9", "#1171A6", "#0E5A93", "#0A437F", "#072D6C", "#031659", "#000046"];
   const colorsYGB = ["#F0F8FF","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"]; // #FFFFDD
   const colorsRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
@@ -91,10 +122,113 @@ text.active {
 
   const COLOR_GRADIENTS =  [{name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'rainbow', colors: colorsRainbow}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
 
+  const DEFAULT_MIN_SIMILARITY = 1;
+  const DEFAULT_TEXT_FILL = 'white';
   const FONT_SIZE = '8pt';
   const ROTATION_FACTOR = 7;
   const SHORTEN_VALUE = 3;
   const SHORTEN_VALUE_ROTATION = 4;
+
+  function getSVGString( svgNode ) {
+    svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
+    var cssStyleText = getCSSStyles( svgNode );
+    appendCSS( cssStyleText, svgNode );
+
+    var serializer = new XMLSerializer();
+    var svgString = serializer.serializeToString(svgNode);
+    svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+    svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+
+    return svgString;
+
+    function getCSSStyles( parentElement ) {
+      var selectorTextArr = [];
+
+      // Add Parent element Id and Classes to the list
+      selectorTextArr.push( '#'+parentElement.id );
+      for (var c = 0; c < parentElement.classList.length; c++)
+          if ( !contains('.'+parentElement.classList[c], selectorTextArr) )
+            selectorTextArr.push( '.'+parentElement.classList[c] );
+
+      // Add Children element Ids and Classes to the list
+      var nodes = parentElement.getElementsByTagName("*");
+      for (var i = 0; i < nodes.length; i++) {
+        var id = nodes[i].id;
+        if ( !contains('#'+id, selectorTextArr) )
+          selectorTextArr.push( '#'+id );
+
+        var classes = nodes[i].classList;
+        for (var c = 0; c < classes.length; c++)
+          if ( !contains('.'+classes[c], selectorTextArr) )
+            selectorTextArr.push( '.'+classes[c] );
+      }
+
+      // Extract CSS Rules
+      var extractedCSSText = "";
+      for (var i = 0; i < document.styleSheets.length; i++) {
+        var s = document.styleSheets[i];
+        
+        try {
+            if(!s.cssRules) continue;
+        } catch( e ) {
+              if(e.name !== 'SecurityError') throw e; // for Firefox
+              continue;
+            }
+
+        var cssRules = s.cssRules;
+        for (var r = 0; r < cssRules.length; r++) {
+          if ( contains( cssRules[r].selectorText, selectorTextArr ) )
+            extractedCSSText += cssRules[r].cssText;
+        }
+      }
+      
+
+      return extractedCSSText;
+
+      function contains(str,arr) {
+        return arr.indexOf( str ) === -1 ? false : true;
+      }
+
+    }
+
+    function appendCSS( cssText, element ) {
+      var styleElement = document.createElement("style");
+      styleElement.setAttribute("type","text/css"); 
+      styleElement.innerHTML = cssText;
+      var refNode = element.hasChildNodes() ? element.children[0] : null;
+      element.insertBefore( styleElement, refNode );
+    }
+  }
+
+  function svgString2Image( svgString, width, height, format, callback ) {
+    var format = format ? format : 'png';
+
+    //var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( svgString ) ) ); // Convert SVG string to data URL
+
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    var image = new Image();
+    image.onload = function() {
+      console.log("loaded")
+      context.clearRect ( 0, 0, width, height );
+      context.drawImage(image, 0, 0, width, height);
+
+      canvas.toBlob( function(blob) {
+        var filesize = Math.round( blob.length/1024 ) + ' KB';
+        if ( callback ) callback( blob, filesize );
+      });
+    };
+    var url = URL.createObjectURL(
+      new Blob([svgString], {
+        type: 'image/svg+xml;charset=utf8'
+        })
+    );
+    image.src = url;
+  }
 
   function buildParentTreeHelper ( attributes ) {
     var roots = [];
@@ -284,7 +418,7 @@ text.active {
     return {x: nodesX, y: nodesY};
   }
 
-  function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL, sortValues ) {
+  function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL, sortValues, selectableCells ) {
     if (!!buildingMatrix) return;
     buildingMatrix = true;
     var rootsX = buildParentTree(attributesX.response);
@@ -412,6 +546,10 @@ text.active {
                 matrixY[l][k].src = nodesX[k].text;
                 matrixY[l][k].dest = nodesY[l].text;
                 matrixY[l][k].onClickURL = onClickURL;
+                if (!!link.occurrences) {
+                  matrixX[k][l].occurrences = link.occurrences;
+                  matrixY[l][k].occurrences = link.occurrences;
+                }
                 nodesX[k].count += link.value;
                 nodesY[l].count += link.value;
                 foundLinks++;
@@ -434,6 +572,10 @@ text.active {
                 matrixY[l][k].src = nodesX[k].text;
                 matrixY[l][k].dest = nodesY[l].text;
                 matrixY[l][k].onClickURL = onClickURL;
+                if (!!link.occurrences) {
+                  matrixX[k][l].occurrences = link.occurrences;
+                  matrixY[l][k].occurrences = link.occurrences;
+                }
                 nodesX[k].count += link.value;
                 nodesY[l].count += link.value;
                 foundLinks++;
@@ -447,6 +589,10 @@ text.active {
                 matrixY[l][k].src = nodesY[l].text;
                 matrixY[l][k].dest = nodesX[k].text;
                 matrixY[l][k].onClickURL = onClickURL;
+                if (!!link.occurrences) {
+                  matrixX[k][l].occurrences = link.occurrences;
+                  matrixY[l][k].occurrences = link.occurrences;
+                }
                 nodesX[k].count += link.value;
                 nodesY[l].count += link.value;
                 foundLinks++;
@@ -462,9 +608,11 @@ text.active {
     if (!!sortValues && !!selectedOrder && selectedOrder != 'default') {
       var sortedNodes = sortNodes(selectedOrder, nodesOriginalX, nodesOriginalY);
       buildingMatrix = false;
-      return buildMatrix({response: sortedNodes.x}, {response: sortedNodes.y}, correlations, maxValue, onClickURL, false);
+      return buildMatrix({response: sortedNodes.x}, {response: sortedNodes.y}, correlations, maxValue, onClickURL, false, selectableCells);
     }
     var labelText = ($('#dataType')[0].value == 'referenceCount') ? ' reference' : ' citation';
+    var clickCellOption = !!selectableCells ? clickCellSelectable : clickCell;
+    if (!!selectableCells) labelText = ' occurrence';
     if (maxValue < 0) {
       maxValue = 0;
       for ( var i = 0; i < matrixX.length; i++ ) {
@@ -513,6 +661,7 @@ text.active {
 
     d3.selectAll("svg").remove();
     var svg = d3.select("body").append("svg")
+        .attr("id", "matrixSVG")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .style("margin-left", svgMarginLeft + "px")
@@ -566,7 +715,7 @@ text.active {
       var marginTop = margin.top / (i+1) - 10;
       svg.append("rect")
           .attr("class", "background")
-          .style("background-color", "white")
+          .style("background-color", DEFAULT_TEXT_FILL)
           .style("fill", "none")
           .style("stroke", "black")
           //.style("stroke-dasharray", "" + (width - margin.left) + ",0")
@@ -639,28 +788,6 @@ text.active {
         .attr("stroke-width", "1")
         .style("stroke", "black");
     }
-    /*
-    svg.append("rect")
-        .attr("class", "background")
-        .style("background-color", "white")
-        .style("fill", "none")
-        .style("stroke", "black")
-        //.style("stroke-dasharray", "" + (width - margin.left) + ",0")
-        .attr("width", width + marginLeft)
-        .attr("height", height + marginTop)
-        .attr("transform", "translate(-" + marginLeft + ",-" + marginTop + ")");
-    */
-
-/*
-
-    d3.selectAll(".row")
-      .data(matrixX)
-      .enter().append("g")
-      .attr("class", "row")
-      .attr("transform", function(d, i) { return "translate(0," + nodesX[i].yPosition + ")"; })
-      .each(row);
-*/
-
     svg.append("rect")
         .attr("class", "background")
         .attr("width", width)
@@ -674,6 +801,8 @@ text.active {
         .attr("class", "row")
         .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
         .each(row);
+
+    if (!!selectableCells) appendCellTexts();
 
     var column = svg.selectAll(".column")
         .data(matrixY)
@@ -701,7 +830,7 @@ text.active {
           break;
         default:
       }
-      if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL, true);
+      if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL, true, selectableCells);
     }
 
     function filterChildAttributes ( elm, parent ) {
@@ -747,7 +876,7 @@ text.active {
                 break;
               default:
             }
-            if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL, true);
+            if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL, true, selectableCells);
           }
         });
     }
@@ -776,9 +905,133 @@ text.active {
             default:
           }
         },
-        disabled: false // optional, defaults to false
-      },
+        disabled: false
+      }
     ];
+
+    var selectableCellMenu = [
+      {
+        title: 'Set occurrences',
+        action: function(elm, d, i) {
+          console.log("input");
+          elm.append('input')
+              .attr('type','text')
+              .attr('name','occurrences')
+              .attr('value', d.z);
+        },
+        disabled: false
+      }
+    ];
+
+    // http://bl.ocks.org/GerHobbelt/2653660
+    function make_editable(d, field)
+    {
+        this
+          .on("mouseover", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", "red");
+            var evt = new MouseEvent("mouseover");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("mouseout", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", DEFAULT_TEXT_FILL);
+            var evt = new MouseEvent("mouseout");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("click", function() {
+            var cell = d3.select(this.previousSibling);
+            var evt = new MouseEvent("click");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("contextmenu", function(d) {
+            var that = this;
+            var p = that.parentNode;
+            var xy = that.getBBox();
+            var p_xy = p.getBBox();
+
+            xy.x -= p_xy.x;
+            xy.y -= p_xy.y;
+
+            var el = d3.select(that);
+            var p_el = d3.select(p);
+
+            var frm = p_el.append("foreignObject");
+
+            function updateText ( txt ) {
+              if (!isNaN(txt)) {
+                d[field] = txt;
+                var cell = d3.select(that.previousSibling);
+                if (txt != 0) {
+                  var colorThemeIndex = $('#colorTheme')[0].value - 0;
+                  if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) {
+                    var gradient = COLOR_GRADIENTS[colorThemeIndex];
+                    cell.style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(txt)); });
+                  }
+                  el.style("fill", DEFAULT_TEXT_FILL).text(function(d) { return d[field]; });
+                } else {
+                  d3Tip.hide(el.data()[0]);
+                  cell.style("fill-opacity", 0);
+                  el.style("fill", DEFAULT_TEXT_FILL).text('');
+                }
+              } else {
+                d3Tip.hide(el.data()[0]);
+                cell.style("fill-opacity", 0);
+                el.style("fill", DEFAULT_TEXT_FILL).text('');
+              }
+              p_el.select("foreignObject").remove();
+            }
+
+            var inp = frm
+                .attr("x", el.attr("x") - 10) // .attr("x", xy.x - 6)
+                .attr("y", el.attr("y") - 12) // .attr("y", xy.y - 4)
+                .attr("width", 20)
+                .attr("height", 22)
+                .append("xhtml:form")
+                        .append("input")
+                            .attr("value", function() {
+                                this.focus();
+                                return el.text();
+                            })
+                            .attr("style", "width: 19; font-size: " + FONT_SIZE + ";")
+                            .on("blur", function() {
+                                var txt = inp.node().value;
+                                updateText(txt);
+                            })
+                            .on("keypress", function() {
+                                // IE fix
+                                if (!d3.event)
+                                    d3.event = window.event;
+                                var e = d3.event;
+                                if (e.keyCode == 13)
+                                {
+                                    if (typeof(e.cancelBubble) !== 'undefined') // IE
+                                      e.cancelBubble = true;
+                                    if (e.stopPropagation)
+                                      e.stopPropagation();
+                                    e.preventDefault();
+
+                                    var txt = inp.node().value - 0;
+                                    updateText(txt);
+                                }
+                            });
+          });
+    }
+
+    function appendCellTexts () {
+        d3.selectAll(".cellContainer").append("text")
+            .attr("class", "occurrences")
+            .attr("x", function(d,i) { return y(d.x) + y.rangeBand() / 2; })
+            .attr("y", function(d,i) { return x.rangeBand() / 2; })
+            .attr("dy", ".32em")
+            .attr("font-size", FONT_SIZE)
+            .attr("text-anchor", "middle")
+            .style("fill", DEFAULT_TEXT_FILL)
+            //.attr('width', that.attr('width'))
+            //.attr('height', that.attr('height'))
+            .text( function (d) { var value = d3.select(this.previousSibling).data()[0].z; return value > 0 ? value : ''; })
+            .call(make_editable, "occurrences");
+    }
 
     function addRowText ( row ) {
       row.append("text")
@@ -962,6 +1215,7 @@ text.active {
                 //if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
                 //if (counter > maxIndex) maxIndex = shownTextsX.length - maxIndex; // TODO
                 //if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
+                if (nodesX[i].text == 'State inspection') console.log('state: max: ' + maxIndex + ', parents: ' + parentsDiff + ', shown: ', shownTextsX.join(','))
                 var result = -margin.left + (treeDepthX - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsX = nodesX[i].parents;
                 if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
@@ -969,7 +1223,6 @@ text.active {
               } else sameParents.push(lastParentsX[k]);
               counter++;
             }
-            if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
             var parentCounter = 0;
             if (i > 1) {
               for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
@@ -982,6 +1235,7 @@ text.active {
             }
             var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
             lastParentsX = nodesX[i].parents;
+            if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
             return -margin.left + (treeDepthX - parentCounter - parentsDiff)*widthPerParentCell + ((treeDepthX - parentCounter - parentsDiff) == 0 ? 10 : 0);
           })
           .attr("class", "rowParentLine")
@@ -1106,7 +1360,7 @@ text.active {
 
     }
     function addRowHandlers ( row ) {
-      row.selectAll('text')
+      row.selectAll('.rowText,.rowParentText,.rowDimensionText')
         .on ("mouseover", function ( p, j ) {
           var that = d3.select(this);
           var text = that.text().trim();
@@ -1115,8 +1369,8 @@ text.active {
           if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
           if (j > treeDepthX) {
             var text = d3.select(this).text().trim();
-            d3.selectAll('.row').selectAll('text').classed("active", function(d, i) { return nodesX[d[0].y-1].dimension == text + ' view'; });
-          } else d3.selectAll('.row').selectAll('text').classed("active", function(d, i) { return (i == 0 && d[0].y == p[0].y) || (i <= j && !!nodesX[d[0].y-1].indices && nodesX[d[0].y-1].indices[j-1] == p[0].y); });
+            d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return nodesX[d[0].y-1].dimension == text + ' view'; });
+          } else d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].y == p[0].y) || (i <= j && !!nodesX[d[0].y-1].indices && nodesX[d[0].y-1].indices[j-1] == p[0].y); });
         })
         .on("mouseout", mouseout)
         .style("cursor", "pointer")
@@ -1334,7 +1588,6 @@ text.active {
               } else sameParents.push(lastParentsY[k]);
               counter++;
             }
-            if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
             var parentCounter = 0;
             if (i > 1) {
               for ( var k = lastParentsY.length-1; k >= 0; k-- ) {
@@ -1347,6 +1600,7 @@ text.active {
             }
             var parentsDiff = nodesY[i].parents.length - lastParentsY.length;
             lastParentsY = nodesY[i].parents;
+            if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
             return margin.top - (treeDepthY - parentCounter - parentsDiff)*heightPerParentCell - ((treeDepthY - parentCounter - parentsDiff) == 0 ? 10 : 0);
           })
           .attr("class", "columnParentLine")
@@ -1470,7 +1724,7 @@ text.active {
     }
 
     function addColumnHandlers ( column ) {
-      column.selectAll('text')
+      column.selectAll('.columnText,.columnParentText,.columnDimensionText')
         .on ("mouseover", function ( p, j ) {
           var that = d3.select(this);
           var text = that.text().trim();
@@ -1478,8 +1732,8 @@ text.active {
           if (!fullText) fullText = -1;
           if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
           if (j > treeDepthY) {
-            d3.selectAll('.column').selectAll('text').classed("active", function(d, i) { return nodesY[d[0].x-1].dimension == text + ' view'; });
-          } else d3.selectAll('.column').selectAll('text').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesY[d[0].x-1].indices && nodesY[d[0].x-1].indices[j-1] == p[0].x); });
+            d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return nodesY[d[0].x-1].dimension == text + ' view'; });
+          } else d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesY[d[0].x-1].indices && nodesY[d[0].x-1].indices[j-1] == p[0].x); });
         })
         .on("mouseout", mouseout)
         .style("cursor", "pointer")
@@ -1505,8 +1759,13 @@ text.active {
 
     function row(row) {
       var cell = d3.select(this).selectAll(".cell")
-          .data(row.filter(function(d) { return d.z; }))
-          .enter().append("rect")
+          .data(row) // row.filter(function(d) { return d.z; })
+          .enter()
+          .append("g")
+          .attr("class", "cellContainer")
+          .attr("width", y.rangeBand())
+          .attr("height", x.rangeBand())
+          .append("rect")
           .attr("class", "cell")
           .attr("x", function(d) { return x(d.x); })
           .attr("width", y.rangeBand())
@@ -1514,10 +1773,49 @@ text.active {
           .style("fill-opacity", function(d) { return z(d.z); })
           .on("mouseover", mouseover)
           .on("mouseout", mouseout)
-          .on("click", clickCell);
+          .on("click", clickCellOption);
+    }
+
+    function clickCellSelectable(p) {
+      if (!!p.occurrences) {
+        var minSimilarity = $('#importMinSimilarity').val() - 0;
+        if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
+        var occurrencesTable = '<table class="table table-bordered"><thead><th>Word</th><th>#</th></thead><tbody>';
+        p.occurrences.data.forEach ( function ( occurrence ) {
+          occurrencesTable += '<tr><td>' + occurrence.name + '</td><td>' + occurrence.value + '</td></tr>';
+        });
+        occurrencesTable += '</tbody></table>';
+        BootstrapDialog.show({
+          title: '' + p.occurrences.total + ' occurrences for "' + nodesX[p.y-1].text + '"<br>Min similarity: ' + minSimilarity,
+          message: occurrencesTable
+        });
+      } else {
+        const TRANSITION_DURATION = 500;
+        var that = d3.select(this);
+        var value = p.z > 0 ? p.z : 1;
+        var fill = that.style("fill");
+        var opacity = that.style("fill-opacity");
+        if (true || opacity == '0') { // TODO
+          var colorThemeIndex = $('#colorTheme')[0].value - 0;
+          if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) {
+            var gradient = COLOR_GRADIENTS[colorThemeIndex];
+            that.transition().duration(TRANSITION_DURATION)
+              .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(value)); })
+              .style("fill-opacity", z(value));
+            d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text(value);
+            p.occurrences = {data: [{name: '', value: value}], total: value};
+          }
+        } else {
+          d3Tip.hide(p);
+          that.transition().duration(TRANSITION_DURATION)
+            .style("fill-opacity", 0);
+          d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text('');
+        }
+      }
     }
 
     function clickCell(p) {
+      if (p.z == 0) return;
       var text1 = nodesX[p.y-1].text;
       var text2 = nodesY[p.x].text;
       $.ajax
@@ -1554,20 +1852,22 @@ text.active {
     }
 
     function mouseover(p) {
-      d3Tip.show(p);
-      d3.selectAll(".row").selectAll("text").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y-1].indices && nodesX[p.y-1].indices.length > (i-1) && nodesX[p.y-1].indices[i-1] == d[0].y); });
+      if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
+      if (!selectableCells) d3Tip.show(p);
+      d3.selectAll(".row").selectAll(".rowText,.rowParentText").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y-1].indices && nodesX[p.y-1].indices.length > (i-1) && nodesX[p.y-1].indices[i-1] == d[0].y); });
       var dimensionX = nodesX[p.y-1].dimension;
       var dimensionY = nodesY[p.x].dimension;
       if (!!dimensionX && dimensionX != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionX; });
-      d3.selectAll(".column").selectAll("text").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesY[p.x].indices && nodesY[p.x].indices.length > (i-1) && nodesY[p.x].indices[i-1] == d[0].x); });
+      d3.selectAll(".column").selectAll(".columnText,.columnParentText").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesY[p.x].indices && nodesY[p.x].indices.length > (i-1) && nodesY[p.x].indices[i-1] == d[0].x); });
       if (!!dimensionY && dimensionY != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionY; });
       console.log('value: ' + matrixX[p.y-1][p.x].z + ', src: ' + nodesX[p.y-1].text + ', dest: ' + nodesY[p.x].text);
       //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
     }
 
     function mouseout(p) {
+      if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
       d3Tip.hide(p);
-      d3.selectAll("text").classed("active", false);
+      d3.selectAll(".rowText,.rowParentText,.rowDimensionText,.columnText,.columnParentText,.columnDimensionText").classed("active", false);
     }
 
     function order(value) {
@@ -1671,9 +1971,9 @@ text.active {
       addColumnParentText(column);
       if (hasDimensionsY) addColumnDimensionText(column);
       addColumnHandlers(column);
-      buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL, true);
+      buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL, true, selectableCells);
     });
-      //buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true);
+      //buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true, selectableCells);
     }
 
     var colorThemeIndex = $('#colorTheme')[0].value - 0;
@@ -1685,11 +1985,212 @@ text.active {
     $('#order').unbind().on("change", function() {
       order(this.value);
     });
+    $('#export').unbind().click ( function () {
+/*
+      var svgTmp = document.querySelector( "#matrixSVG" );
+      if (!svgTmp) return;
+      var width = svg.attr('width');
+      var height = svg.attr('height');
+      var html = svg
+                  .attr("version", 1.1)
+                  .attr("xmlns", "http://www.w3.org/2000/svg")
+                  .node().parentNode.innerHTML;
+
+      var canvas = document.createElement( "canvas" );
+      var ctx = canvas.getContext( "2d" );
+
+      var img = document.createElement( "img" );
+      img.src = "";
+      img.onload = function() {
+          ctx.drawImage( img, 0, 0 );
+          console.log('img2 loaded');
+          var dataLink = document.createElement('a');
+          dataLink.download = 'CorrelationMatrix.png';
+          dataLink.href = canvas.toDataURL( "image/png" );
+          document.body.appendChild(dataLink);
+          dataLink.click();
+          document.body.removeChild(dataLink);
+          delete dataLink;
+          //delete this;
+      };
+      var str = new XMLSerializer().serializeToString( svgTmp );
+      img.src = "data:image/svg+xml;base64," + btoa(str); // unescape(encodeURIComponent(html))
+      console.log(img.src)
+*/
+      var svg = d3.select("#matrixSVG");
+      var svgString = getSVGString(svg.node());
+      var width = svg.attr('width');
+      var height = svg.attr('height');
+      svgString2Image( svgString, width*3, height*3, 'png', function ( dataBlob, filesize ) {
+        saveAs( dataBlob, 'CorrelationMatrix.png' ); // FileSaver.js function
+      }); // passes Blob and filesize String to the callback        
+    });
+    $('#upload-input, #upload-input-image').unbind().on('change', function(){
+      var minSimilarity = $('#importMinSimilarity').val() - 0;
+      if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
+      var files = $(this).get(0).files;
+      if (files.length > 0) {
+        var dataArray = [];
+        var citations = [];
+        nodesOriginalX.forEach ( function ( node ) {
+          dataArray.push({text: node.text, value: 0});
+        });
+        var currentFileIndex = 0;
+        $('.progress').show();
+        waitingDialog.show('Importing');
+        $('.progress-bar-text').html('0/' + files.length);
+        waitingDialog.progress(0);
+        var promises = [];
+        for ( var i = 0; i < files.length; i++ ) {
+          console.log('file: ', files[i])
+          if (files[i].type == 'application/pdf') {
+            citations.push({text: files[i].name});
+            var importFilePromise = new Promise ( function ( resolve, reject ) {
+              var fileIndex = i+1;
+              var numberOfFiles = files.length;
+              var fileName = files[i].name;
+              importPDF(files[i], function ( result ) {
+                if (!result.success) {
+                  console.log('Error: ', result.msg);
+                  if (fileIndex > currentFileIndex) {
+                    currentFileIndex = fileIndex;
+                    $('.progress-bar-text').html(currentFileIndex + '/' + numberOfFiles);
+                    waitingDialog.progress(currentFileIndex / numberOfFiles * 100);
+                  }
+                  resolve({array: [], correlations: []});
+                  return;
+                }
+                var text = result.msg;
+                if (!text) {
+                  console.log('Error: Received empty string as text from pdf file.');
+                  if (fileIndex > currentFileIndex) {
+                    currentFileIndex = fileIndex;
+                    $('.progress-bar-text').html(currentFileIndex + '/' + numberOfFiles);
+                    waitingDialog.progress(currentFileIndex / numberOfFiles * 100);
+                  }
+                  resolve({array: [], correlations: []});
+                  return;
+                }
+                var correlations = [];
+                var tmpArray = dataArray.slice(0);
+                for ( var j = 0; j < dataArray.length; j++ ) {
+                  if (minSimilarity < 1 && minSimilarity >= 0) var similarity = occurrencesStringSimilarity(text, dataArray[j].text, minSimilarity);
+                  else {
+                    var tmp = occurrencesRegex(text, dataArray[j].text);
+                    //var tmp = occurrences(text, dataArray[j].text, false);
+                    var similarity = {value: tmp, occurrences: [{name: dataArray[j].text, value: tmp}]};
+                  }
+                  var value = similarity.value;
+                  if (value > 0) {
+                    tmpArray[j].value += value;
+                    correlations.push({text1: dataArray[j].text, text2: fileName, value: value, occurrences: {data: similarity.occurrences, total: similarity.value}});
+                  }
+                }
+                if (fileIndex > currentFileIndex) {
+                  currentFileIndex = fileIndex;
+                  $('.progress-bar-text').html(currentFileIndex + '/' + numberOfFiles);
+                  waitingDialog.progress(currentFileIndex / numberOfFiles * 100);
+                }
+                resolve({array: tmpArray, correlations: correlations});
+              });
+            });
+            promises.push(importFilePromise);
+          } else console.log('"' + files[i].name + '" is not a pdf file.');
+        }
+        if (promises.length == 0) {
+          console.log('No pdf files to parse.');
+          return;
+        }
+        Promise.all(promises)
+          .then ( function ( results ) {
+            var correlations = [];
+            results.forEach ( function ( result ) {
+              correlations = correlations.concat(result.correlations);
+            /*
+              for ( var i = 0; i < result.array.length; i++ ) {
+                dataArray[i].value += result.array[i].value;
+              }
+              dataArray.forEach ( function ( entry ) {
+                console.log(entry.text + ': ' + entry.value);
+              });
+            */
+            });
+            $('.progress-bar-text').html(files.length + '/' + files.length);
+            waitingDialog.progress(100);
+            $('.progress').hide();
+            waitingDialog.hide();
+            buildingMatrix = false;
+            buildMatrix({response: nodesOriginalX}, {response: citations}, {response: correlations}, -1, onClickURL, false, true);
+          }).catch ( function ( err ) {
+            console.log('Error: ', err);
+            handleError(err);
+          });
+      }
+    });
+    $('#import').unbind().click ( function () {
+      $('#upload-input').click();
+    });
     buildingMatrix = false;
   }
 
+  /** Function that count occurrences of a substring in a string;
+   * @param {String} string               The string
+   * @param {String} subString            The sub string to search for
+   * @param {Boolean} [allowOverlapping]  Optional. (Default:false)
+   *
+   * @author Vitim.us https://gist.github.com/victornpb/7736865
+   * @see Unit Test https://jsfiddle.net/Victornpb/5axuh96u/
+   * @see http://stackoverflow.com/questions/4009756/how-to-count-string-occurrence-in-string/7924240#7924240
+   */
+  function occurrences(string, subString, allowOverlapping) {
+      string += "";
+      subString += "";
+      if (subString.length <= 0) return (string.length + 1);
+
+      var n = 0,
+          pos = 0,
+          step = allowOverlapping ? 1 : subString.length;
+
+      while (true) {
+          pos = string.indexOf(subString, pos);
+          if (pos >= 0) {
+              ++n;
+              pos += step;
+          } else break;
+      }
+      return n;
+  }
+
+  function occurrencesRegex ( string, subString ) {
+    return (string.match(new RegExp(subString, 'gi')) || []).length;
+  }
+
+  function occurrencesStringSimilarity ( string, subString, minSimilarity ) {
+    var words = (!!string && string != '') ? string.replace(/\.|\,|\;/g, ' ').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
+    var counter = 0;
+    var occurrences = [];
+    words.forEach ( function ( entry ) {
+      if (entry.length > 2) { // TODO
+        var value = compareTwoStrings(subString, entry);
+        if (value >= minSimilarity) {
+          counter++;
+          var index = -1;
+          for ( var i = 0; i < occurrences.length; i++ ) {
+            if (occurrences[i].name == entry) {
+              index = i;
+              break;
+            }
+          }
+          if (index < 0) occurrences.push({name: entry, value: 1});
+          else occurrences[index].value++;
+        }
+      }
+    });
+    return {value: counter, occurrences: occurrences};
+  }
+
   function showMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {
-    buildMatrix(attributesX, attributesY, correlations, maxValue, onClickURL, true);
+    buildMatrix(attributesX, attributesY, correlations, maxValue, onClickURL, true, false);
   }
 
   function loadAttributes ( init, correlations, options, maxValue, onClickURL, callback, filter ) {
@@ -1706,7 +2207,6 @@ text.active {
               handleError('Cannot get attributes from DB.');
               return;
             }
-            console.log('attributes: ', attributesResultX.response);
             $.ajax
               ({
                   type: options.ajaxTypeY,
@@ -1745,13 +2245,13 @@ function renderMatrixHelper () {
     var dataTypeIsReferenceCount = $('#dataType')[0].value == 'referenceCount';
     switch(parent1) {
       case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'leafAttribute'; break;
-      case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverage'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent1; break;
       default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
     }
     switch(parent2) {
       case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'leafAttribute'; break;
-      case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverage'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent2; break;
       default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
     }
@@ -1876,6 +2376,11 @@ function initPage () {
 }
 
 $(document).ready( function () {
+  $(this).on('contextmenu', function ( e ) {
+    e.preventDefault();
+  });
+  $('#import').html('<span>Import from xlsx<div class="progress" style="margin-left:29%;display:none;"><div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><span class="progress-bar-text"></span></div></div></span>');
+  $('#importMinSimilarity').val(DEFAULT_MIN_SIMILARITY);
   initPage();
 });
 

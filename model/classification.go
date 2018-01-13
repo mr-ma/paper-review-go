@@ -54,6 +54,10 @@ type Position struct {
   Z string `json:"z"`
 }
 
+type FileRequest struct {
+  Path string `json:"path"`
+}
+
 type AttributeRequest struct {
   Text string `json:"text"`
   X string `json:"x"`
@@ -190,7 +194,7 @@ type ConceptCorrelation struct {
 type AttributeCluster struct {
   ID int `json:"id"`
   Text string `json:"text"`
-  Children []AttributeCluster `json:"children"`
+  Children string `json:"children"`
 }
 
 type AttributeCoverage struct {

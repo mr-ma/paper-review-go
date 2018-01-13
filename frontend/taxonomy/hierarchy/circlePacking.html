@@ -25,6 +25,8 @@
     <link href="d3-tip.css" type="text/css" rel="stylesheet"/>
     <script src='d3-tip.js'></script>
 
+    <script type="text/javascript" src="FileSaver.min.js"></script>
+
     <script src="error.js"></script>
     <style>
 
@@ -63,6 +65,7 @@
         <option value="referenceCount">Sum of references</option>
       </select>
       <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
+      <input type="button" class="btn btn-success" id="export" style="margin-top:15px;" value="Export">
   </form>
   </div>
   <div id="colorLegend" style="margin-left:330px;margin-top:30px;margin-bottom:15px;"></div>
@@ -87,6 +90,107 @@
 
   var isInterDimensional = true;
   var displayedDimension;
+
+  function getSVGString( svgNode ) {
+    svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
+    var cssStyleText = getCSSStyles( svgNode );
+    appendCSS( cssStyleText, svgNode );
+
+    var serializer = new XMLSerializer();
+    var svgString = serializer.serializeToString(svgNode);
+    svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+    svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+
+    return svgString;
+
+    function getCSSStyles( parentElement ) {
+      var selectorTextArr = [];
+
+      // Add Parent element Id and Classes to the list
+      selectorTextArr.push( '#'+parentElement.id );
+      for (var c = 0; c < parentElement.classList.length; c++)
+          if ( !contains('.'+parentElement.classList[c], selectorTextArr) )
+            selectorTextArr.push( '.'+parentElement.classList[c] );
+
+      // Add Children element Ids and Classes to the list
+      var nodes = parentElement.getElementsByTagName("*");
+      for (var i = 0; i < nodes.length; i++) {
+        var id = nodes[i].id;
+        if ( !contains('#'+id, selectorTextArr) )
+          selectorTextArr.push( '#'+id );
+
+        var classes = nodes[i].classList;
+        for (var c = 0; c < classes.length; c++)
+          if ( !contains('.'+classes[c], selectorTextArr) )
+            selectorTextArr.push( '.'+classes[c] );
+      }
+
+      // Extract CSS Rules
+      var extractedCSSText = "";
+      for (var i = 0; i < document.styleSheets.length; i++) {
+        var s = document.styleSheets[i];
+        
+        try {
+            if(!s.cssRules) continue;
+        } catch( e ) {
+              if(e.name !== 'SecurityError') throw e; // for Firefox
+              continue;
+            }
+
+        var cssRules = s.cssRules;
+        for (var r = 0; r < cssRules.length; r++) {
+          if ( contains( cssRules[r].selectorText, selectorTextArr ) )
+            extractedCSSText += cssRules[r].cssText;
+        }
+      }
+      
+
+      return extractedCSSText;
+
+      function contains(str,arr) {
+        return arr.indexOf( str ) === -1 ? false : true;
+      }
+
+    }
+
+    function appendCSS( cssText, element ) {
+      var styleElement = document.createElement("style");
+      styleElement.setAttribute("type","text/css"); 
+      styleElement.innerHTML = cssText;
+      var refNode = element.hasChildNodes() ? element.children[0] : null;
+      element.insertBefore( styleElement, refNode );
+    }
+  }
+
+  function svgString2Image( svgString, width, height, format, callback ) {
+    var format = format ? format : 'png';
+
+    //var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( svgString ) ) ); // Convert SVG string to data URL
+
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    var image = new Image();
+    image.onload = function() {
+      console.log("loaded")
+      context.clearRect ( 0, 0, width, height );
+      context.drawImage(image, 0, 0, width, height);
+
+      canvas.toBlob( function(blob) {
+        var filesize = Math.round( blob.length/1024 ) + ' KB';
+        if ( callback ) callback( blob, filesize );
+      });
+    };
+    var url = URL.createObjectURL(
+      new Blob([svgString], {
+        type: 'image/svg+xml;charset=utf8'
+        })
+    );
+    image.src = url;
+  }
 
  function applyColorGradient ( defs, gradient, minValue, maxValue ) {
     if (!gradient.name || !gradient.colors) return {};
@@ -189,7 +293,7 @@
 
   function showHierarchy ( json, minValue, maxValue ) {
     d3.selectAll("svg").remove();
-    $('#svgContainer').html('<svg width="960" height="960"></svg>');
+    $('#svgContainer').html('<svg id="circlePackingSVG" width="960" height="960"></svg>');
     var svg = d3.select("svg"),
         margin = 20,
         diameter = svg.attr("width"),
@@ -281,6 +385,15 @@
         var index = this.value - 0;
         if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue);
       });
+    $('#export').unbind().click ( function () {
+      var svg = d3.select("#circlePackingSVG");
+      var svgString = getSVGString(svg.node());
+      var width = svg.attr('width');
+      var height = svg.attr('height');
+      svgString2Image( svgString, width*3, height*3, 'png', function ( dataBlob, filesize ) {
+        saveAs( dataBlob, 'CirclePacking.png' ); // FileSaver.js function
+      }); // passes Blob and filesize String to the callback        
+    });
   }
 
   function traverseTree ( json, attributes, parents, counter, useReferenceCount ) {

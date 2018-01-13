@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"io"
 
 	"./data"
 	"./model"
@@ -108,9 +109,31 @@ func main() {
 	mux.Handle("POST", "/mergeAttributes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMergeAttributesHandler), "getMergeAttributesHandler", nil)))
 	mux.Handle("POST", "/forkAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getForkAttributeHandler), "getForkAttributeHandler", nil)))
 	mux.Handle("GET", "/attributeCoverage", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandler), "getAttributeCoverageHandler", nil)))
-	mux.Handle("GET", "/attributeCoverageWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandlerWithReferenceCounts), "getAttributeCoverageHandlerWithReferenceCounts", nil)))
+	mux.Handle("GET", "/attributeCoverageWithOccurrenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithOccurrenceCountsHandler), "getAttributeCoverageWithOccurrenceCountsHandler", nil)))
+	mux.Handle("GET", "/attributeCoverageWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithReferenceCountsHandler), "getAttributeCoverageWithReferenceCountsHandler", nil)))
+
 	mux.HandleFunc("GET", "/error.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/error.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/pdf.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/pdf.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/pdf.worker.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/pdf.worker.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/lodash.core.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/lodash.core.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/compare-strings.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/compare-strings.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/fileUploader.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/fileUploader.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/zoomInIcon.png", func(w http.ResponseWriter, r *http.Request) {
@@ -123,6 +146,10 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/bluebird.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/bluebird.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/FileSaver.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/FileSaver.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/multiselect.min.js", func(w http.ResponseWriter, r *http.Request) {
@@ -197,6 +224,10 @@ func main() {
 	mux.HandleFunc("GET", "/bootstrap.min.css", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/css/bootstrap.min.css")
 		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/bootstrap-waitingfor.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/bootstrap-waitingfor.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/selectize.min.js", func(w http.ResponseWriter, r *http.Request) {
@@ -488,6 +519,50 @@ func main() {
 			fmt.Fprintf(w, "%s", err)
 		}
 		w.Write([]byte("PNG Generated"))
+	})
+	/*
+	// https://astaxie.gitbooks.io/build-web-application-with-golang/en/04.5.html
+	mux.HandleFunc("POST", "/upload", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseMultipartForm(32 << 20)
+		file, handler, err := r.FormFile("file")
+		if err != nil {
+		    fmt.Println(err)
+		}
+		defer file.Close()
+		fmt.Fprintf(w, "%v", handler.Header)
+		f, err := os.OpenFile("./files/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+		    fmt.Println(err)
+		}
+		defer f.Close()
+		io.Copy(f, file)
+	})
+	*/
+	mux.HandleFunc("POST", "/upload", func(w http.ResponseWriter, r *http.Request) {
+
+		file, header, err := r.FormFile("file")
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "{'error': %s}", err)
+			return
+		}
+		defer file.Close()
+
+		out, err := os.Create("files/uploaded-" + header.Filename)
+		checkErr(err)
+		if err != nil {
+			fmt.Fprintf(w, "[-] Unable to create the file for writing. Check your write access privilege.", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		defer out.Close()
+
+		// write the content from POST to the file
+		_, err = io.Copy(out, file)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	})
 
 	// c := &Config{}
@@ -904,7 +979,13 @@ func getAttributeCoverageHandler(u *url.URL, h http.Header, r *MyRequest) (int, 
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
 }
-func getAttributeCoverageHandlerWithReferenceCounts(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+func getAttributeCoverageWithOccurrenceCountsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	attributeCoverage, err := driver.GetAttributeCoverageWithOcurrenceCounts()
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
+}
+func getAttributeCoverageWithReferenceCountsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeCoverage, err := driver.GetAttributeCoverageWithReferenceCounts()
 	checkErr(err)
