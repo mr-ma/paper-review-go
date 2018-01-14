@@ -185,6 +185,7 @@ text.active {
   const ROTATION_FACTOR = 7;
   const SHORTEN_VALUE = 3;
   const SHORTEN_VALUE_ROTATION = 4;
+  const SHORTEN_LEAF_VALUE = 18;
 
   function updateSynonyms ( elm ) {
     var that = d3.select(elm);
@@ -317,7 +318,6 @@ text.active {
 
     var image = new Image();
     image.onload = function() {
-      console.log("loaded")
       context.clearRect ( 0, 0, width, height );
       context.drawImage(image, 0, 0, width, height);
 
@@ -614,8 +614,6 @@ text.active {
       textTransformFactorY = 125;
     }
 
-    console.log('treedepthX: ' + treeDepthX + ', treeDepthY: ' + treeDepthY)
-
     var left = marginLeft + treeDepthX * 35;
     var sortedLeft = marginLeft + treeDepthX * 60;
     var top = marginTop + treeDepthY * 35;
@@ -792,7 +790,7 @@ text.active {
         c = d3.scale.category10().domain(d3.range(10));
 
     if (maxValue > 4) z.domain([0, 4]);
-
+ 
     var orders = [];
     orders.push({
       name: d3.range(m).sort(function(a, b) { if (nodesY[a].text == '') return 1; if (nodesY[b].text == '') return -1; else return d3.ascending(nodesY[a].text.toLowerCase(), nodesY[b].text.toLowerCase()); }),
@@ -807,7 +805,6 @@ text.active {
 
     var maxAxisLength = Math.max(m, n);
 
-    // The default sort order.
     x.domain(d3.range(maxAxisLength));
     y.domain(d3.range(maxAxisLength));
 
@@ -854,14 +851,16 @@ text.active {
       .style("stroke", "black");
 
     for ( var i = 0; i < treeDepthX; i++ ) {
-      svg.append("line")
-        .attr("class", "line")
-        .attr("x1", -margin.left + (i+1)*widthPerParentCell)
-        .attr("x2", -margin.left + (i+1)*widthPerParentCell)
-        .attr("y1", 0)
-        .attr("y2", height)
-        .attr("stroke-width", "1")
-        .style("stroke", "black");
+      if (i == 0) {
+        svg.append("line")
+          .attr("class", "line")
+          .attr("x1", -margin.left + (i+1)*widthPerParentCell)
+          .attr("x2", -margin.left + (i+1)*widthPerParentCell)
+          .attr("y1", 0)
+          .attr("y2", height)
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+      }
     }
 
     svg.append("line")
@@ -883,14 +882,16 @@ text.active {
       .style("stroke", "black");
 
     for ( var i = 0; i < treeDepthY; i++ ) {
-      svg.append("line")
-        .attr("class", "line")
-        .attr("x1", 0)
-        .attr("x2", width)
-        .attr("y1", -margin.top + (i+1)*heightPerParentCell)
-        .attr("y2", -margin.top + (i+1)*heightPerParentCell)
-        .attr("stroke-width", "1")
-        .style("stroke", "black");
+      if (i == 0) {
+        svg.append("line")
+          .attr("class", "line")
+          .attr("x1", 0)
+          .attr("x2", width)
+          .attr("y1", -margin.top + (i+1)*heightPerParentCell)
+          .attr("y2", -margin.top + (i+1)*heightPerParentCell)
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+      }
     }
     svg.append("rect")
         .attr("class", "background")
@@ -903,6 +904,7 @@ text.active {
         .data(matrixX)
       .enter().append("g")
         .attr("class", "row")
+        .attr("y", function (d, i) { return x(i); })
         .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
         .each(row);
 
@@ -912,6 +914,7 @@ text.active {
         .data(matrixY)
       .enter().append("g")
         .attr("class", "column")
+        .attr("x", function (d, i) { return y(i); })
         .attr("transform", function(d, i) { return "translate(" + y(i) + ")rotate(-90)"; });
 
     var maxNodeAmount = Math.max(nodesX.length, nodesY.length);
@@ -1090,7 +1093,7 @@ text.active {
                     cell.style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(txt)); })
                         .style("fill-opacity", z(txt));
                   }
-                  el.style("fill", DEFAULT_TEXT_FILL).text(function(d) { if (d[field] >= 1000) return ('' + Math.floor(d[field] / 1000) + '..'); return d[field]; });
+                  el.style("fill", DEFAULT_TEXT_FILL).text(function(d) { if (d[field] >= 1000) return ('' + Math.floor(d[field] / 1000) + '...'); return d[field]; });
                 } else {
                   d3Tip.hide(el.data()[0]);
                   cell.style("fill-opacity", 0);
@@ -1117,7 +1120,7 @@ text.active {
                             })
                             .attr("style", "width: 19; font-size: " + FONT_SIZE + ";")
                             .on("blur", function() {
-                                var txt = inp.node().value;
+                                var txt = inp.node().value - 0;
                                 updateText(txt);
                             })
                             .on("keypress", function() {
@@ -1151,8 +1154,11 @@ text.active {
             .style("fill", DEFAULT_TEXT_FILL)
             //.attr('width', that.attr('width'))
             //.attr('height', that.attr('height'))
-            .text( function (d) { var value = d3.select(this.previousSibling).data()[0].z; return value > 0 ? value : ''; })
-            .call(make_editable, "occurrences");
+            .text( function (d) {
+              var value = d3.select(this.previousSibling).data()[0].z;
+              if (value >= 1000) return ('' + Math.floor(value / 1000) + '...');
+              return value > 0 ? value : '';
+            }).call(make_editable, "occurrences");
     }
 
     function addRowText ( row ) {
@@ -1165,9 +1171,9 @@ text.active {
           .attr("font-size", FONT_SIZE)
           .text(function(d, i) {
             if (!nodesX[i].text) return '';
-            if (nodesX[i].text.length * 4 > marginLeft && nodesX[i].text.length > 22) {
+            if (nodesX[i].text.length * ROTATION_FACTOR > marginLeft && nodesX[i].text.length > SHORTEN_LEAF_VALUE) {
               d3.select(this).attr('data-fulltext', nodesX[i].text)
-              return nodesX[i].text.substr(0, 22) + '...';
+              return nodesX[i].text.substr(0, SHORTEN_LEAF_VALUE) + '...';
             }
             return nodesX[i].text;
           })
@@ -1194,7 +1200,7 @@ text.active {
             .attr("font-size", FONT_SIZE)
             .text(function(d, i) {
               if (!nodesX[i].indices) nodesX[i].indices = [];
-              if (nodesX[i].indices.length < k) nodesX[i].indices[k] = -1;
+              nodesX[i].indices[k] = -1; // if (nodesX[i].indices.length < k)
               counter++;
               var index = (!!lastValueX && lastValueX != '') ? nodesX[i].parents.indexOf(lastValueX) : -1;
               if (index == k) { // index > -1 && index < (treeDepthX-k+1)
@@ -1236,9 +1242,11 @@ text.active {
                 for ( var l = 0; l < treeDepthX; l++ ) {
                   parentsX.push([]);
                 }
+                nodesX[i].indices[k] = rowIndex;
                 return '';
               }
               value = nodesX[i].parents[k];
+              //if () return '';
               if (!value || value == '' || checkForOccurrence(parentsX, value) > k) {
                 nodesX[i].indices[k] = rowIndex;
                 return '';
@@ -1270,6 +1278,15 @@ text.active {
               lastValueX = value;
               rowIndex = i+1;
               nodesX[i].indices[k] = rowIndex;
+              var valueIndex = nodesX[i].parents.indexOf(value);
+              if (valueIndex == nodesX[i].parents.length-1 && k < treeDepthX-1) {
+                var currentRow = d3.select(d3.select(this).node().parentNode);
+                currentRow.append("line")
+                  .attr("class", "line")
+                  .attr("x1", -margin.left + widthPerParentCell)
+                  .attr("stroke-width", "1")
+                  .style("stroke", "black");
+              }
               return value;
             });
         if (!!lastTextRef && !!lastValueX && lastValueX != '') {
@@ -1337,7 +1354,6 @@ text.active {
                 //if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
                 //if (counter > maxIndex) maxIndex = shownTextsX.length - maxIndex; // TODO
                 //if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
-                if (nodesX[i].text == 'State inspection') console.log('state: max: ' + maxIndex + ', parents: ' + parentsDiff + ', shown: ', shownTextsX.join(','))
                 var result = -margin.left + (treeDepthX - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsX = nodesX[i].parents;
                 if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
@@ -1363,6 +1379,17 @@ text.active {
           .attr("class", "rowParentLine")
           .attr("stroke-width", "1")
           .style("stroke", "black");
+
+          for ( var k = 0; k < treeDepthX; k++ ) {
+            row.append("line")
+              .attr("class", "line")
+              .attr("x1", function (d,i) { return -margin.left + (treeDepthX-k)*widthPerParentCell; })
+              .attr("x2", function (d,i) { return -margin.left + (treeDepthX-k)*widthPerParentCell; })
+              .attr("y1", function (d,i) { return d3.select(this).attr('y'); })
+              .attr("y2", function (d,i) { var y = d3.select(this).attr('y'); if (nodesX[i].indices[k] < 0) return y; return y + x.rangeBand(); })
+              .attr("stroke-width", "1")
+              .style("stroke", "black");
+          }
     }
     function addRowDimensionText ( row ) {
       var lastDimension = '';
@@ -1530,9 +1557,9 @@ text.active {
           .attr("font-size", FONT_SIZE)
           .text(function(d, i) {
             if (!nodesY[i].text) return '';
-            if (nodesY[i].text.length * 4 > marginTop && nodesY[i].text.length > 22) {
+            if (nodesY[i].text.length * ROTATION_FACTOR > marginTop && nodesY[i].text.length > SHORTEN_LEAF_VALUE) {
               d3.select(this).attr('data-fulltext', nodesY[i].text)
-              return nodesY[i].text.substr(0, 22) + '...';
+              return nodesY[i].text.substr(0, SHORTEN_LEAF_VALUE) + '...';
             }
             return nodesY[i].text;
           })
@@ -1559,7 +1586,7 @@ text.active {
             .attr("font-size", FONT_SIZE)
             .text(function(d, i) {
               if (!nodesY[i].indices) nodesY[i].indices = [];
-              if (nodesY[i].indices.length < k) nodesY[i].indices[k] = -1;
+              nodesY[i].indices[k] = -1; // if (nodesY[i].indices.length < k)
               counter++;
               var index = (!!lastValueY && lastValueY != '') ? nodesY[i].parents.indexOf(lastValueY) : -1;
               if (index == k) { // index > -1 && index < (treeDepthY-k+1)
@@ -1601,6 +1628,7 @@ text.active {
                 for ( var l = 0; l < treeDepthY; l++ ) {
                   parentsY.push([]);
                 }
+                nodesY[i].indices[k] = columnIndex;
                 return '';
               }
               value = nodesY[i].parents[k];
@@ -1635,6 +1663,15 @@ text.active {
               lastValueY = value;
               columnIndex = i+1;
               nodesY[i].indices[k] = columnIndex;
+              var valueIndex = nodesY[i].parents.indexOf(value);
+              if (valueIndex == nodesY[i].parents.length-1 && k < treeDepthY-1) {
+                var currentColumn = d3.select(d3.select(this).node().parentNode);
+                currentColumn.append("line")
+                  .attr("class", "line")
+                  .attr("x1", margin.top - heightPerParentCell)
+                  .attr("stroke-width", "1")
+                  .style("stroke", "black");
+              }
               return value;
             });
         if (!!lastTextRef && !!lastValueY && lastValueY != '') {
@@ -1729,6 +1766,17 @@ text.active {
           .attr("class", "columnParentLine")
           .attr("stroke-width", "1")
           .style("stroke", "black");
+
+          for ( var k = 0; k < treeDepthY; k++ ) {
+            column.append("line")
+              .attr("class", "line")
+              .attr("y1", function (d,i) { return d3.select(this).attr("x"); })
+              .attr("y2", function (d,i) { var x = d3.select(this).attr("x"); if (nodesY[i].indices[k] < 0) return x; return x + y.rangeBand(); })
+              .attr("x1", function (d,i) { return margin.top - (treeDepthY-k)*heightPerParentCell; })
+              .attr("x2", function (d,i) { return margin.top - (treeDepthY-k)*heightPerParentCell; })
+              .attr("stroke-width", "1")
+              .style("stroke", "black");
+          }
     }
 
     function addColumnDimensionText ( column ) {
@@ -1927,7 +1975,7 @@ text.active {
               .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(value)); })
               .style("fill-opacity", z(value));
             p.z = value;
-            var shownText = value >= 1000 ? ('' + Math.floor(value / 1000) + '..') : value;
+            var shownText = value >= 1000 ? ('' + Math.floor(value / 1000) + '...') : value;
             d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text(shownText);
             p.occurrences = {data: [{name: '', value: value}], total: value};
           }
