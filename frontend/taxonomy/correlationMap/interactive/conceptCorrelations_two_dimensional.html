@@ -55,16 +55,73 @@ text.active {
     <script type="text/javascript" src="lodash.core.js"></script>
     <script type="text/javascript" src="compare-strings.js"></script>
 
+    <link href="loginForm.css" type="text/css" rel="stylesheet"/>
+
+    <script type="text/javascript" src="editableTable.js"></script>
+
     <script type="text/javascript" src="pdf.min.js"></script>
     <script type="text/javascript" src="FileSaver.min.js"></script>
     <script type="text/javascript" src="fileUploader.js"></script>
 
     <script src="error.js"></script>
+
+  <style>
+    .searchContainer { margin-bottom: 20px; }
+
+    .input-group-btn > .btn, .input-group-btn > .btn-group {
+        top:1px !important;
+    }
+  </style>
+
+  <script>
+    function closeButton ( button ) {
+      $(button).parentsUntil('modal').parent().modal('hide');
+    }
+  </script>
 </header>
 <body>
 
 <input id="upload-input" type="file" name="uploads[]" multiple="multiple" style="display:none;">
 <input id="upload-input-image" type="file" name="uploads[]" multiple="multiple" style="display:none;">
+
+<div class="modal fade" id="default-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="defaultModalTitle"></h1><br>
+      <form id="defaultModalForm">
+        <!--<label for="defaultModalText" id="defaultModalLabel"></label>-->
+        <div class="tableTemplateContainer">
+          <div class="input-group searchContainer">
+            <input type="text" class="form-control" id="searchTableField" style="width:200px;" placeholder="Search table">
+          </div>
+          <div id ="defaultModalTableContainer"></div>
+          <br>
+          <input type="button" class ="btn btn-primary" id="addRow" value="Add row">
+        </div>
+        <div style="margin-top:20px;">
+          <input type="submit" id="defaultModalButton" class="btn btn-success" value="Save">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="rename-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="renameModalTitle">Rename</h1><br>
+      <form id="renameModalForm">
+        <label for="renameModalText" id="renameModalLabel">Rename to:</label>
+        <input type="text" id="renameModalText" value="">
+        <div style="margin-top:20px;">
+          <input type="submit" id="renameModalButton" class="btn btn-success" value="Save">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <div style="margin-left:20px;margin-top:50px;">
     <form style="width:165px;">
@@ -128,6 +185,53 @@ text.active {
   const ROTATION_FACTOR = 7;
   const SHORTEN_VALUE = 3;
   const SHORTEN_VALUE_ROTATION = 4;
+
+  function updateSynonyms ( elm ) {
+    var that = d3.select(elm);
+    var synonymText = that.attr('data-synonyms');
+    var synonyms = (!!synonymText && synonymText != '') ? synonymText.split(',') : [];
+    var synonymRows = '';
+    synonyms.forEach ( function ( synonym ) {
+      synonymRows += '<tr>' + synonym + '</tr>';
+    });
+    var tableHeader = '<thead><th>Synonym</th></thead>';
+    $('#defaultModalTitle').html(that.text());
+    $('#searchTableField').val('');
+    $('#defaultModalTableContainer').html(initTable(tableHeader, synonyms));
+    $('#defaultModalButton').prop('disabled', false);
+    $('#defaultModalForm').unbind().on('submit', function ( evt ) {
+      evt.preventDefault();
+      var synonymString = '';
+      $('#defaultModalTableContainer').find('tbody').find('tr').each ( function ( index, entry ) {
+        var cellText = $(entry).find('td:first');
+        cellText = !!cellText ? $(cellText).text() : '';
+        if (!!cellText && cellText != '') synonymString += (synonymString != '' ? ',' : '') + cellText;
+      });
+      that.attr('data-synonyms', synonymString);
+      //$('#defaultModalButton').prop('disabled', true);
+      $('#default-modal').modal('hide');
+    });
+    $('#default-modal').unbind().on('shown.bs.modal', function () {
+      loadTableListeners();
+    });
+    $('#default-modal').modal('show');
+  }
+
+  function renameText ( elm, data ) {
+    var that = d3.select(elm);
+    var previousText = that.text();
+    $('#renameModalTitle').html('Rename "' + previousText + '"');
+    $('#renameModalText').val(previousText);
+    $('#renameModalButton').prop('disabled', false);
+    $('#renameModalForm').unbind().on('submit', function ( evt ) {
+      evt.preventDefault();
+      var newText = $('#renameModalText').val();
+      if (!!newText) that.text(newText);
+      //$('#renameModalButton').prop('disabled', true);
+      $('#rename-modal').modal('hide');
+    });
+    $('#rename-modal').modal('show');
+  }
 
   function getSVGString( svgNode ) {
     svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
@@ -539,12 +643,12 @@ text.active {
             for ( var l = 0; l < nodesY.length; l++) {
               if (nodesY[l].text == link.text2) {
                 matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesX[k].text;
-                matrixX[k][l].dest = nodesY[l].text;
+                //matrixX[k][l].src = nodesX[k].text;
+                //matrixX[k][l].dest = nodesY[l].text;
                 matrixX[k][l].onClickURL = onClickURL;
                 matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesX[k].text;
-                matrixY[l][k].dest = nodesY[l].text;
+                //matrixY[l][k].src = nodesX[k].text;
+                //matrixY[l][k].dest = nodesY[l].text;
                 matrixY[l][k].onClickURL = onClickURL;
                 if (!!link.occurrences) {
                   matrixX[k][l].occurrences = link.occurrences;
@@ -565,12 +669,12 @@ text.active {
             for ( var l = 0; l < nodesY.length; l++) {
               if (nodesY[l].text == link.text2 && nodesX[k].text != nodesY[l].text) {
                 matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesX[k].text;
-                matrixX[k][l].dest = nodesY[l].text;
+                //matrixX[k][l].src = nodesX[k].text;
+                //matrixX[k][l].dest = nodesY[l].text;
                 matrixX[k][l].onClickURL = onClickURL;
                 matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesX[k].text;
-                matrixY[l][k].dest = nodesY[l].text;
+                //matrixY[l][k].src = nodesX[k].text;
+                //matrixY[l][k].dest = nodesY[l].text;
                 matrixY[l][k].onClickURL = onClickURL;
                 if (!!link.occurrences) {
                   matrixX[k][l].occurrences = link.occurrences;
@@ -582,12 +686,12 @@ text.active {
                 break;
               } else if (nodesY[l].text == link.text1 && nodesX[k].text != nodesY[l].text) {
                 matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesY[l].text;
-                matrixX[k][l].dest = nodesX[k].text;
+                //matrixX[k][l].src = nodesY[l].text;
+                //matrixX[k][l].dest = nodesX[k].text;
                 matrixX[k][l].onClickURL = onClickURL;
                 matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesY[l].text;
-                matrixY[l][k].dest = nodesX[k].text;
+                //matrixY[l][k].src = nodesY[l].text;
+                //matrixY[l][k].dest = nodesX[k].text;
                 matrixY[l][k].onClickURL = onClickURL;
                 if (!!link.occurrences) {
                   matrixX[k][l].occurrences = link.occurrences;
@@ -881,11 +985,10 @@ text.active {
         });
     }
 
-    var menu = [
+    var hideOption =
       {
         title: 'Hide',
         action: function(elm, d, i) {
-          if (!!buildingMatrix) return;
           var that = d3.select(elm);
           var text = that.text().trim();
           if (!text || text == '') return;
@@ -906,6 +1009,25 @@ text.active {
           }
         },
         disabled: false
+      };
+
+    var renameOption =
+      {
+        title: 'Rename',
+        action: function(elm, d, i) {
+          renameText(elm);
+        },
+        disabled: false
+      };
+
+    var menu = [hideOption];
+
+    var advancedMenu = [hideOption, renameOption, {
+        title: 'Synonyms',
+        action: function(elm, d, i) {
+          updateSynonyms(elm);
+        },
+        disabled: false
       }
     ];
 
@@ -913,7 +1035,6 @@ text.active {
       {
         title: 'Set occurrences',
         action: function(elm, d, i) {
-          console.log("input");
           elm.append('input')
               .attr('type','text')
               .attr('name','occurrences')
@@ -966,9 +1087,10 @@ text.active {
                   var colorThemeIndex = $('#colorTheme')[0].value - 0;
                   if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) {
                     var gradient = COLOR_GRADIENTS[colorThemeIndex];
-                    cell.style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(txt)); });
+                    cell.style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(txt)); })
+                        .style("fill-opacity", z(txt));
                   }
-                  el.style("fill", DEFAULT_TEXT_FILL).text(function(d) { return d[field]; });
+                  el.style("fill", DEFAULT_TEXT_FILL).text(function(d) { if (d[field] >= 1000) return ('' + Math.floor(d[field] / 1000) + '..'); return d[field]; });
                 } else {
                   d3Tip.hide(el.data()[0]);
                   cell.style("fill-opacity", 0);
@@ -1386,8 +1508,9 @@ text.active {
           if (!selectize1) return;
           if (parents.indexOf(text) < 0) return;
           selectize1.setValue(text, false);
-        })
-        .on("contextmenu", d3.contextMenu(menu));
+        });
+        row.selectAll('.rowParentText,.rowDimensionText').on("contextmenu", d3.contextMenu(menu));
+        row.selectAll('.rowText').on("contextmenu", d3.contextMenu(advancedMenu));
     }
     addRowText(row);
     addRowParentText(row);
@@ -1749,8 +1872,9 @@ text.active {
           if (!selectize2) return;
           if (parents.indexOf(text) < 0) return;
           selectize2.setValue(text, false);
-        })
-        .on("contextmenu", d3.contextMenu(menu));
+        });
+        column.selectAll('.columnParentText,.columnDimensionText').on("contextmenu", d3.contextMenu(menu));
+        column.selectAll('.columnText').on("contextmenu", d3.contextMenu(advancedMenu));
     }
     addColumnText(column);
     addColumnParentText(column);
@@ -1802,13 +1926,16 @@ text.active {
             that.transition().duration(TRANSITION_DURATION)
               .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(value)); })
               .style("fill-opacity", z(value));
-            d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text(value);
+            p.z = value;
+            var shownText = value >= 1000 ? ('' + Math.floor(value / 1000) + '..') : value;
+            d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text(shownText);
             p.occurrences = {data: [{name: '', value: value}], total: value};
           }
         } else {
           d3Tip.hide(p);
           that.transition().duration(TRANSITION_DURATION)
             .style("fill-opacity", 0);
+          p.z = 0;
           d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text('');
         }
       }
@@ -1853,7 +1980,7 @@ text.active {
 
     function mouseover(p) {
       if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
-      if (!selectableCells) d3Tip.show(p);
+      d3Tip.show(p);
       d3.selectAll(".row").selectAll(".rowText,.rowParentText").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y-1].indices && nodesX[p.y-1].indices.length > (i-1) && nodesX[p.y-1].indices[i-1] == d[0].y); });
       var dimensionX = nodesX[p.y-1].dimension;
       var dimensionY = nodesY[p.x].dimension;
@@ -1865,8 +1992,8 @@ text.active {
     }
 
     function mouseout(p) {
-      if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
       d3Tip.hide(p);
+      if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
       d3.selectAll(".rowText,.rowParentText,.rowDimensionText,.columnText,.columnParentText,.columnDimensionText").classed("active", false);
     }
 
@@ -2032,9 +2159,20 @@ text.active {
       if (files.length > 0) {
         var dataArray = [];
         var citations = [];
-        nodesOriginalX.forEach ( function ( node ) {
-          dataArray.push({text: node.text, value: 0});
+        d3.selectAll(".rowText").each ( function () {
+          var that = d3.select(this);
+          var entryText = that.text();
+          if (!!entryText && entryText != '') {
+            var texts = [entryText];
+            var synonyms = that.attr('data-synonyms');
+            if (!!synonyms && synonyms != '') texts = texts.concat(synonyms.split(','));
+            dataArray.push({texts: texts, value: 0});
+          }
         });
+        if (dataArray.length == 0) {
+          handleError('No concepts available to map files on.');
+          return;
+        }
         var currentFileIndex = 0;
         $('.progress').show();
         waitingDialog.show('Importing');
@@ -2042,7 +2180,6 @@ text.active {
         waitingDialog.progress(0);
         var promises = [];
         for ( var i = 0; i < files.length; i++ ) {
-          console.log('file: ', files[i])
           if (files[i].type == 'application/pdf') {
             citations.push({text: files[i].name});
             var importFilePromise = new Promise ( function ( resolve, reject ) {
@@ -2074,16 +2211,15 @@ text.active {
                 var correlations = [];
                 var tmpArray = dataArray.slice(0);
                 for ( var j = 0; j < dataArray.length; j++ ) {
-                  if (minSimilarity < 1 && minSimilarity >= 0) var similarity = occurrencesStringSimilarity(text, dataArray[j].text, minSimilarity);
+                  if (minSimilarity < 1 && minSimilarity >= 0) var similarity = occurrencesStringSimilarity(text, dataArray[j].texts, minSimilarity);
                   else {
-                    var tmp = occurrencesRegex(text, dataArray[j].text);
-                    //var tmp = occurrences(text, dataArray[j].text, false);
-                    var similarity = {value: tmp, occurrences: [{name: dataArray[j].text, value: tmp}]};
+                    //var similarity = occurrences(text, dataArray[j].texts, false);
+                    var similarity = occurrencesRegex(text, dataArray[j].texts);
                   }
                   var value = similarity.value;
                   if (value > 0) {
                     tmpArray[j].value += value;
-                    correlations.push({text1: dataArray[j].text, text2: fileName, value: value, occurrences: {data: similarity.occurrences, total: similarity.value}});
+                    correlations.push({text1: dataArray[j].texts[0], text2: fileName, value: value, occurrences: {data: similarity.occurrences, total: similarity.value}});
                   }
                 }
                 if (fileIndex > currentFileIndex) {
@@ -2142,7 +2278,7 @@ text.active {
    * @see Unit Test https://jsfiddle.net/Victornpb/5axuh96u/
    * @see http://stackoverflow.com/questions/4009756/how-to-count-string-occurrence-in-string/7924240#7924240
    */
-  function occurrences(string, subString, allowOverlapping) {
+  function occurrencesHelper(string, subString, allowOverlapping) {
       string += "";
       subString += "";
       if (subString.length <= 0) return (string.length + 1);
@@ -2161,29 +2297,53 @@ text.active {
       return n;
   }
 
-  function occurrencesRegex ( string, subString ) {
-    return (string.match(new RegExp(subString, 'gi')) || []).length;
+  function occurrences(string, subStrings, allowOverlapping) {
+    var counter = 0;
+    var occurrences = [];
+    subStrings.forEach ( function ( subString ) {
+      var value = occurrencesHelper(string, subString, allowOverlapping);
+      if (value > 0) {
+        counter += value;
+        occurrences.push({name: subString, value: value});
+      }
+    });
+    return {value: counter, occurrences: occurrences}; 
   }
 
-  function occurrencesStringSimilarity ( string, subString, minSimilarity ) {
-    var words = (!!string && string != '') ? string.replace(/\.|\,|\;/g, ' ').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
+  function occurrencesRegex ( string, subStrings ) {
+    var counter = 0;
+    var occurrences = [];
+    subStrings.forEach ( function ( subString ) {
+      var value = (string.match(new RegExp(subString, 'gi')) || []).length;
+      if (value > 0) {
+        counter += value;
+        occurrences.push({name: subString, value: value});
+      }
+    });
+    return {value: counter, occurrences: occurrences};
+  }
+
+  function occurrencesStringSimilarity ( string, subStrings, minSimilarity ) {
+    var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
     var counter = 0;
     var occurrences = [];
     words.forEach ( function ( entry ) {
       if (entry.length > 2) { // TODO
-        var value = compareTwoStrings(subString, entry);
-        if (value >= minSimilarity) {
-          counter++;
-          var index = -1;
-          for ( var i = 0; i < occurrences.length; i++ ) {
-            if (occurrences[i].name == entry) {
-              index = i;
-              break;
+        subStrings.forEach ( function ( subString ) {
+          var value = compareTwoStrings(subString, entry);
+          if (value >= minSimilarity) {
+            counter++;
+            var index = -1;
+            for ( var i = 0; i < occurrences.length; i++ ) {
+              if (occurrences[i].name == entry) {
+                index = i;
+                break;
+              }
             }
+            if (index < 0) occurrences.push({name: entry, value: 1});
+            else occurrences[index].value++;
           }
-          if (index < 0) occurrences.push({name: entry, value: 1});
-          else occurrences[index].value++;
-        }
+        });
       }
     });
     return {value: counter, occurrences: occurrences};
@@ -2317,7 +2477,7 @@ function initPage () {
           }
           $('#parents1, #parents2').html('');
           $('#parents1, #parents2').append('<option>All attributes</option>');
-          $('#parents1, #parents2').append('<option>All citations</option>');
+          $('#parents2').append('<option>All citations</option>');
           parents.push('All attributes');
           parents.push('All citations');
           dimensions.response.forEach ( function ( dimension ) {

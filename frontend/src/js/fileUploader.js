@@ -41,7 +41,6 @@ function uploadFiles ( files, callback ) {
 	     var countPromises = []; // collecting all page promises
 	     for (var j = 1; j <= maxPages; j++) {
 	        var page = pdf.getPage(j);
-
 	        var txt = "";
 	        countPromises.push(page.then(function(page) { // add page promise
 	            var textContent = page.getTextContent();
@@ -62,7 +61,7 @@ function importPDF ( file, callback ) {
     fileReader.onload = function() {
         var typedarray = new Uint8Array(this.result);
 		gettext(typedarray).then(function (text) {
-		  var tmp = text.replace(/\.|\,|\;/g, ' ').replace(/\s(\s+)/g, ' ').split(/\s/);
+		  var tmp = text.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/);
 		  console.log("words: " + tmp.length);
 		  console.log("last 2: " + tmp[tmp.length-2] + ', ' + tmp[tmp.length-1]);
 		  if (!!callback) callback({success: true, msg: text});

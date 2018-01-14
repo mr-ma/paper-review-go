@@ -104,6 +104,7 @@
     background-color: #605F61;
     left: 99%;
     border-radius: 5px;
+    cursor: pointer;
 }
 
 .close-btn a {
@@ -111,4 +112,5 @@
     font-weight: bold;
     color: white;
     text-decoration: none;
+    cursor: pointer;
 }

@@ -244,6 +244,10 @@ func main() {
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/editableTable.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/editableTable.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/selectize.bootstrap3.css", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/css/selectize.bootstrap3.css")
 		w.Header().Add("Content-Type", "text/css")
