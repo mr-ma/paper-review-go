@@ -911,11 +911,11 @@
                       handleErrorHelper('Cannot get citations from DB for attribute: ' + attribute + '.');
                       return;
                     }
-                    var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+                    var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>Occurrences</th><th>References</th><th>Bib</th></tr></thead><tbody>';
                     var sumOfReferences = 0;
                     if (!!citationsPerAttribute.response) {
                       citationsPerAttribute.response.forEach ( function ( citationPerAttribute ) {
-                        citationTable += '<tr><td>' + citationPerAttribute.citation + '</td><td>' + citationPerAttribute.referenceCount + '</td><td>' + citationPerAttribute.bib + '</td></tr>';
+                        citationTable += '<tr><td>' + citationPerAttribute.citation + '</td><td>' + citationPerAttribute.occurrenceCount + '</td><td>' + citationPerAttribute.referenceCount + '</td><td>' + citationPerAttribute.bib + '</td></tr>';
                         sumOfReferences += citationPerAttribute.referenceCount;
                       });
                     }

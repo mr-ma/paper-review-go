@@ -71,6 +71,7 @@ func main() {
 	mux.Handle("POST", "/citationsPerAttributeIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsPerAttributeIncludingChildrenHandler), "getCitationsPerAttributeIncludingChildrenHandler", nil)))
 	mux.Handle("POST", "/addAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(addAttributeHandler), "addAttributeHandler", nil)))
 	mux.Handle("POST", "/addDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(addDimensionHandler), "addDimensionHandler", nil)))
+	mux.Handle("POST", "/deleteCitation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(deleteCitationHandler), "deleteCitationHandler", nil)))
 	mux.Handle("POST", "/removeAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(removeAttributeHandler), "removeAttributeHandler", nil)))
 	mux.Handle("POST", "/removeDimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(removeDimensionHandler), "removeDimensionHandler", nil)))
 	mux.Handle("POST", "/renameAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(renameAttributeHandler), "renameAttributeHandler", nil)))
@@ -87,6 +88,7 @@ func main() {
 	mux.Handle("GET", "/citationCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsHandler), "getCitationCountsHandler", nil)))
 	mux.Handle("POST", "/updateMajor", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateMajorHandler), "getUpdateMajorHandler", nil)))
 	mux.Handle("POST", "/updateCitationMapping", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateCitationMappingHandler), "getUpdateCitationMappingHandler", nil)))
+	mux.Handle("POST", "/updateCitationMappings", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateCitationMappingsHandler), "getUpdateCitationMappingsHandler", nil)))
 	mux.Handle("POST", "/updateCitationReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getUpdateCitationReferenceCountsHandler), "getUpdateCitationReferenceCountsHandler", nil)))
 	mux.Handle("GET", "/citationCountsIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsIncludingChildrenHandler), "getCitationCountsIncludingChildrenHandler", nil)))
 	mux.Handle("GET", "/relationTypes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getRelationTypesHandler), "getRelationTypesHandler", nil)))
@@ -134,6 +136,10 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/fileUploader.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/fileUploader.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/scopus.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/scopus.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/zoomInIcon.png", func(w http.ResponseWriter, r *http.Request) {
@@ -747,6 +753,13 @@ func addDimensionHandler(u *url.URL, h http.Header, dimensionRequest *model.Dime
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }
+func deleteCitationHandler(u *url.URL, h http.Header, citationRequest *model.CitationRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	citation := model.Paper{Citation: citationRequest.Citation}
+	result, err := driver.DeleteCitation(citation)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
+}
 func removeAttributeHandler(u *url.URL, h http.Header, attributeRequest *model.AttributeRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attribute := model.Attribute{Text: attributeRequest.Text}
@@ -858,6 +871,12 @@ func getUpdateMajorHandler(u *url.URL, h http.Header, updateMajorRequest *model.
 func getUpdateCitationMappingHandler(u *url.URL, h http.Header, updateCitationMappingRequest *model.UpdateCitationMappingRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateCitationMapping(updateCitationMappingRequest.Attribute, updateCitationMappingRequest.Citations)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
+}
+func getUpdateCitationMappingsHandler(u *url.URL, h http.Header, updateCitationMappingsRequest *model.UpdateCitationMappingsRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.UpdateCitationMappings(updateCitationMappingsRequest.Mappings)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", 1, result}, nil
 }

@@ -88,16 +88,29 @@ INSERT IGNORE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relati
 ALTER TABLE taxonomy_relation ADD COLUMN edgeBendPoints longtext;
 
 ALTER TABLE paper ADD COLUMN referenceCount int(20) DEFAULT "0";
+ALTER TABLE paper ADD COLUMN author varchar(500) DEFAULT "";
+ALTER TABLE paper ADD COLUMN keywords varchar(500) DEFAULT "";
 ALTER TABLE mapping ADD COLUMN occurrenceCount int(20) DEFAULT "1";
 
+ALTER TABLE mapping CHANGE COLUMN id_paper id_paper INT(11) UNSIGNED NOT NULL;
+ALTER TABLE mapping CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL;
+
 ALTER TABLE attribute ADD UNIQUE KEY attribute_text_UNIQUE (text);
-ALTER TABLE mapping ADD UNIQUE KEY mapping_id_paper_id_attribute_UNIQUE (id_paper, id_attribute);
+/* ALTER TABLE mapping ADD UNIQUE KEY mapping_id_paper_id_attribute_UNIQUE (id_paper, id_attribute); */
+
+/* change primary key */
+ALTER TABLE mapping MODIFY id_mapping int(10) UNSIGNED NOT NULL, DROP PRIMARY KEY, ADD PRIMARY KEY (id_paper, id_attribute);
+ALTER TABLE mapping ADD INDEX mapping_id_mapping (id_mapping), MODIFY id_mapping int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
 ALTER TABLE taxonomy_dimension ADD UNIQUE KEY taxonomy_dimension_id_attribute_UNIQUE (id_taxonomy, id_attribute);
 ALTER TABLE taxonomy_relation ADD UNIQUE KEY taxonomy_relation_attributes_UNIQUE (id_taxonomy, id_src_attribute, id_dest_attribute, id_dimension);
 
 /* foreign keys start */
 
 SET FOREIGN_KEY_CHECKS = 0;
+
+ALTER TABLE paper CHANGE COLUMN id_paper id_paper INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE paper CHANGE COLUMN citation citation varchar(500) NOT NULL;
 
 ALTER TABLE attribute CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 ALTER TABLE attribute CHANGE COLUMN text text varchar(500) NOT NULL;
@@ -106,7 +119,6 @@ ALTER TABLE dimension CHANGE COLUMN id_dimension id_dimension INT(11) UNSIGNED N
 ALTER TABLE taxonomy_dimension CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL;
 ALTER TABLE taxonomy_dimension CHANGE COLUMN id_dimension id_dimension INT(11) UNSIGNED NOT NULL;
 ALTER TABLE taxonomy_relation CHANGE COLUMN id_src_attribute id_src_attribute INT(11) UNSIGNED NOT NULL, CHANGE COLUMN id_dest_attribute id_dest_attribute INT(11) UNSIGNED NOT NULL;
-ALTER TABLE mapping CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL;
 
 
 ALTER TABLE taxonomy_dimension ADD CONSTRAINT taxonomy_dimension_id_attribute_foreign FOREIGN KEY (id_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
@@ -114,6 +126,7 @@ ALTER TABLE taxonomy_dimension ADD CONSTRAINT taxonomy_dimension_id_dimension_fo
 ALTER TABLE taxonomy_relation ADD CONSTRAINT taxonomy_relation_id_src_attribute_foreign FOREIGN KEY (id_src_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE taxonomy_relation ADD CONSTRAINT taxonomy_relation_id_dest_attribute_foreign FOREIGN KEY (id_dest_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE mapping ADD CONSTRAINT mapping_id_attribute_foreign FOREIGN KEY (id_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE mapping ADD CONSTRAINT mapping_id_paper_foreign FOREIGN KEY (id_paper) REFERENCES paper (id_paper) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 SET FOREIGN_KEY_CHECKS = 1;
 

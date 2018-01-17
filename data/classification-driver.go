@@ -30,6 +30,7 @@ type ClassificationDriver interface {
 	UpdateCitationReferenceCounts([]model.ReferenceCount) (model.Result, error)
 	UpdateMajor(string, int) (model.Result, error)
 	UpdateCitationMapping(string, []model.Paper) (model.Result, error)
+	UpdateCitationMappings([]model.CitationMapping) (model.Result, error)
 	GetRelationTypes() ([]model.RelationType, error)
 	GetCitationsPerAttribute(string) ([]model.Paper, error)
 	GetCitationsPerAttributeIncludingChildren(string) ([]model.Paper, error)
@@ -67,6 +68,7 @@ type ClassificationDriver interface {
 	RenameAttribute(string, string) (model.Result, error)
 	RenameDimension(string, string) (model.Result, error)
 	AddTaxonomyRelation(model.AttributeRelation) (model.Result, error)
+	DeleteCitation(model.Paper) (model.Result, error)
 	RemoveAttribute(model.Attribute) (model.Result, error)
 	RemoveDimension(model.Dimension) (model.Result, error)
 	RemoveTaxonomyRelation(model.AttributeRelation) (model.Result, error)
@@ -189,7 +191,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
-		db, stmt, err := d.Query(`select id_paper,citation,citation as text,bib,referenceCount
+		db, stmt, err := d.Query(`select id_paper,citation,citation as text,referenceCount
 			from paper order by id_paper`)
 		defer stmt.Close()
 		defer db.Close()
@@ -197,7 +199,7 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
-			rows.Scan(&a.ID,&a.Citation,&a.Text,&a.Bib,&a.ReferenceCount)
+			rows.Scan(&a.ID,&a.Citation,&a.Text,&a.ReferenceCount) // TODO: ,&a.Bib
 			papers = append(papers, a)
 		}
 		defer rows.Close()
@@ -328,6 +330,42 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		return result, err
 		}
 
+	func (d MySQLDriver) UpdateCitationMappings(mappings []model.CitationMapping) (result model.Result, err error){
+	  	dbRef, err := d.OpenDB()
+		checkErr(err)
+		for _, elem := range mappings {
+			db, stmt, err := d.Query("SELECT DISTINCT tmp.maxID, (CASE WHEN paper.id_paper IS NOT NULL THEN paper.id_paper ELSE -1 END) AS paperID FROM (SELECT MAX(id_paper) AS maxID FROM paper) AS tmp left outer join paper ON (paper.citation = \"" + elem.Citation + "\");")
+			rows, err := stmt.Query()
+			checkErr(err)
+			stmt.Close()
+			db.Close()
+			var paperID int
+			paperID = -1
+			var maxID int
+			maxID = 0
+			for rows.Next() {
+				rows.Scan(&maxID,&paperID)
+			}
+			rows.Close()
+			paperIDStr := strconv.Itoa(paperID)
+			if paperID < 0 {
+				paperID = maxID+1
+				paperIDStr = strconv.Itoa(paperID)
+				referenceCountStr := strconv.Itoa(elem.ReferenceCount)
+				dbRef.Exec("INSERT INTO paper (id_paper, citation, bib, referenceCount, author, keywords) VALUES (" + paperIDStr + ", \"" + elem.Citation + "\", \"\", " + referenceCountStr + ", \"" + elem.Author + "\", \"" + elem.Keywords + "\");")
+			}
+			if elem.OccurrenceCount <= 0 {
+				dbRef.Exec("DELETE FROM mapping WHERE id_paper = " + paperIDStr + " AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + elem.Attribute + "\");")
+			} else {
+				occurrenceCountStr := strconv.Itoa(elem.OccurrenceCount)
+				dbRef.Exec("REPLACE INTO mapping (id_paper, id_attribute, occurrenceCount) VALUES (" + paperIDStr + ", (SELECT DISTINCT id_attribute FROM attribute WHERE text = \"" + elem.Attribute + "\"), " + occurrenceCountStr + ");")
+			}
+		}
+		result.Success = true
+		defer dbRef.Close()
+		return result, err
+		}
+
 	func (d MySQLDriver) GetRelationTypes() (relationTypes []model.RelationType, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
@@ -350,14 +388,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	func (d MySQLDriver) GetCitationsPerAttribute(attribute string) (papers []model.Paper, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from paper inner join mapping on (paper.id_paper = mapping.id_paper) inner join attribute on (mapping.id_attribute = attribute.id_attribute and attribute.text = \"" + attribute +  "\") order by paper.id_paper;")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount, mapping.occurrenceCount from paper inner join mapping on (paper.id_paper = mapping.id_paper) inner join attribute on (mapping.id_attribute = attribute.id_attribute and attribute.text = \"" + attribute +  "\") order by paper.id_paper;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
-			rows.Scan(&a.ID,&a.Citation,&a.Bib,&a.ReferenceCount)
+			rows.Scan(&a.ID,&a.Citation,&a.Bib,&a.ReferenceCount,&a.OccurrenceCount)
 			papers = append(papers, a)
 		}
 		defer rows.Close()
@@ -368,14 +406,14 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 	func (d MySQLDriver) GetCitationsPerAttributeIncludingChildren(attribute string) (papers []model.Paper, err error){
 		dbRef, err := d.OpenDB()
 		checkErr(err)
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from allchildrenperattribute inner join mapping on (allchildrenperattribute.text = \"" + attribute + "\" and FIND_IN_SET(mapping.id_attribute, allchildrenperattribute.children)) inner join paper on (mapping.id_paper = paper.id_paper) order by paper.id_paper;")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount, sum(mapping.occurrenceCount) as occurrenceCount from allchildrenperattribute inner join mapping on (allchildrenperattribute.text = \"" + attribute + "\" and FIND_IN_SET(mapping.id_attribute, allchildrenperattribute.children)) inner join paper on (mapping.id_paper = paper.id_paper) group by allchildrenperattribute.id_attribute, mapping.id_paper order by paper.id_paper;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query()
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
-			rows.Scan(&a.ID,&a.Citation,&a.Bib,&a.ReferenceCount)
+			rows.Scan(&a.ID,&a.Citation,&a.Bib,&a.ReferenceCount,&a.OccurrenceCount)
 			papers = append(papers, a)
 		}
 		defer rows.Close()
@@ -1316,6 +1354,15 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		checkErr(err)
 		taxonomyIDStr := strconv.Itoa(int(relation.TaxonomyID))
 		dbRef.Exec("REPLACE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relation, annotation) VALUES (" + taxonomyIDStr + ", (SELECT DISTINCT id_taxonomy_relation FROM taxonomy_relation WHERE id_taxonomy = " + taxonomyIDStr + " AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = \"" + relation.AttributeSrc + "\") AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE text = \"" + relation.AttributeDest + "\")), \"" + relation.Annotation + "\");") //  AND id_dimension = (SELECT id_dimension FROM dimension WHERE text = \"" + relation.Dimension + "\")
+		result.Success = true
+		defer dbRef.Close()
+		return result, err
+		}
+
+	func (d MySQLDriver) DeleteCitation(paper model.Paper) (result model.Result, err error){
+		dbRef, err := d.OpenDB()
+		checkErr(err)
+		dbRef.Exec("DELETE FROM paper WHERE citation = \"" + paper.Citation + "\";")
 		result.Success = true
 		defer dbRef.Close()
 		return result, err

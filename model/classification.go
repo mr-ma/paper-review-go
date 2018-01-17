@@ -44,6 +44,7 @@ type Paper struct {
 	StrAttributes string `json:"str_attributes"`
 	Bib string `json:"bib"`
   ReferenceCount int64 `json:"referenceCount"`
+  OccurrenceCount int64 `json:"occurrenceCount"`
 }
 
 type Position struct {
@@ -54,8 +55,21 @@ type Position struct {
   Z string `json:"z"`
 }
 
+type CitationMapping struct {
+  Citation string `json:"citation"`
+  Attribute string `json:"attribute"`
+  OccurrenceCount int `json:"occurrenceCount"`
+  ReferenceCount int `json:"referenceCount"`
+  Author string `json:"author"`
+  Keywords string `json:"keywords"`
+}
+
 type FileRequest struct {
   Path string `json:"path"`
+}
+
+type CitationRequest struct {
+  Citation string `json:"citation"`
 }
 
 type AttributeRequest struct {
@@ -120,6 +134,10 @@ type CitationsPerAttributeRequest struct {
 type UpdateCitationMappingRequest struct {
   Attribute string `json:"attribute"`
   Citations []Paper `json:"citations"`
+}
+
+type UpdateCitationMappingsRequest struct {
+  Mappings []CitationMapping `json:"mappings"`
 }
 
 type SharedPapersRequest struct {
