@@ -134,6 +134,10 @@ func main() {
 		p := loadPage("frontend/src/js/compare-strings.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/fuzzysort.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/fuzzysort.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/fileUploader.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/fileUploader.js")
 		fmt.Fprintf(w, "%s", p)
