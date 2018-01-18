@@ -2321,12 +2321,16 @@ text.active {
 
   function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalX, nodesOriginalY ) {
     if (!!buildingMatrix) return;
+    if (!!sortValues && !!selectedOrder && selectedOrder != 'default') {
+      var sortedNodes = sortNodes(selectedOrder, nodesX, nodesY);
+      buildingMatrix = false;
+      return buildMatrix({response: sortedNodes.x}, {response: sortedNodes.y}, correlations, maxValue, onClickURL, false, selectableCells, nodesOriginalX, nodesOriginalY);
+    }
     buildingMatrix = true;
-
     d3.selectAll(".d3-tip").remove();
 
-    var rootsX = buildParentTree(attributesX.response);
-    var rootsY = buildParentTree(attributesY.response);
+    //var rootsX = buildParentTree(attributesX.response);
+    //var rootsY = buildParentTree(attributesY.response);
     var matrixX = [],
         matrixY = [],
         nodesX = attributesX.response,
@@ -2509,11 +2513,6 @@ text.active {
       }
     });
 
-    if (!!sortValues && !!selectedOrder && selectedOrder != 'default') {
-      var sortedNodes = sortNodes(selectedOrder, nodesOriginalX, nodesOriginalY);
-      buildingMatrix = false;
-      return buildMatrix({response: sortedNodes.x}, {response: sortedNodes.y}, correlations, maxValue, onClickURL, false, selectableCells, nodesOriginalX, nodesOriginalY);
-    }
     var labelText = ($('#dataType')[0].value == 'referenceCount') ? ' reference' : ' citation';
     var clickCellOption = !!selectableCells ? clickCellSelectable : clickCell;
     if (!!selectableCells) labelText = ' occurrence';
@@ -3962,7 +3961,7 @@ text.active {
 
     function clickCellSelectable(p) {
       var that = d3.select(this);
-      if (!!p.occurrences) {
+      if (!!p.occurrences && p.occurrences.data.length > 0) {
         var minSimilarity = $('#importMinSimilarity').val() - 0;
         if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
         var occurrencesTable = '<table class="table table-bordered"><thead><th>Word</th><th>#</th><th style="width:1%;"></th></thead><tbody>';
@@ -3984,12 +3983,8 @@ text.active {
                 }
                 return true;
               });
-              console.log("that: ", that);
               var thatCell = that.node().nextSibling;
               var el = d3.select(thatCell);
-
-              console.log("that: ", that, ", cell: ", thatCell);
-              console.log("el: ", el)
               updateText(p, 'z', el, d3.select(thatCell.parentNode), thatCell, p.occurrences.total);
               thatRow.remove();
             });
@@ -4161,28 +4156,30 @@ text.active {
           .attr("x", function(d) { return y(d.x); })
           .attr("transform", function(d, i) { return "translate(" + y(i) + ",0)rotate(-90)"; });
 
-    function endall(transition, callback) { 
-      if (typeof callback !== "function") throw new Error("Wrong callback in endall");
-      if (transition.size() === 0) { callback() }
-      var n = 0; 
-      transition 
-          .each(function() { ++n; }) 
-          .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
-    } 
+      function endall(transition, callback) { 
+        if (typeof callback !== "function") throw new Error("Wrong callback in endall");
+        if (transition.size() === 0) { callback() }
+        var n = 0; 
+        transition 
+            .each(function() { ++n; }) 
+            .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
+      } 
 
-    t.call(endall, function () {
+      t.call(endall, function () {
+  /*
+        var row = svg.selectAll(".row");
+        addRowParentText(row);
+        if (hasDimensionsX) addRowDimensionText(row);
+        addRowHandlers(row);
 
-      var row = svg.selectAll(".row");
-      addRowParentText(row);
-      if (hasDimensionsX) addRowDimensionText(row);
-      addRowHandlers(row);
-
-      var column = svg.selectAll(".column");
-      addColumnParentText(column);
-      if (hasDimensionsY) addColumnDimensionText(column);
-      addColumnHandlers(column);
-      buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL, true, selectableCells, nodesOriginalX, nodesOriginalY);
-    });
+        var column = svg.selectAll(".column");
+        addColumnParentText(column);
+        if (hasDimensionsY) addColumnDimensionText(column);
+        addColumnHandlers(column);
+  */
+        buildingMatrix = false;
+        buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL, false, selectableCells, nodesOriginalX, nodesOriginalY);
+      });
       //buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true, selectableCells, nodesOriginalX, nodesOriginalY);
     }
 
@@ -4439,7 +4436,7 @@ text.active {
               waitingDialog.hide();
               buildingMatrix = false;
               console.log('citations: ', citations);
-              buildMatrix({response: nodesOriginalX}, {response: citations}, {response: correlations}, -1, onClickURL, false, true, nodesOriginalX, nodesOriginalY);
+              buildMatrix({response: nodesX}, {response: citations}, {response: correlations}, -1, onClickURL, false, true, nodesOriginalX, nodesOriginalY);
             }
             var scopusPromises = [];
             for ( var i = 0; i < fileTitles.length; i++ ) {
@@ -4504,7 +4501,6 @@ text.active {
         var keywords = !!nodesY[cell.x].keywords ? nodesY[cell.x].keywords : '';
         mappings.push({attribute: attributeText, citation: citationText, occurrenceCount: cell.z, referenceCount: referenceCount, author: author, keywords: keywords});
       });
-      console.log("mappings: ", mappings);
       $.ajax
         ({
           type: "POST",
