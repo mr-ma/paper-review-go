@@ -130,6 +130,18 @@ ALTER TABLE mapping ADD CONSTRAINT mapping_id_paper_foreign FOREIGN KEY (id_pape
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+CREATE TABLE IF NOT EXISTS user (
+  email varchar(128) NOT NULL,
+  password varchar(128) NOT NULL,
+  admin tinyint(1) DEFAULT "0",
+  PRIMARY KEY (email),
+  UNIQUE KEY email_UNIQUE (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO user (email, password, admin)
+  VALUES
+    ("felixhuber2@gmx.de", "123", 1);
+
 /* foreign keys end */
 
 /* dummy reference count data */

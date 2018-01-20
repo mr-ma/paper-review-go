@@ -19,27 +19,30 @@ text.active {
 }
 
 </style>
-    <script type="text/javascript" src="d3.min.js"></script>
+    <script src="d3.min.js"></script>
     <script src="jquery.min.js"></script>
 
-    <link href="vis.min.css" type="text/css" rel="stylesheet"/>
+    <link href="vis.min.css" type="text/css" rel="stylesheet">
     <script src="vis.min.js"></script>
 
-    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet">
     <script src="bootstrap.min.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet">
     <script src="bootstrap-dialog.min.js"></script>
 
-    <link href="selectize.css" rel="stylesheet" type="text/css">
-    <script type="text/javascript" src="selectize.min.js"></script>
-    <link href="selectize.bootstrap3.css" rel="stylesheet" type="text/css">
+    <link href="selectize.css" type="text/css" rel="stylesheet">
+    <script src="selectize.min.js"></script>
+    <link href="selectize.bootstrap3.css" type="text/css" rel="stylesheet">
 
+    <script src="exportHTML.js"></script>
+    <script src="userManagement.js"></script>
     <script src="error.js"></script>
 
 </header>
 <body>
-
+<div class="navbar"></div>
+<div class="modals"></div>
 
 <div style="margin-left:20px;margin-top:50px;">
     <form style="width:165px;">
@@ -74,6 +77,7 @@ text.active {
 
 <script>
 
+  var admin = false;
   var lastParentText = '';
   var totalNumberOfCitations, maxReferenceCount;
   var selectize1, selectize2;
@@ -389,12 +393,10 @@ text.active {
       $.ajax
          ({
           type: "POST",
-          //the url where you want to sent the userName and password to
           url: onClickURL,
           dataType: 'json',
           contentType:'application/json',
           async: true,
-          //json object to sent to the authentication url
           data: JSON.stringify({text1: text1, text2: text2}),
           success: function ( citations ) {
             if (!citations) {
@@ -581,8 +583,8 @@ function renderMatrixHelper () {
     if (parent1 == '') parent1 = 'All attributes';
     if (parent2 == '') parent2 = 'All attributes';
     var ajaxTypeX, ajaxTypeY, attributeUrlX, attributeUrlY;
-    var requestX = {'taxonomy_id': 1};
-    var requestY = {'taxonomy_id': 1};
+    var requestX = {'taxonomy_id': TAXONOMY_ID};
+    var requestY = {'taxonomy_id': TAXONOMY_ID};
     var correlationURLObj = getCorrelationOptions();
     var correlationURL = correlationURLObj.url;
     var maxValue = correlationURLObj.maxValue;
@@ -692,7 +694,7 @@ function initPage () {
           $('#parents2-selectized').off('focus').on('focus', function () {
             $(this).trigger({type: 'keydown', keyCode: 8});
           });
-          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', requestX: {'taxonomy_id': 1}, requestY: {'taxonomy_id': 1}};
+          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', requestX: {'taxonomy_id': TAXONOMY_ID}, requestY: {'taxonomy_id': TAXONOMY_ID}};
           var correlationURLObj = getCorrelationOptions();
           var correlationURL = correlationURLObj.url;
           var maxValue = correlationURLObj.maxValue;
@@ -712,12 +714,33 @@ function initPage () {
 }
 
 $(document).ready( function () {
-  $('.media_node').unbind().on('click', function ( e ) {
-    var frameID = $(this).attr('id') + 'Frame';
-    $('.tab-pane[id != "' + frameID + '"]').hide();
-    $('#' + frameID).show();
+  var promises = [];
+  var initPagePromise = new Promise ( function ( resolve, reject ) {
+    initPage();
+    resolve();
   });
-  initPage();
+  promises.push(initPagePromise);
+  var initUserPromise = new Promise( function ( resolve, reject ) {
+    var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+      initUserManagement(resolve, reject);
+    }).then ( function ( user ) {
+      if (!!user && user.admin == 1) {
+        admin = true;
+      }
+      resolve(user);
+    }).catch ( function ( err ) {
+      reject(err);
+    });
+  });
+  promises.push(initUserPromise);
+  Promise.all(promises)
+    .then ( function ( results ) {
+      console.log('Page is loaded.');
+    }).catch ( function ( err ) {
+      console.log('Error: ', err);
+      handleError(err);
+      initPage();
+    });
 });
 
 </script>

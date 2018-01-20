@@ -106,7 +106,7 @@ type AttributeRelationsRequest struct {
   MaxValue int64 `json:"maxValue"`
 }
 
-type MajorAttributesRequest struct {
+type AttributesRequest struct {
   TaxonomyID int64 `json:"taxonomy_id"`
 }
 
@@ -247,6 +247,41 @@ type CitationCount struct {
 
 type Result struct {
   Success bool `json:"success"`
+}
+
+type User struct {
+  Email string `json:"email"`
+  Admin int `json:"admin"`
+}
+
+type LoginRequest struct {
+  Email string `json:"email"`
+  Password string `json:"password"`
+}
+
+type CreateUserRequest struct {
+  Email string `json:"email"`
+  Password string `json:"password"`
+  Admin int `json:"admin"`
+}
+
+type UpdateUserRequest struct {
+  Email string `json:"email"`
+  Admin int `json:"admin"`
+}
+
+type DeleteUserRequest struct {
+  Email string `json:"email"`
+}
+
+type LoginResult struct {
+  Success bool `json:"success"`
+  User User `json:"user"`
+}
+
+type UserResult struct {
+  Success bool `json:"success"`
+  Users []User `json:"users"`
 }
 
 //

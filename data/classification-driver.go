@@ -13,6 +13,13 @@ import (
 
 type ClassificationDriver interface {
   DriverCore
+  	Login(string, string) (model.LoginResult, error)
+  	SaveUser(string, string) (model.Result, error)
+  	CreateUser(string, string, int) (model.Result, error)
+  	UpdateUser(string, int) (model.Result, error)
+  	DeleteUser(string) (model.Result, error)
+  	GetUser(string) (model.User, error)
+  	GetUsers() ([]model.User, error)
 	ExportCorrelations([]model.Attribute, int64) ([]model.Paper, error)
 	GetAttributesPerDimension(int64, string) ([]model.Attribute, error)
 	GetLeafAttributesPerDimension(int64, string) ([]model.Attribute, error)
@@ -34,12 +41,12 @@ type ClassificationDriver interface {
 	GetRelationTypes() ([]model.RelationType, error)
 	GetCitationsPerAttribute(string) ([]model.Paper, error)
 	GetCitationsPerAttributeIncludingChildren(string) ([]model.Paper, error)
-	SavePositions([]model.Position) (error)
-	SaveMajorPositions([]model.Position) (error)
-	Save3DPositions([]model.Position) (error)
-	SaveMajor3DPositions([]model.Position) (error)
+	SavePositions([]model.Position) (model.Result, error)
+	SaveMajorPositions([]model.Position) (model.Result, error)
+	Save3DPositions([]model.Position) (model.Result, error)
+	SaveMajor3DPositions([]model.Position) (model.Result, error)
 	SaveEdgeBendPoints(int64, string, string, string, string) (model.Result, error)
-	GetAllAttributes() ([]model.Attribute, error)
+	GetAllAttributes(int64) ([]model.Attribute, error)
 	GetLeafAttributes() ([]model.Attribute, error)
 	GetAllDimensions() ([]model.Dimension, error)
 	GetAllCitations() ([]model.Paper, error)
@@ -88,6 +95,129 @@ func InitClassificationDriver(user string, password string) ClassificationDriver
 	return MySQLDriver{username: user, pass: password, database: "classification"}
 }
 
+func (d MySQLDriver) Login(email string, password string) (result model.LoginResult, err error){
+	dbRef, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query("SELECT email, admin FROM user WHERE email = \"" + email + "\" AND password = \"" + password + "\";")
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	checkErr(err)
+	if rows.Next() {
+		a := model.User{}
+		rows.Scan(&a.Email,&a.Admin)
+		result.Success = true
+		result.User = a
+	} else {
+		result.Success = false
+	}
+	defer rows.Close()
+	defer dbRef.Close()
+	return result, err
+	}
+
+func (d MySQLDriver) SaveUser(email string, password string) (result model.Result, err error){
+	dbRef, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query("SELECT COUNT(email) as userCount FROM user WHERE email = \"" + email + "\";")
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	checkErr(err)
+	var count int
+	for rows.Next() {
+		rows.Scan(&count)
+	}
+	defer rows.Close()
+	if count > 0 {
+		result.Success = false
+		return result, err
+	}
+	dbRef.Exec("INSERT INTO user (email, password) VALUES (\"" + email + "\", \"" + password + "\");")
+	result.Success = true
+	defer dbRef.Close()
+	return result, err
+	}
+
+func (d MySQLDriver) CreateUser(email string, password string, admin int) (result model.Result, err error){
+	dbRef, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query("SELECT COUNT(email) as userCount FROM user WHERE email = \"" + email + "\";")
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	checkErr(err)
+	var count int
+	for rows.Next() {
+		rows.Scan(&count)
+	}
+	defer rows.Close()
+	if count > 0 {
+		result.Success = false
+		return result, err
+	}
+	adminStr := strconv.Itoa(admin)
+	dbRef.Exec("INSERT INTO user (email, password, admin) VALUES (\"" + email + "\", \"" + password + "\", " + adminStr + ");")
+	result.Success = true
+	defer dbRef.Close()
+	return result, err
+	}
+
+func (d MySQLDriver) UpdateUser(email string, admin int) (result model.Result, err error){
+	dbRef, err := d.OpenDB()
+	checkErr(err)
+	adminStr := strconv.Itoa(admin)
+	dbRef.Exec("UPDATE user SET admin = " + adminStr + " WHERE email = \"" + email + "\";")
+	result.Success = true
+	defer dbRef.Close()
+	return result, err
+	}
+
+func (d MySQLDriver) DeleteUser(email string) (result model.Result, err error){
+	dbRef, err := d.OpenDB()
+	checkErr(err)
+	dbRef.Exec("DELETE FROM user WHERE email = \"" + email + "\";")
+	result.Success = true
+	defer dbRef.Close()
+	return result, err
+	}
+
+func (d MySQLDriver) GetUser(email string) (user model.User, err error){
+	dbRef, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query("SELECT email, admin FROM user WHERE email = \"" + email + "\";")
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	checkErr(err)
+	if rows.Next() {
+		a := model.User{}
+		rows.Scan(&a.Email,&a.Admin)
+		user = a
+	}
+	defer rows.Close()
+	defer dbRef.Close()
+	return user, err
+	}
+
+func (d MySQLDriver) GetUsers() (users []model.User, err error){
+	dbRef, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query("SELECT email, admin FROM user;")
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	checkErr(err)
+	for rows.Next() {
+		a := model.User{}
+		rows.Scan(&a.Email,&a.Admin)
+		users = append(users, a)
+	}
+	defer rows.Close()
+	defer dbRef.Close()
+	return users, err
+	}
+
 //ExportCorrelations export correlations with the given attributes
 func (d MySQLDriver) ExportCorrelations(filterAttributes []model.Attribute,
 	taxonomyId int64) (papers []model.Paper, err error) {
@@ -127,10 +257,12 @@ func (d MySQLDriver) ExportCorrelationsCSV(filterAttributes []model.Attribute){
 }
 
 
-func (d MySQLDriver) GetAllAttributes() (attributes []model.Attribute,
+func (d MySQLDriver) GetAllAttributes(taxonomyId int64) (attributes []model.Attribute,
 	err error){
 	dbRef, err := d.OpenDB()
 	checkErr(err)
+	taxonomyIdStr := strconv.Itoa(int(taxonomyId)) // TODO
+	fmt.Println(taxonomyIdStr)
 	db, stmt, err := d.Query(`select distinct attribute.id_attribute as id, attribute.text, allparentsperattribute.parents as parentText, dimension.text as dimensionText
 		from attribute inner join allparentsperattribute on (attribute.id_attribute = allparentsperattribute.id_attribute) left outer join taxonomy_dimension on (attribute.id_attribute = taxonomy_dimension.id_attribute) left outer join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension) order by attribute.id_attribute;`)
 	defer stmt.Close()
@@ -994,49 +1126,53 @@ func (d MySQLDriver) GetAllDimensions() (dimensions []model.Dimension,
 		return attributeRelations, err
 		}
 
-	func (d MySQLDriver) SavePositions(positions []model.Position) (err error){
+	func (d MySQLDriver) SavePositions(positions []model.Position) (result model.Result, err error){
 	  	dbRef, err := d.OpenDB()
 		checkErr(err)
     	for _, elem := range positions {
 			dbRef.Exec("update " + elem.Table + " set x = \"" + elem.X + "\", y = \"" + elem.Y + "\" where text = \"" + elem.ID + "\";");
 			//time.Sleep(time.Second / 5)
 		}
+		result.Success = true
 		defer dbRef.Close()
-		return err
+		return result, err
 		}
 
-	func (d MySQLDriver) SaveMajorPositions(positions []model.Position) (err error){
+	func (d MySQLDriver) SaveMajorPositions(positions []model.Position) (result model.Result, err error){
 	  	dbRef, err := d.OpenDB()
 		checkErr(err)
     	for _, elem := range positions {
 			dbRef.Exec("update " + elem.Table + " set xMajor = \"" + elem.X + "\", yMajor = \"" + elem.Y + "\" where text = \"" + elem.ID + "\";");
 			//time.Sleep(time.Second / 5)
 		}
+		result.Success = true
 		defer dbRef.Close()
-		return err
+		return result, err
 		}
 
 	// TODO taxonomyId + dimension
-	func (d MySQLDriver) Save3DPositions(positions []model.Position) (err error){
+	func (d MySQLDriver) Save3DPositions(positions []model.Position) (result model.Result, err error){
 	  	dbRef, err := d.OpenDB()
 		checkErr(err)
     	for _, elem := range positions {
 			dbRef.Exec("update " + elem.Table + " set x3D = \"" + elem.X + "\", y3D = \"" + elem.Y + "\", z3D = \"" + elem.Z + "\" where text = \"" + elem.ID + "\";");
 			//time.Sleep(time.Second / 5)
 		}
+		result.Success = true
 		defer dbRef.Close()
-		return err
+		return result, err
 		}
 
-	func (d MySQLDriver) SaveMajor3DPositions(positions []model.Position) (err error){
+	func (d MySQLDriver) SaveMajor3DPositions(positions []model.Position) (result model.Result, err error){
 	  	dbRef, err := d.OpenDB()
 		checkErr(err)
     	for _, elem := range positions {
 			dbRef.Exec("update " + elem.Table + " set xMajor3D = \"" + elem.X + "\", yMajor3D = \"" + elem.Y + "\", zMajor3D = \"" + elem.Z + "\" where text = \"" + elem.ID + "\";");
 			//time.Sleep(time.Second / 5)
 		}
+		result.Success = true
 		defer dbRef.Close()
-		return err
+		return result, err
 		}
 
 	func (d MySQLDriver) SaveEdgeBendPoints(taxonomyId int64, attributeSrc string, attributeDest string, edgeBendPoints string, dimension string) (result model.Result, err error){

@@ -23,7 +23,9 @@
 		  contentType: false,
 		  success: function ( result ) {
 	        if (!result || !result.response || !result.response.success) {
-	          handleErrorHelper('Cannot upload files to server.');
+	          var msg = 'Cannot upload files to server.';
+	          if (!!handleErrorHelper) handleErrorHelper(msg);
+	          else handleError(msg);
 	          return;
 	        }
 	        console.log('File upload successful.');
