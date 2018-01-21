@@ -79,6 +79,7 @@
   <div>
     <input type="button" class="btn btn-success" id="exportPNG" style="margin-top:5px;" value="Export PNG">
     <input type="button" class="btn btn-success" id="exportHTML" style="margin-top:5px;" value="Export HTML">
+    <input type="button" class="btn btn-success" id="exportJSON" style="margin-top:5px;" value="Export JSON">
     <input type="button" class="btn btn-primary" id="getEdges" value="Save positions" style="display:none;">
     <input type="button" class="btn btn-primary" id="merge" value="Merge nodes" style="display:none;">
   </div>
@@ -1586,6 +1587,9 @@
     });
     $('#exportHTML').unbind().click ( function () {
       exportHTML('TaxonomyRelations.html');
+    });
+    $('#exportJSON').unbind().click ( function () {
+      console.log("json: ", cy.json());
     });
     /*
     cy.$('.parent,.child').on('click', function ( e ) {
