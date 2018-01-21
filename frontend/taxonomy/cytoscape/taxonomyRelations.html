@@ -143,7 +143,8 @@
   var STATIC_CITATIONCOUNTS;
   var DYNAMIC_ARRAY = [];
 
-  const TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_ID = 1;
+  var TAXONOMY_ID;
 
   const ATTRIBUTE_URL = 'majorAttributes';
   const CITATION_COUNTS_URL = 'citationCountsIncludingChildren';
@@ -191,6 +192,26 @@
           'border-color': COLOR_BLUE,
           'color': COLOR_BLUE,
           'border-width': '5px',
+          label: 'data(id)',
+          'text-valign': 'top',
+          'text-halign': 'right',
+          'text-margin-x': '5px',
+          'text-margin-y': '-5px',
+          'compound-sizing-wrt-labels': 'include',
+          'min-height-bias-top': '100%',
+          'min-height-bias-bottom': '100%',
+          'min-width-bias-left': '100%',
+          'min-width-bias-right': '100%',
+          'overlay-opacity': 0
+        }
+      },
+      {
+        selector: '.interdimensional',
+        style: {
+          'background-color': 'white',
+          'border-color': COLOR_BLUE,
+          'color': COLOR_BLUE,
+          'border-width': '1px',
           label: 'data(id)',
           'text-valign': 'top',
           'text-halign': 'right',
@@ -262,6 +283,8 @@
         }
       }
     ];
+
+  const INTER_DIMENSIONAL_VIEW = 'Interdimensional view';
 
   var admin = false;
   var cy;
@@ -353,7 +376,7 @@
               dataType: 'json',
               contentType:'application/json',
               async: true,
-              data: JSON.stringify({previousName: previousName, newName: newAttributeName}),
+              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, previousName: previousName, newName: newAttributeName}),
               success: function ( result ) {
                 if (!result || !result.success) {
                   handleErrorHelper('Cannot rename attribute "' + previousName + '" to "' + newAttributeName + '". This name already exists.');
@@ -396,7 +419,7 @@
           dataType: 'json',
           contentType:'application/json',
           async: true,
-          data: JSON.stringify({text: text, major: (isMajor == 1) ? 0 : 1}),
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text: text, major: (isMajor == 1) ? 0 : 1}),
           success: function ( result ) {
             if (!result || !result.success) {
               handleErrorHelper('Error occurred while updating the major attribute of "' + text + '".');
@@ -422,7 +445,7 @@
         $('#defaultModalButton').prop('disabled', false);
         return;
       }
-      var request = {text: attributeName};
+      var request = {'taxonomy_id': TAXONOMY_ID, text: attributeName};
       if (isInterDimensional) {
         request.xMajor = '' + e.position.x;
         request.yMajor = '' + e.position.y;
@@ -480,7 +503,7 @@
         $('#defaultModalButton').prop('disabled', false);
         return;
       }
-      var request = {text: dimensionName};
+      var request = {'taxonomy_id': TAXONOMY_ID, text: dimensionName};
       function callback () {
         var position = ele.position();
         cy.add({data: { id: dimensionName, table: 'dimension' }, classes: 'dimension', position: {x: position.x + ele.width(), y: position.y + ele.height()} });
@@ -527,7 +550,7 @@
               dataType: 'json',
               contentType:'application/json',
               async: true,
-              data: JSON.stringify({text: selectedID}),
+              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text: selectedID}),
               success: function ( result ) {
                 if (!result || !result.success) {
                   if (selectedTable == 'dimension') handleErrorHelper('Error occurred while deleting dimension: "' + selectedID + '". Dimensions must be empty before they can be deleted.');
@@ -575,7 +598,7 @@
           dataType: 'json',
           contentType:'application/json',
           async: true,
-          data: JSON.stringify({text1: text1, text2: text2, dimension1: dimension1, dimension2: dimension2}),
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text1: text1, text2: text2, dimension1: dimension1, dimension2: dimension2}),
           success: function ( result ) {
             if (!result || !result.success) {
               handleErrorHelper('Error occurred while merging the attributes "' + text1 + '" and "' + text2 + '". Make sure that a node with the name "' + text1 + ':' + text2 + '" does not exist.');
@@ -720,7 +743,7 @@
           dataType: 'json',
           contentType:'application/json',
           async: true,
-          data: JSON.stringify({attribute: text}),
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text}),
           success: function ( citationsPerAttribute ) {
             if (!citationsPerAttribute) {
               handleErrorHelper('Cannot get citations of attribute "' + text + '" from DB.');
@@ -734,7 +757,7 @@
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
-                  data: JSON.stringify({attribute: text, citations: mappedCitations}),
+                  data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text, citations: mappedCitations}),
                   success: function ( result ) {
                     if (!result || !result.success) {
                       handleErrorHelper('Cannot update citation mapping of attribute: "' + text + '". Can only map papers to leaf nodes.');
@@ -795,7 +818,7 @@
                           contentType:'application/json',
                           async: true,
                           //json object to sent to the authentication url
-                          data: JSON.stringify({attribute: text}),
+                          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text}),
                           success: function ( attributeCoverage ) {
                             if (!attributeCoverage) {
                               handleErrorHelper('Error occurred while forking the attribute: ' + text);
@@ -817,7 +840,7 @@
                                         contentType:'application/json',
                                         async: true,
                                         //json object to sent to the authentication url
-                                        data: JSON.stringify({text: text, dimension: dimension, parents1: parentResults[0], parents2: parentResults[1], children1: childResults[0], children2: childResults[1], citations1: citationResults[0], citations2: citationResults[1]}),
+                                        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text: text, dimension: dimension, parents1: parentResults[0], parents2: parentResults[1], children1: childResults[0], children2: childResults[1], citations1: citationResults[0], citations2: citationResults[1]}),
                                         success: function ( result ) {
                                           if (!result || !result.success) {
                                             handleErrorHelper('Cannot fork attribute "' + text + '".');
@@ -974,7 +997,7 @@
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
-                  data: JSON.stringify({attribute: attribute}),
+                  data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute}),
                   success: function ( citationsPerAttribute ) {
                     if (!citationsPerAttribute) {
                       handleErrorHelper('Cannot get citations from DB for attribute: ' + attribute + '.');
@@ -1014,16 +1037,28 @@
     return qtipOptions;
   }
 
-  function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts ) {
-    console.log("dim: ", dimensions, attributes, relations, relationTypes, citationCounts);
-    console.log('creating json, sttr: ', attributes);
-    isInterDimensional = dimensions.length > 1;
+  function createJSON ( dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
+    //var items = [{data: { id: INTER_DIMENSIONAL_VIEW, table: 'dimension'}, classes: 'interdimensional'}];
     var items = [];
     var menuItems = [];
+    isInterDimensional = interDimensional;
+    var interDimensionalPosition = {x: $(window).width() / 2, y: $(window).height() / 2};
+    console.log("isInter: " + isInterDimensional)
     dimensions.forEach ( function ( dimension ) {
-      if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension' }, classes: 'dimension', position: {x: (dimension.xMajor - 0), y: (dimension.yMajor - 0)} });
-      else items.push({data: { id: dimension.text, table: 'dimension' }, classes: 'dimension' }); // , style: { events: 'no' }
+      if (dimension.text == INTER_DIMENSIONAL_VIEW) {
+        var classText = 'interdimensional';
+        var position = interDimensionalPosition;
+      } else var classText = 'dimension';
+      if (!!position) {
+        if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText, position: position});
+        else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText, position: position }); // , style: { events: 'no' }
+      } else {
+        if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText});
+        else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText }); // , style: { events: 'no' }
+      }
     });
+
+    console.log("dim: ", items)
     attributes.forEach ( function ( attribute ) {
       var x = attribute.x - 0;
       var y = attribute.y - 0;
@@ -1089,7 +1124,7 @@
       layout: {
         name: 'preset',
         zoom: 1,
-        pan: {x: !!isInterDimensional ? ($(document).width() - 300) : 0, y: !!isInterDimensional ? $(document).height() : 0}
+        pan: {x: !!isInterDimensional ? ($(window).width() - 300) : 0, y: !!isInterDimensional ? $(window).height() : 0}
         //rows: 3
       },
       style: STYLES
@@ -1409,6 +1444,12 @@
       expandCueImage: `data:image/png;base64,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`, //'zoomInIcon.png',
       collapseCueImage: `data:image/png;base64,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`// 'zoomOutIcon.png'
     });
+    cy.$('.interdimensional').on('expandcollapse.beforecollapse', function ( e ) {
+      e.preventDefault();
+    });
+    cy.$('.interdimensional').on('expandcollapse.beforeexpand', function ( e ) {
+      e.preventDefault();
+    });
     cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
       cy.$('.parent,.child').each ( function ( node, index ) {
         var api = node.qtip('api');
@@ -1421,6 +1462,7 @@
       cy.destroy();
       if (isInterDimensional) {
         var dimText = this.id();
+        console.log('showing dim: ' + dimText)
         displayedDimension = dimText;
         showDimension(dimText);
       } else {
@@ -1564,10 +1606,49 @@
   }
 
     function initPage () {
-      loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+      if (!IS_STATIC) {
+        var hash = window.location.hash.split('#').pop();
+        if (!!hash && hash != '') {
+          $.ajax
+            ({
+              type: "POST",
+              url: 'getTaxonomyID',
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              data: JSON.stringify({text: unescape(hash)}),
+              success: function ( taxonomy ) {
+                if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
+                  console.log('Cannot get taxonomy ID From DB.');
+                  TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                  window.location.href = window.location.origin + '/taxonomyRelations';
+                  return;
+                } else {
+                  var id = taxonomy.response[0].id - 0;
+                  console.log("taxonomy id: ", id)
+                  if (!isNaN(id)) TAXONOMY_ID = id;
+                  else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                }
+                loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+              }
+          });
+        } else {
+          TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+          loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+        }
+      } else {
+        TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+        loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+      }
     }
 
     $(document).ready( function () {
+      window.onhashchange = function () {
+        var hash = window.location.hash;
+        console.log("hash changed to: " + hash);
+        window.location.reload(false);
+      };
+
       $(this).on('contextmenu', function ( e ) {
         e.preventDefault();
       });

@@ -2,22 +2,39 @@ function validateEmail(email) {
   var re = /^[\w-']+(\.[\w-']+)*@([a-z0-9-]+(\.[a-z0-9-]+)*?\.[a-z]{2,6}|(\d{1,3}\.){3}\d{1,3})(:\d{4})?$/i;
   return re.test(email);}
 
-function getCookie(cname) {
-    var cookie =[], name = cname + '=', ca = document.cookie.split(';');
-    ca.forEach ( function (entry) {  if ( entry.split ( cname ).length > 1 ) {  
-      var cooki = entry.replace(name,'').trim(); 
-          cookie =  JSON.parse(cooki);  
-    } }); return cookie;
-  }
-
-  function setCookie(cname, cvalue) { 
-    var d = new Date();
-    d = new Date(d.getTime() + 1000*60*60*24*365 ); // one year 
-    document.cookie=cname + '=' + cvalue + ';expires=' + d.toGMTString(); 
-  }
-
-  function deleteCookie(cname) {
-    document.cookie = 'diamantUser=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  function addTaxonomy () {
+    if (!admin) return;
+    //if (!!cy) cy.elements().trigger('qtiphide');
+    $('#addTaxonomyModalText').val('');
+    $('#addTaxonomyModalText1').val('');
+    $('#addTaxonomyModalForm').on('submit', function ( evt ) {
+      evt.preventDefault();
+      var taxonomy = $('#addTaxonomyModalText1').val();
+      var dimension = $('#addTaxonomyModalText2').val();
+      $('#addTaxonomyModalButton').prop('disabled', true);
+      $.ajax
+        ({
+            type: "POST",
+            url: 'addTaxonomy',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            data: JSON.stringify({taxonomy: taxonomy, dimension: dimension}),
+            success: function ( result ) {
+              $('#addTaxonomyModalButton').prop('disabled', false);
+              if (!result || !result.success) {
+                var msg = 'Cannot add taxonomy: ' + taxonomy;
+                if (!!handleErrorHelper) handleErrorHelper(msg);
+                else handleError(msg);
+                return;
+              }
+              $('#addTaxonomy-modal').modal('hide');
+              var url = window.location.origin;
+              window.location.href = url + '/taxonomyRelations#' + taxonomy;
+            }
+        });
+    });
+    $('#addTaxonomy-modal').modal('show');
   }
 
   function getUser ( resolve, reject ){
@@ -50,7 +67,19 @@ function getCookie(cname) {
     $.get(navbarPath, function (data ) {
       $('.navbar').replaceWith(data);
       loadNavbarFields(user);
-      resolve();
+      if (!!user.admin) {
+        $('#taxonomyDropdown').html('');
+        $.get('taxonomy', function ( taxonomies ) {
+          console.log('tax: ', taxonomies)
+          if (!!taxonomies && !!taxonomies.response) {
+            taxonomies.response.forEach ( function ( taxonomy ) {
+              $('#taxonomyDropdown').append('<li><a href="#' + taxonomy.text + '" name="' + taxonomy.id + '">' + taxonomy.text + '</a></li>')
+            });
+          }
+          $('#taxonomyDropdown').append('<li><input type="button" class="btn btn-primary" id="addTaxonomy" value="Add Taxonomy" style="margin-left:20px;margin-top:10px;" onclick="addTaxonomy()"></li>');
+          resolve();
+        });
+      } else resolve();
     });
   }
 

@@ -92,7 +92,8 @@
   var STATIC_CITATIONCOUNTS;
   var DYNAMIC_ARRAY = [];
 
-  const TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_ID = 1;
+  var TAXONOMY_ID;
 
   const ATTRIBUTE_URL = 'attribute';
   const CITATION_COUNTS_URL = 'citationCounts';
@@ -292,7 +293,7 @@
         dataType: 'json',
         contentType:'application/json',
         async: true,
-        data: JSON.stringify({attribute: attribute}),
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute}),
         success: function ( citationsPerAttribute ) {
           if (!citationsPerAttribute) {
             handleError('Cannot get citations from DB for attribute: ' + attribute + '.');
@@ -420,7 +421,7 @@
       });
     });
     $('#exportHTML').unbind().click ( function () {
-      exportHTML('TaxonomyRelations.html');
+      exportHTML('CirclePacking.html');
     });
   }
 
@@ -449,8 +450,8 @@
     return traverseTree(json, remainingAttributes, parents, counter+1, useReferenceCount);
   }
 
-  function createJSON ( dimensions, attributes, relations, relationTypes, citationCounts ) {
-    isInterDimensional = dimensions.length > 1;
+  function createJSON ( dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
+    isInterDimensional = interDimensional;
     var useReferenceCount = $('#dataType').val() == 'referenceCount';
 
     var json = {'name': 'Taxonomy', 'children': [], 'citationCount': 0, 'referenceCountSum': 0};
@@ -517,6 +518,15 @@
     }
 
     $(document).ready( function () {
+      window.onhashchange = function () {
+        var hash = window.location.hash;
+        console.log("hash changed to: " + hash);
+        window.location.reload(false);
+      };
+      var hash = window.location.hash.split('#').pop() - 0;
+      if (!isNaN(hash)) TAXONOMY_ID = hash;
+      else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+
       var promises = [];
       var initPagePromise = new Promise ( function ( resolve, reject ) {
         initPage();

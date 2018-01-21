@@ -1,11 +1,14 @@
   function showDimension ( dimension ) {
+    console.log("showing dimension: " + dimension)
     var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
     var relationTypes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('RELATIONTYPES')];
     var citationCounts = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONCOUNTS')];
     if (dimension == 'Interdimensional view') {
+      var interDimensional = true;
       var attributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('MAJORATTRIBUTES')];
       var relations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('INTERDIMENSIONALRELATIONS')];
     } else {
+      var interDimensional = false;
       var index = -1;
       for ( var i = 0; i < dimensions.length; i++ ) {
         if (dimensions[i].text == dimension) {
@@ -18,7 +21,8 @@
       var relations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTERELATIONS')][index];
       dimensions = [{text: dimension}];
     }
-    createJSON(!!dimensions ? dimensions : [], !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
+    console.log("dimensions: ", dimensions)
+    createJSON(!!dimensions ? dimensions : [], interDimensional, !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
   }
 
     function loadTaxonomyData ( taxonomyID, attributeURL, citationCountsURL ) {
@@ -26,71 +30,85 @@
         var request = {'taxonomy_id': taxonomyID};
         var promises = [];
         var getDimensionsPromise = new Promise ( function ( resolve, reject ) {
-          $.get('dimension', function ( dimensionResults ) {
-            if (!dimensionResults || !dimensionResults.response) {
-              reject('Cannot get dimensions from DB.');
-              return;
-            }
-            dimensions = dimensionResults.response;
-            if (dimensions.length == 0) {
-              resolve({name: 'DIMENSIONDATA', value: []});
-              return;
-            }
-            var dimensionPromises = [];
-            for ( var i = 0; i < dimensions.length; i++ ) {
-              var getAttributesPerDimensionPromise = new Promise ( function ( resolve, reject ) {
-                var index = i;
-                var dimension = dimensions[i].text;
-                $.ajax
-                  ({
-                    type: "POST",
-                    url: 'attributesPerDimension',
-                    dataType: 'json',
-                    contentType:'application/json',
-                    async: true,
-                    data: JSON.stringify({'taxonomy_id': taxonomyID, dimension: dimension}),
-                    success: function ( attributesPerDimension ) {
-                      if (!attributesPerDimension || !attributesPerDimension.response) {
-                        reject('Cannot get attributes of dimension "' + dimension + '" from DB.')
-                        return;
-                      }
-                      resolve({name: 'ATTRIBUTESPERDIMENSION', value: {index: index, value: attributesPerDimension.response}});
-                    }
-                  });
-              });
-              dimensionPromises.push(getAttributesPerDimensionPromise);
-              var getRelationsPerDimensionPromise = new Promise ( function ( resolve, reject ) {
-                var index = i;
-                var dimension = dimensions[i].text;
-                $.ajax
-                  ({
-                      type: "POST",
-                      url: 'attributeRelations',
-                      dataType: 'json',
-                      contentType:'application/json',
-                      async: true,
-                      data: JSON.stringify({'taxonomy_id': taxonomyID, dimension: dimension}),
-                      success: function ( attributeRelations ) {
-                        if (!attributeRelations || !attributeRelations.response) {
-                          reject('Cannot get attribute relations of dimension "' + dimension + '" from DB.')
-                          return;
+          var request = {'taxonomy_id': taxonomyID};
+          $.ajax
+            ({
+              type: "POST",
+              url: 'dimension',
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              data: JSON.stringify(request),
+              success: function ( dimensionResults ) {
+                if (!dimensionResults) {
+                  reject('Cannot get dimensions from DB.');
+                  return;
+                }
+                if (!dimensionResults.response) dimensionResults.response = [];
+                dimensions = dimensionResults.response;
+                if (dimensions.length == 0) {
+                  resolve({name: 'DIMENSIONDATA', value: []});
+                  return;
+                }
+                var dimensionPromises = [];
+                for ( var i = 0; i < dimensions.length; i++ ) {
+                  var getAttributesPerDimensionPromise = new Promise ( function ( resolve, reject ) {
+                    var index = i;
+                    var dimension = dimensions[i].text;
+                    $.ajax
+                      ({
+                        type: "POST",
+                        url: 'attributesPerDimension',
+                        dataType: 'json',
+                        contentType:'application/json',
+                        async: true,
+                        data: JSON.stringify({'taxonomy_id': taxonomyID, dimension: dimension}),
+                        success: function ( attributesPerDimension ) {
+                          if (!attributesPerDimension) {
+                            reject('Cannot get attributes of dimension "' + dimension + '" from DB.')
+                            return;
+                          }
+                          if (!attributesPerDimension.response) attributesPerDimension.response = [];
+                          resolve({name: 'ATTRIBUTESPERDIMENSION', value: {index: index, value: attributesPerDimension.response}});
                         }
-                        resolve({name: 'ATTRIBUTERELATIONS', value: {index: index, value: attributeRelations.response}});
-                      }
+                      });
                   });
-              });
-              dimensionPromises.push(getRelationsPerDimensionPromise);
-            }
-            Promise.all(dimensionPromises)
-              .then ( function ( results ) {
-                resolve({name: 'DIMENSIONDATA', value: results});
-              }).catch ( function ( err ) {
-                reject(err);
-              });
+                  dimensionPromises.push(getAttributesPerDimensionPromise);
+                  var getRelationsPerDimensionPromise = new Promise ( function ( resolve, reject ) {
+                    var index = i;
+                    var dimension = dimensions[i].text;
+                    $.ajax
+                      ({
+                          type: "POST",
+                          url: 'attributeRelations',
+                          dataType: 'json',
+                          contentType:'application/json',
+                          async: true,
+                          data: JSON.stringify({'taxonomy_id': taxonomyID, dimension: dimension}),
+                          success: function ( attributeRelations ) {
+                            if (!attributeRelations) {
+                              reject('Cannot get attribute relations of dimension "' + dimension + '" from DB.')
+                              return;
+                            }
+                            if (!attributeRelations.response) attributeRelations.response = [];
+                            resolve({name: 'ATTRIBUTERELATIONS', value: {index: index, value: attributeRelations.response}});
+                          }
+                      });
+                  });
+                  dimensionPromises.push(getRelationsPerDimensionPromise);
+                }
+                Promise.all(dimensionPromises)
+                  .then ( function ( results ) {
+                    resolve({name: 'DIMENSIONDATA', value: results});
+                  }).catch ( function ( err ) {
+                    reject(err);
+                  });
+              }
           });
         });
         promises.push(getDimensionsPromise);
         var getMajorAttributesPromise = new Promise ( function ( resolve, reject ) {
+          var request = {'taxonomy_id': taxonomyID};
           $.ajax
             ({
                 type: "POST",
@@ -100,16 +118,18 @@
                 async: true,
                 data: JSON.stringify(request),
                 success: function ( majorAttributes ) {
-                  if (!majorAttributes || !majorAttributes.response) {
+                  if (!majorAttributes) {
                     reject('Cannot get major attributes from DB.')
                     return;
                   }
+                  if (!majorAttributes.response) majorAttributes.response = [];
                   resolve({name: 'MAJORATTRIBUTES', value: majorAttributes.response});
                 }
             });
         });
         promises.push(getMajorAttributesPromise);
         var getInterdimensionalRelationsPromise = new Promise ( function ( resolve, reject ) {
+          var request = {'taxonomy_id': taxonomyID};
           $.ajax
           ({
               type: "POST",
@@ -119,10 +139,11 @@
               async: true,
               data: JSON.stringify(request),
               success: function ( interdimensionalRelations ) {
-                if (!interdimensionalRelations || !interdimensionalRelations.response) {
+                if (!interdimensionalRelations) {
                   reject('Cannot get interdimensional relations from DB.');
                   return;
                 }
+                if (!interdimensionalRelations.response) interdimensionalRelations.response = [];
                 resolve({name: 'INTERDIMENSIONALRELATIONS', value: interdimensionalRelations.response});
               }
           });
@@ -130,23 +151,34 @@
         promises.push(getInterdimensionalRelationsPromise);
         var getRelationTypesPromise = new Promise ( function ( resolve, reject ) {
           $.get('relationTypes', function ( relationTypes ) {
-            if (!relationTypes || !relationTypes.response) {
+            if (!relationTypes) {
               reject('Cannot get relation types from DB.');
               return;
             }
+            if (!relationTypes.response) relationTypes.response = [];
             resolve({name: 'RELATIONTYPES', value: relationTypes.response});
           });
         });
         promises.push(getRelationTypesPromise);
         var getCitationCountsPromise = new Promise ( function ( resolve, reject ) {
-          $.get(citationCountsURL, function ( citationCounts ) {
-            if (!citationCounts || !citationCounts.response) {
-              reject('Cannot get citation counts from DB.');
-              return;
-            }
-            console.log("cit: ", citationCounts.response)
-            resolve({name: 'CITATIONCOUNTS', value: citationCounts.response});
-          });
+          var request = {'taxonomy_id': taxonomyID};
+          $.ajax
+            ({
+                type: "POST",
+                url: citationCountsURL,
+                dataType: 'json',
+                contentType:'application/json',
+                async: true,
+                data: JSON.stringify(request),
+                success: function ( citationCounts ) {
+                  if (!citationCounts) {
+                    reject('Cannot get citation counts from DB.')
+                    return;
+                  }
+                  if (!citationCounts.response) citationCounts.response = [];
+                  resolve({name: 'CITATIONCOUNTS', value: citationCounts.response});
+                }
+            });
         });
         promises.push(getCitationCountsPromise);
         Promise.all(promises)

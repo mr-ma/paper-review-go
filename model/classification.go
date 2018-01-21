@@ -1,8 +1,8 @@
 package model
 
 type Taxonomy struct {
-	ID             int       `json:"id"`
-	Text      string    `json:"text"`
+	ID int `json:"id"`
+	Text string    `json:"text"`
   Dimensions []Dimension `json:"dimensions"`
 }
 
@@ -73,6 +73,7 @@ type CitationRequest struct {
 }
 
 type AttributeRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Text string `json:"text"`
   X string `json:"x"`
   Y string `json:"y"`
@@ -83,6 +84,7 @@ type AttributeRequest struct {
 }
 
 type DimensionRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Text string `json:"text"`
 }
 
@@ -92,6 +94,7 @@ type CorrelationRequest struct {
 }
 
 type RenameAttributeRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   PreviousName string `json:"previousName"`
   NewName string `json:"newName"`
 }
@@ -106,8 +109,17 @@ type AttributeRelationsRequest struct {
   MaxValue int64 `json:"maxValue"`
 }
 
-type AttributesRequest struct {
+type TaxonomyRequest struct {
   TaxonomyID int64 `json:"taxonomy_id"`
+}
+
+type TaxonomyIDRequest struct {
+  Text string `json:"text"`
+}
+
+type AddTaxonomyRequest struct {
+  Taxonomy string `json:"taxonomy"`
+  Dimension string `json:"dimension"`
 }
 
 type AllChildrenAttributesRequest struct {
@@ -116,6 +128,7 @@ type AllChildrenAttributesRequest struct {
 }
 
 type SavePositionsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Positions []Position `json:"positions"`
 }
 
@@ -128,29 +141,35 @@ type SaveEdgeBendPointsRequest struct {
 }
 
 type CitationsPerAttributeRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Attribute string `json:"attribute"`
 }
 
 type UpdateCitationMappingRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Attribute string `json:"attribute"`
   Citations []Paper `json:"citations"`
 }
 
 type UpdateCitationMappingsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Mappings []CitationMapping `json:"mappings"`
 }
 
 type SharedPapersRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Text1 string `json:"text1"`
   Text2 string `json:"text2"`
   Text3 string `json:"text3"`
 }
 
 type AttributeDetailsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Text string `json:"text"`
 }
 
 type MergeAttributesRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Text1 string  `json:"text1"`
   Text2 string  `json:"text2"`
   Dimension1 string `json:"dimension1"`
@@ -158,6 +177,7 @@ type MergeAttributesRequest struct {
 }
 
 type ForkAttributeRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Text string `json:"text"`
   Dimension string `json:"dimension"`
   Parents1 []AttributeRelation `json:"parents1"`
@@ -178,6 +198,7 @@ type UpdateReferenceCountsRequest struct {
 }
 
 type UpdateMajorRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Text string `json:"text"`
   Major int `json:"major"`
 }

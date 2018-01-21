@@ -591,13 +591,13 @@ function renderMatrixHelper () {
     var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
     var showChildAttributes = $('#showChildAttributes').is(':checked');
     switch(parent1) {
-      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'leafAttribute'; break;
+      case 'All attributes': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttribute'; break;
       case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent1; break;
       default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
     }
     switch(parent2) {
-      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'leafAttribute'; break;
+      case 'All attributes': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttribute'; break;
       case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = 'attributeCoverage'; maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent2; break;
       default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
@@ -694,7 +694,7 @@ function initPage () {
           $('#parents2-selectized').off('focus').on('focus', function () {
             $(this).trigger({type: 'keydown', keyCode: 8});
           });
-          var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'attribute', attributeUrlY: 'attribute', requestX: {'taxonomy_id': TAXONOMY_ID}, requestY: {'taxonomy_id': TAXONOMY_ID}};
+          var options = {ajaxTypeX: 'POST', ajaxTypeY: 'POST', attributeUrlX: 'attribute', attributeUrlY: 'attribute', requestX: {'taxonomy_id': TAXONOMY_ID}, requestY: {'taxonomy_id': TAXONOMY_ID}};
           var correlationURLObj = getCorrelationOptions();
           var correlationURL = correlationURLObj.url;
           var maxValue = correlationURLObj.maxValue;

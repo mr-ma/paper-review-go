@@ -409,7 +409,8 @@ text.active {
   var STATIC_CORRELATIONS;
   var DYNAMIC_ARRAY = [];
 
-  const TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_ID = 1;
+  var TAXONOMY_ID;
 
   var admin = false;
   var totalNumberOfCitations, maxReferenceCount;
@@ -2868,7 +2869,7 @@ text.active {
           dataType: 'json',
           contentType:'application/json',
           async: true,
-          data: JSON.stringify({mappings: mappings}),
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, mappings: mappings}),
           success: function ( result ) {
             if (!result || !result.success) {
               handleError('Cannot save citation mappings.');
@@ -3005,10 +3006,11 @@ text.active {
             async: true,
             data: JSON.stringify(options.requestX),
             success: function ( attributesResultX) {
-              if (!attributesResultX || !attributesResultX.response) {
+              if (!attributesResultX) {
                 handleError('Cannot get attributes from DB.');
                 return;
               }
+              if (!attributesResultX.response) attributesResultX.response = [];
               DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')] = attributesResultX;
               $.ajax
                 ({
@@ -3019,10 +3021,11 @@ text.active {
                     async: true,
                     data: JSON.stringify(options.requestY),
                     success: function ( attributesResultY) {
-                      if (!attributesResultY || !attributesResultY.response) {
+                      if (!attributesResultY) {
                         handleError('Cannot get attributes from DB.');
                         return;
                       }
+                      if (!attributesResultY.response) attributesResultY.response = [];
                       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = attributesResultY;
                       callback(attributesResultX, attributesResultY, correlations, maxValue, onClickURL);
                     }
@@ -3035,13 +3038,14 @@ text.active {
     }
 
 function renderMatrixHelper () {
+    var request = {'taxonomy_id': TAXONOMY_ID};
     var parent1 = $('#parents1').val();
     var parent2 = $('#parents2').val();
     if (parent1 == '') parent1 = 'All attributes';
     if (parent2 == '') parent2 = 'All attributes';
     var ajaxTypeX, ajaxTypeY, attributeUrlX, attributeUrlY;
-    var requestX = {'taxonomy_id': TAXONOMY_ID};
-    var requestY = {'taxonomy_id': TAXONOMY_ID};
+    var requestX = request;
+    var requestY = request;
     var correlationURLObj = getCorrelationOptions();
     var correlationURL = correlationURLObj.url;
     var maxValue = correlationURLObj.maxValue;
@@ -3049,13 +3053,13 @@ function renderMatrixHelper () {
     var showChildAttributes = $('#showChildAttributes').is(':checked');
     var dataTypeIsReferenceCount = $('#dataType')[0].value == 'referenceCount';
     switch(parent1) {
-      case 'All attributes': ajaxTypeX = 'GET'; attributeUrlX = 'leafAttribute'; break;
+      case 'All attributes': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttribute'; break;
       case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent1; break;
       default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
     }
     switch(parent2) {
-      case 'All attributes': ajaxTypeY = 'GET'; attributeUrlY = 'leafAttribute'; break;
+      case 'All attributes': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttribute'; break;
       case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent2; break;
       default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
@@ -3075,7 +3079,7 @@ function getCorrelationOptions () {
   return {url: url, maxValue: maxValue};
 }
 
-function initFields ( citations, citationCount, dimensions, allAttributes, correlations, maxValue ) {
+function initFields ( request, citations, citationCount, dimensions, allAttributes, correlations, maxValue ) {
   dimensions.response.sort( function ( a, b ) {
     return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
   });
@@ -3127,11 +3131,129 @@ function initFields ( citations, citationCount, dimensions, allAttributes, corre
   $('#parents2-selectized').off('focus').on('focus', function () {
     $(this).trigger({type: 'keydown', keyCode: 8});
   });
-  var options = {ajaxTypeX: 'GET', ajaxTypeY: 'GET', attributeUrlX: 'leafAttribute', attributeUrlY: 'leafAttribute', requestX: {'taxonomy_id': TAXONOMY_ID}, requestY: {'taxonomy_id': TAXONOMY_ID}};
+  var options = {ajaxTypeX: 'POST', ajaxTypeY: 'POST', attributeUrlX: 'leafAttribute', attributeUrlY: 'leafAttribute', requestX: request, requestY: request};
   var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
 
   loadAttributes(true, correlations, options, maxValue, onClickURL, showMatrix);
   $('#showChildAttributes, #includeChildAttributes, #dataType').unbind().on('change', renderMatrix);
+}
+
+function loadData ( correlationURL, maxValue ) {
+  var request = {'taxonomy_id': TAXONOMY_ID};
+  var promises = [];
+  var getCitationsPromise = new Promise ( function ( resolve, reject ) {
+    $.get('citation', function ( citations ) {
+      if (!citations) {
+        reject('Cannot get citations from DB.');
+        return;
+      }
+      if (!citations.response) citations.response = [];
+      resolve({name: 'CITATIONS', value: citations});
+    });
+  });
+  promises.push(getCitationsPromise);
+  var getCitationCountPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: 'citationCount',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( citationCount ) {
+          if (!citationCount || !citationCount.response || citationCount.response.length == 0) {
+            reject('Cannot get number of papers from DB.')
+            return;
+          }
+          resolve({name: 'CITATIONCOUNT', value: citationCount});
+        }
+      });
+  });
+  promises.push(getCitationCountPromise);
+  var getDimensionsPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: 'dimension',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( dimensions ) {
+          if (!dimensions) {
+            reject('Cannot get dimensions From DB.');
+            return;
+          }
+          if (!dimensions.response) dimensions.response = [];
+          resolve({name: 'DIMENSIONS', value: dimensions});
+        }
+    });
+  });
+  promises.push(getDimensionsPromise);
+  var getAttributesPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: 'attribute',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( allAttributes ) {
+          if (!allAttributes) {
+            reject('Cannot get attributes from DB.');
+            return;
+          }
+          if (!allAttributes.response) allAttributes.response = [];
+          resolve({name: 'ALLATTRIBUTES', value: allAttributes});
+        }
+    });
+  });
+  promises.push(getAttributesPromise);
+  var getCorrelationsPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: correlationURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( correlations ) {
+          if (!correlations) {
+            reject('Cannot get correlation data from DB.');
+            return;
+          }
+          if (!correlations.response) correlations.response = [];
+          resolve({name: 'CORRELATIONS', value: correlations});
+        }
+    });
+  });
+  promises.push(getCorrelationsPromise);
+  Promise.all(promises)
+    .then ( function ( results ) {
+      results.forEach ( function ( result ) {
+        if (result.name == 'CITATIONCOUNT') {
+          totalNumberOfCitations = result.value.response[0].citationCount;
+          maxReferenceCount = result.value.response[0].maxReferenceCount;
+        }
+        DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
+      });
+      var citations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONS')];
+      var citationCount = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONCOUNT')];
+      var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
+      var allAttributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ALLATTRIBUTES')];
+      var correlations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')];
+      initFields(request, citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+    }).catch ( function ( err ) {
+      console.log('Error loading data from DB: ', err);
+      handleError(err);
+    });
 }
 
 function initPage () {
@@ -3140,86 +3262,37 @@ function initPage () {
   var correlationURL = correlationURLObj.url;
   var maxValue = correlationURLObj.maxValue;
   if (!IS_STATIC) {
-    var promises = [];
-    var getCitationsPromise = new Promise ( function ( resolve, reject ) {
-      $.get('citation', function ( citations ) {
-        if (!citations || !citations.response) {
-          reject('Cannot get citations from DB.');
-          return;
-        }
-        resolve({name: 'CITATIONS', value: citations});
-      });
-    });
-    promises.push(getCitationsPromise);
-    var getCitationCountPromise = new Promise ( function ( resolve, reject ) {
-      $.get('citationCount', function ( citationCount ) {
-        if (!citationCount || !citationCount.response || citationCount.response.length == 0) {
-          reject('Cannot get number of papers from DB.');
-          return;
-        }
-        resolve({name: 'CITATIONCOUNT', value: citationCount});
-      });
-    });
-    promises.push(getCitationCountPromise);
-    var getDimensionsPromise = new Promise ( function ( resolve, reject ) {
-      $.get('dimension', function ( dimensions ) {
-        if (!dimensions || !dimensions.response) {
-          reject('Cannot get dimensions From DB.');
-          return;
-        }
-        resolve({name: 'DIMENSIONS', value: dimensions});
-      });
-    });
-    promises.push(getDimensionsPromise);
-    var getAttributesPromise = new Promise ( function ( resolve, reject ) {
+    var hash = window.location.hash.split('#').pop();
+    if (!!hash && hash != '') {
       $.ajax
         ({
           type: "POST",
-          url: 'attribute',
+          url: 'getTaxonomyID',
           dataType: 'json',
           contentType:'application/json',
           async: true,
-          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
-          success: function ( allAttributes ) {
-            if (!allAttributes || !allAttributes.response) {
-              reject('Cannot get attributes from DB.');
+          data: JSON.stringify({text: unescape(hash)}),
+          success: function ( taxonomy ) {
+            if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
+              console.log('Cannot get taxonomy ID From DB.');
+              TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+              window.location.href = window.location.origin + '/correlationMatrix2D';
               return;
+            } else {
+              var id = taxonomy.response[0].id - 0;
+              console.log("taxonomy id: ", id)
+              if (!isNaN(id)) TAXONOMY_ID = id;
+              else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
             }
-            resolve({name: 'ALLATTRIBUTES', value: allAttributes});
+            loadData(correlationURL, maxValue);
           }
       });
-    });
-    promises.push(getAttributesPromise);
-    var getCorrelationsPromise = new Promise ( function ( resolve, reject ) {
-      $.get(correlationURL, function ( correlations ) {
-        if (!correlations || !correlations.response) {
-          reject('Cannot get correlation data from DB.');
-          return;
-        }
-        resolve({name: 'CORRELATIONS', value: correlations});
-      });
-    });
-    promises.push(getCorrelationsPromise);
-    Promise.all(promises)
-      .then ( function ( results ) {
-        results.forEach ( function ( result ) {
-          if (result.name == 'CITATIONCOUNT') {
-            totalNumberOfCitations = result.value.response[0].citationCount;
-            maxReferenceCount = result.value.response[0].maxReferenceCount;
-          }
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
-        });
-        var citations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONS')];
-        var citationCount = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONCOUNT')];
-        var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
-        var allAttributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ALLATTRIBUTES')];
-        var correlations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')];
-        initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
-      }).catch ( function ( err ) {
-        console.log('Error loading data from DB: ', err);
-        handleError(err);
-      });
+    } else {
+      TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+      loadData(correlationURL, maxValue);
+    }
   } else {
+    TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
     try {
       var citations = JSON.parse(STATIC_CITATIONS);
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONS')] = citations;
@@ -3233,7 +3306,7 @@ function initPage () {
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = JSON.parse(STATIC_ATTRIBUTESY);
       var correlations = JSON.parse(STATIC_CORRELATIONS);
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')] = correlations;
-      initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+      initFields(request, citations, citationCount, dimensions, allAttributes, correlations, maxValue);
     } catch ( err ) {
       handleErrorHelper('Error parsing STATIC data.');
     }
@@ -3241,6 +3314,12 @@ function initPage () {
 }
 
 $(document).ready( function () {
+  window.onhashchange = function () {
+    var hash = window.location.hash;
+    console.log("hash changed to: " + hash);
+    window.location.reload(false);
+  };
+
   $(this).on('contextmenu', function ( e ) {
     e.preventDefault();
   });
