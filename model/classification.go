@@ -113,6 +113,11 @@ type TaxonomyRequest struct {
   TaxonomyID int64 `json:"taxonomy_id"`
 }
 
+type TaxonomyPermissionsRequest struct {
+  Email string `json:"email"`
+  Permissions string `json:"permissions"`
+}
+
 type TaxonomyIDRequest struct {
   Text string `json:"text"`
 }
@@ -272,6 +277,7 @@ type Result struct {
 
 type User struct {
   Email string `json:"email"`
+  Taxonomies string `json:"taxonomies"`
   Admin int `json:"admin"`
 }
 
@@ -291,7 +297,7 @@ type UpdateUserRequest struct {
   Admin int `json:"admin"`
 }
 
-type DeleteUserRequest struct {
+type UserRequest struct {
   Email string `json:"email"`
 }
 

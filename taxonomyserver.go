@@ -157,8 +157,13 @@ func main() {
 		    if err != nil {
 		        adminInt = 0
 		    }
+		    var taxonomies string
+		    taxonomies, err := session.GetString("taxonomies")
+		    if err != nil {
+		        taxonomies = ""
+		    }
 		    userResult := model.LoginResult{Success: true}
-		    userResult.User = model.User{Email: email, Admin: adminInt}
+		    userResult.User = model.User{Email: email, Admin: adminInt, Taxonomies: taxonomies}
 			output, err := json.Marshal(userResult)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
@@ -172,7 +177,6 @@ func main() {
 		loginResult, err := driver.Login(loginRequest.Email, loginRequest.Password)
 		checkErr(err)
 		if loginResult.Success {
-			fmt.Println("result: email: " + loginResult.User.Email + ", admin: " + strconv.Itoa(loginResult.User.Admin))
 			/*
 			session, _ := store.Get(r, "session")
 		    session.Values["email"] = loginResult.User.Email
@@ -190,6 +194,10 @@ func main() {
 		        http.Error(w, err.Error(), 500)
 		    }
 		    err = session.PutString(w, "admin", strconv.Itoa(loginResult.User.Admin))
+		    if err != nil {
+		        http.Error(w, err.Error(), 500)
+		    }
+		    err = session.PutString(w, "taxonomies", loginResult.User.Taxonomies)
 		    if err != nil {
 		        http.Error(w, err.Error(), 500)
 		    }
@@ -271,81 +279,91 @@ func main() {
 	mux.HandleFunc("POST", "/deleteUser", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, deleteUserHandler)
 	})
+	mux.HandleFunc("POST", "/taxonomyPermissions", func(w http.ResponseWriter, r *http.Request) {
+		checkAdmin(w, r, getTaxonomyPermissionsHandler)
+	})
+	mux.HandleFunc("POST", "/updateTaxonomyPermissions", func(w http.ResponseWriter, r *http.Request) {
+		checkAdmin(w, r, getUpdateTaxonomyPermissionsHandler)
+	})
 	mux.HandleFunc("POST", "/addTaxonomy", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getAddTaxonomyHandler)
 	})
 	mux.HandleFunc("POST", "/removeTaxonomy", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getRemoveTaxonomyHandler)
 	})
-	mux.HandleFunc("POST", "/savePositions", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, savePositionsHandler)
-	})
-	mux.HandleFunc("POST", "/saveMajorPositions", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, saveMajorPositionsHandler)
-	})
-	mux.HandleFunc("POST", "/save3DPositions", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, save3DPositionsHandler)
-	})
-	mux.HandleFunc("POST", "/saveMajor3DPositions", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, saveMajor3DPositionsHandler)
-	})
-	mux.HandleFunc("POST", "/saveEdgeBendPoints", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, saveEdgeBendPointsHandler)
-	})
-	mux.HandleFunc("POST", "/addAttribute", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, addAttributeHandler)
-	})
-	mux.HandleFunc("POST", "/addDimension", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, addDimensionHandler)
-	})
 	mux.HandleFunc("POST", "/deleteCitation", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, deleteCitationHandler)
 	})
+	mux.HandleFunc("POST", "/savePositions", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, savePositionsHandler)
+	})
+	mux.HandleFunc("POST", "/saveMajorPositions", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, saveMajorPositionsHandler)
+	})
+	mux.HandleFunc("POST", "/save3DPositions", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, save3DPositionsHandler)
+	})
+	mux.HandleFunc("POST", "/saveMajor3DPositions", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, saveMajor3DPositionsHandler)
+	})
+	mux.HandleFunc("POST", "/saveEdgeBendPoints", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, saveEdgeBendPointsHandler)
+	})
+	mux.HandleFunc("POST", "/addAttribute", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, addAttributeHandler)
+	})
+	mux.HandleFunc("POST", "/addDimension", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, addDimensionHandler)
+	})
 	mux.HandleFunc("POST", "/removeAttribute", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, removeAttributeHandler)
+		checkTaxonomyPermissions(w, r, removeAttributeHandler)
 	})
 	mux.HandleFunc("POST", "/removeDimension", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, removeDimensionHandler)
+		checkTaxonomyPermissions(w, r, removeDimensionHandler)
 	})
 	mux.HandleFunc("POST", "/renameAttribute", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, renameAttributeHandler)
+		checkTaxonomyPermissions(w, r, renameAttributeHandler)
 	})
 	mux.HandleFunc("POST", "/renameDimension", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, renameDimensionHandler)
+		checkTaxonomyPermissions(w, r, renameDimensionHandler)
 	})
 	mux.HandleFunc("POST", "/addTaxonomyRelation", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, addTaxonomyRelationHandler)
+		checkTaxonomyPermissions(w, r, addTaxonomyRelationHandler)
 	})
 	mux.HandleFunc("POST", "/removeTaxonomyRelation", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, removeTaxonomyRelationHandler)
+		checkTaxonomyPermissions(w, r, removeTaxonomyRelationHandler)
 	})
 	mux.HandleFunc("POST", "/updateTaxonomyRelationType", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, updateTaxonomyRelationTypeHandler)
+		checkTaxonomyPermissions(w, r, updateTaxonomyRelationTypeHandler)
 	})
 	mux.HandleFunc("POST", "/updateTaxonomyRelationAnnotation", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, updateTaxonomyRelationAnnotationHandler)
+		checkTaxonomyPermissions(w, r, updateTaxonomyRelationAnnotationHandler)
 	})
 	mux.HandleFunc("POST", "/updateMajor", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, getUpdateMajorHandler)
+		checkTaxonomyPermissions(w, r, getUpdateMajorHandler)
 	})
 	mux.HandleFunc("POST", "/updateCitationMapping", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, getUpdateCitationMappingHandler)
+		checkTaxonomyPermissions(w, r, getUpdateCitationMappingHandler)
 	})
 	mux.HandleFunc("POST", "/updateCitationMappings", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, getUpdateCitationMappingsHandler)
+		checkTaxonomyPermissions(w, r, getUpdateCitationMappingsHandler)
 	})
 	mux.HandleFunc("POST", "/updateCitationReferenceCounts", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, getUpdateCitationReferenceCountsHandler)
+		checkTaxonomyPermissions(w, r, getUpdateCitationReferenceCountsHandler)
 	})
 	mux.HandleFunc("POST", "/mergeAttributes", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, getMergeAttributesHandler)
+		checkTaxonomyPermissions(w, r, getMergeAttributesHandler)
 	})
 	mux.HandleFunc("POST", "/forkAttribute", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, getForkAttributeHandler)
+		checkTaxonomyPermissions(w, r, getForkAttributeHandler)
 	})
 
 	mux.HandleFunc("GET", "/error.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/error.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/tables.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/tables.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/users.js", func(w http.ResponseWriter, r *http.Request) {
@@ -484,6 +502,15 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/bootstrap-waitingfor.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/bootstrap-waitingfor.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/bootstrap-table.css", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/css/bootstrap-table.css")
+		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/bootstrap-table.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/bootstrap-table.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/selectize.min.js", func(w http.ResponseWriter, r *http.Request) {
@@ -896,6 +923,77 @@ func checkAdmin (w http.ResponseWriter, r *http.Request, callback fn) {
 	w.Write(output)
 }
 
+func contains(s []int, e int) bool {
+    for _, a := range s {
+        if a == e {
+            return true
+        }
+    }
+    return false
+}
+
+func checkTaxonomyPermissions(w http.ResponseWriter, r *http.Request, callback fn) {
+	session := sessionManager.Load(r)
+	var admin int
+	adminStr, err := session.GetString("admin")
+	if err != nil {
+		admin = 0
+	} else {
+		admin, err = strconv.Atoi(adminStr)
+		if err != nil {
+			admin = 0
+		}
+	}
+	if admin == 1 {
+		callback(w, r)
+		return
+	}
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    body, err := ioutil.ReadAll(r.Body)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	var objmap map[string]*json.RawMessage
+	err = json.Unmarshal(body, &objmap)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	var taxonomyId64 int64
+	err = json.Unmarshal(*objmap["taxonomy_id"], &taxonomyId64)
+	if err == nil {
+		taxonomyId := int(taxonomyId64)
+		taxonomyIDs := []int{}
+		taxonomyString, err := session.GetString("taxonomies")
+		if err == nil && taxonomyString != "" {
+			taxonomyArray := strings.Split(taxonomyString, ",")
+			for _, elem := range taxonomyArray {
+				id, err := strconv.Atoi(elem)
+				if err == nil {
+					taxonomyIDs = append(taxonomyIDs, id)
+				}
+			}
+		}
+		if len(taxonomyIDs) > 0 && contains(taxonomyIDs, taxonomyId) {
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			callback(w, r)
+			return
+		}
+	}
+	result := []int{}
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
+
 func getUsersHandler(w http.ResponseWriter, r *http.Request) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	users, err := driver.GetUsers()
@@ -963,7 +1061,7 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteUserHandler(w http.ResponseWriter, r *http.Request) {
-    var userRequest model.DeleteUserRequest
+    var userRequest model.UserRequest
     if r.Body == nil {
         http.Error(w, "Please send a request body", 400)
         return
@@ -998,6 +1096,52 @@ func getTaxonomyIDHandler(u *url.URL, h http.Header, taxonomyIDRequest *model.Ta
 	checkErr(err)
 	return http.StatusOK, nil,
 		&MyResponse{"0", len(taxonomyID), taxonomyID}, nil
+}
+
+func getTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
+    var userRequest model.UserRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&userRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.GetTaxonomyPermissions(userRequest.Email)
+	checkErr(err)
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
+
+func getUpdateTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
+    var taxonomyPermissionsRequest model.TaxonomyPermissionsRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&taxonomyPermissionsRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.UpdateTaxonomyPermissions(taxonomyPermissionsRequest.Email, taxonomyPermissionsRequest.Permissions)
+	checkErr(err)
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
 }
 
 func getAddTaxonomyHandler(w http.ResponseWriter, r *http.Request) {

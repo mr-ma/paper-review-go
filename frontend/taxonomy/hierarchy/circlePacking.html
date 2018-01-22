@@ -113,7 +113,6 @@
       .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
       .interpolate(d3.interpolateHcl);
 
-  var admin = false;
   var isInterDimensional = true;
   var displayedDimension;
 
@@ -537,9 +536,10 @@
         var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
           initUserManagement(resolve, reject);
         }).then ( function ( user ) {
+/*
           if (!!user && user.admin == 1) {
-            admin = true;
           }
+*/
           resolve(user);
         }).catch ( function ( err ) {
           reject(err);

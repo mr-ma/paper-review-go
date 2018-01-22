@@ -287,7 +287,6 @@
 
   const INTER_DIMENSIONAL_VIEW = 'Interdimensional view';
 
-  var admin = false;
   var cy;
   var isInterDimensional = true;
   var displayedDimension;
@@ -1656,35 +1655,24 @@
       $(this).on('contextmenu', function ( e ) {
         e.preventDefault();
       });
-      var promises = [];
-      var initPagePromise = new Promise ( function ( resolve, reject ) {
+      if (!!IS_STATIC) {
+        loadBanner('STATIC');
         initPage();
-        resolve();
+        return;
+      }
+      var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+        initUserManagement(resolve, reject);
+      }).then ( function ( user ) {
+        if (!!user && user.admin == 1) {
+          $('#getEdges').show();
+          $('#merge').show();
+        }
+        initPage();
+      }).catch ( function ( err ) {
+        console.log('Error loading user: ', err);
+        handleError(err);
+        initPage();
       });
-      promises.push(initPagePromise);
-      var initUserPromise = new Promise( function ( resolve, reject ) {
-        var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
-          initUserManagement(resolve, reject);
-        }).then ( function ( user ) {
-          if (!!user && user.admin == 1) {
-            admin = true;
-            $('#getEdges').show();
-            $('#merge').show();
-          }
-          resolve(user);
-        }).catch ( function ( err ) {
-          reject(err);
-        });
-      });
-      promises.push(initUserPromise);
-      Promise.all(promises)
-        .then ( function ( results ) {
-          console.log('Page is loaded.');
-        }).catch ( function ( err ) {
-          console.log('Error: ', err);
-          handleError(err);
-          initPage();
-        });
     });
 	</script>
 <!-- main script end -->

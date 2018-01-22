@@ -23,6 +23,8 @@ type ClassificationDriver interface {
 	ExportCorrelations([]model.Attribute, int64) ([]model.Paper, error)
 	GetAllTaxonomies() ([]model.Taxonomy, error)
 	GetTaxonomyID(string) ([]model.Taxonomy, error)
+	GetTaxonomyPermissions(string) ([]model.Taxonomy, error)
+	UpdateTaxonomyPermissions(string, string) (model.Result, error)
 	AddTaxonomy(string, string) (model.Result, error)
 	RemoveTaxonomy(int64) (model.Result, error)
 	GetAttributesPerDimension(int64, string) ([]model.Attribute, error)
@@ -103,14 +105,14 @@ func (d MySQLDriver) Login(email string, password string) (result model.LoginRes
 	dbRef, err := d.OpenDB()
 	defer dbRef.Close()
 	checkErr(err)
-	db, stmt, err := d.Query("SELECT email, admin FROM user WHERE email = \"" + email + "\" AND password = \"" + password + "\";")
+	db, stmt, err := d.Query("SELECT email, taxonomies, admin FROM user WHERE email = \"" + email + "\" AND password = \"" + password + "\";")
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query()
 	checkErr(err)
 	if rows.Next() {
 		a := model.User{}
-		rows.Scan(&a.Email,&a.Admin)
+		rows.Scan(&a.Email,&a.Taxonomies,&a.Admin)
 		result.Success = true
 		result.User = a
 	} else {
@@ -296,6 +298,43 @@ func (d MySQLDriver) GetTaxonomyID(text string) (taxonomies []model.Taxonomy,
 	}
 	defer rows.Close()
 	return taxonomies, err
+	}
+
+func (d MySQLDriver) GetTaxonomyPermissions(email string) (taxonomies []model.Taxonomy, err error){
+	dbRef, err := d.OpenDB()
+	defer dbRef.Close()
+	checkErr(err)
+	db, stmt, err := d.Query("SELECT taxonomies FROM user WHERE email = \"" + email + "\";")
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	checkErr(err)
+	var taxonomyPermissions string
+	taxonomyPermissions = ""
+	for rows.Next() {
+		rows.Scan(&taxonomyPermissions)
+	}
+	if taxonomyPermissions != "" {
+		array := strings.Split(taxonomyPermissions, ",")
+		for _, elem := range array {
+			id, err := strconv.Atoi(elem)
+			if err == nil {
+				a := model.Taxonomy{ID: id}
+				taxonomies = append(taxonomies, a)
+			}
+		}
+	}
+	defer rows.Close()
+	return taxonomies, err
+	}
+
+func (d MySQLDriver) UpdateTaxonomyPermissions(email string, permissions string) (result model.Result, err error){
+	dbRef, err := d.OpenDB()
+	defer dbRef.Close()
+	checkErr(err)
+	dbRef.Exec("UPDATE user SET taxonomies = \"" + permissions + "\" WHERE email = \"" + email + "\";")
+	result.Success = true
+	return result, err
 	}
 
 func (d MySQLDriver) AddTaxonomy(taxonomy string, dimension string) (result model.Result, err error){

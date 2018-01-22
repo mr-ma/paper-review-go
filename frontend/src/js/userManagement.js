@@ -1,3 +1,5 @@
+var admin = false;
+
 function validateEmail(email) {
   var re = /^[\w-']+(\.[\w-']+)*@([a-z0-9-]+(\.[a-z0-9-]+)*?\.[a-z]{2,6}|(\d{1,3}\.){3}\d{1,3})(:\d{4})?$/i;
   return re.test(email);}
@@ -61,16 +63,31 @@ function validateEmail(email) {
     });
   }
 
+  function loadBanner ( type ) {
+    switch(type) {
+      case 'ADMIN': $('.ribbonContainer').append('<div class="ribbon red"><span>ADMIN</span></div>'); break;
+      case 'EDIT': $('.ribbonContainer').append('<div class="ribbon red"><span>EDIT</span></div>'); break;
+      case 'VIEW': $('.ribbonContainer').append('<div class="ribbon blue"><span>VIEW</span></div>'); break;
+      case 'STATIC': $('.ribbonContainer').append('<div class="ribbon green"><span>STATIC</span></div>'); break;
+      default:
+    }
+    $('.ribbon').css('right','-15px')
+  }
+
   function loadNavbar ( user, resolve, reject ) {
     if (!!user.admin && (user.admin - 0) == 1) var navbarPath = '/navbarAdmin.html';
     else var navbarPath = '/navbar.html';
     $.get(navbarPath, function (data ) {
       $('.navbar').replaceWith(data);
       loadNavbarFields(user);
+      $('a').on('click', function ( e ) {
+        e.preventDefault();
+        var hash = window.location.hash;
+        window.location = window.location.origin + $(this).attr('href') + hash;
+      });
       if (!!user.admin) {
         $('#taxonomyDropdown').html('');
         $.get('taxonomy', function ( taxonomies ) {
-          console.log('tax: ', taxonomies)
           if (!!taxonomies && !!taxonomies.response) {
             taxonomies.response.forEach ( function ( taxonomy ) {
               $('#taxonomyDropdown').append('<li><a href="#' + taxonomy.text + '" name="' + taxonomy.id + '">' + taxonomy.text + '</a></li>')
@@ -184,6 +201,7 @@ function validateEmail(email) {
   }
 
   function loginUser ( user, withModals, resolve, reject ) {
+    if (!!user && user.admin == 1) admin = true;
     var promises = [];
     var loadNavbarPromise = new Promise ( function ( resolve, reject ) {
       loadNavbar(user, resolve, reject);
@@ -195,48 +213,86 @@ function validateEmail(email) {
       });
       promises.push(loadModalsPromise);
     }
-    if (promises.length == 0) resolve(user);
-    else {
-      Promise.all(promises)
-        .then ( function ( results ) {
-          if (user.email != '') {
-            $('#loginField').hide();
-            $('#logoutField').show();
-          } else {
-            $('#loginField').show();
-            $('#logoutField').hide();
-          }
-          $('#logoutField').unbind().on('click', function () {
-            $.ajax
-              ({
-                type: "POST",
-                url: 'logout',
-                dataType: 'json',
-                contentType:'application/json',
-                async: true,
-                xhrFields: {
-                   withCredentials: true
-                },
-                data: JSON.stringify({}),
-                success: function ( result, status, xhr ) {
-                  logoutUser();
-                  window.location.reload(false);
-                }
-            });
+    var getTaxonomyIDPromise = new Promise ( function ( resolve, reject ) {
+      var url = window.location.href.split('#');
+      var hash = window.location.hash.split('#').pop();
+      if (!!hash && hash != '') {
+        $.ajax
+          ({
+            type: "POST",
+            url: 'getTaxonomyID',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            data: JSON.stringify({text: unescape(hash)}),
+            success: function ( taxonomy ) {
+              if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
+                console.log('Cannot get taxonomy ID From DB.');
+                TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                window.location.href = url.shift();
+                resolve();
+                return;
+              } else {
+                var id = taxonomy.response[0].id - 0;
+                console.log("taxonomy id: ", id)
+                if (!isNaN(id)) TAXONOMY_ID = id;
+                else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+              }
+              resolve();
+            }
+        });
+      } else {
+        TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+        resolve();
+      }
+    });
+    promises.push(getTaxonomyIDPromise);
+    Promise.all(promises)
+      .then ( function ( results ) {
+        if (user.email != '') {
+          $('#loginField').hide();
+          $('#logoutField').show();
+        } else {
+          $('#loginField').show();
+          $('#logoutField').hide();
+        }
+        if (user.admin == 1) loadBanner('ADMIN');
+        else {
+          var taxonomies = (!!user.taxonomies && user.taxonomies != '') ? user.taxonomies.split(',') : [];
+          if (taxonomies.indexOf('' + TAXONOMY_ID) > -1) loadBanner('EDIT');
+          else loadBanner('VIEW');
+        }
+        $('#logoutField').unbind().on('click', function () {
+          $.ajax
+            ({
+              type: "POST",
+              url: 'logout',
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              xhrFields: {
+                 withCredentials: true
+              },
+              data: JSON.stringify({}),
+              success: function ( result, status, xhr ) {
+                logoutUser();
+                window.location.reload(false);
+              }
           });
-          if (!!resolve) resolve(user);
-        }).catch ( function ( err ) {
-          console.log('Init user error: ', err);
-          var msg = 'Init user error.';
-          if (!!handleErrorHelper) handleErrorHelper(msg);
-          else handleError(msg);
-          if (!!resolve) resolve(user);
-        })
-    }
+        });
+        if (!!resolve) resolve(user);
+      }).catch ( function ( err ) {
+        console.log('Init user error: ', err);
+        var msg = 'Init user error.';
+        if (!!handleErrorHelper) handleErrorHelper(msg);
+        else handleError(msg);
+        if (!!resolve) resolve(user);
+      });
   }
 
   function logoutUser() {
-    loginUser({email: ''}, false);
+    loginUser({email: '', admin: 0}, false);
+    admin = false;
   }
 
   function initUserManagement( resolve, reject ) {

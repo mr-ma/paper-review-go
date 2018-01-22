@@ -3,6 +3,7 @@ var edit = ' glyphicon glyphicon-pencil';
 var trash  = 'glyphicon glyphicon-trash';
 var save   = 'glyphicon glyphicon-floppy-disk';
 var cancel = 'glyphicon glyphicon-floppy-remove';
+var settings = 'glyphicon glyphicon-cog taxonomySettings';
 
 	function enableButtons() {
 		$('#add').prop('disabled', false);
@@ -18,6 +19,7 @@ var cancel = 'glyphicon glyphicon-floppy-remove';
 		$('#showTable').append('<tr>' +
 	       '<td><input type="text" title="Email" placeholder ="Email" value="" /></td>' +
 	       '<td><input type="text" title="Password" value="" /></td>' +
+	       '<td></td>' +
 	       '<td><input type="checkbox" title="Admin" value="admin" name="admin"></td>' +
 	       '<td><span  class="' + save + '"></span></td>' + 
 	       '<td><span style="padding-left: 10px;" class="' + cancel + '"></span></td></tr>');
@@ -30,7 +32,7 @@ var cancel = 'glyphicon glyphicon-floppy-remove';
 	function saveRow(e) { 
 	  var email = $(e.target).parentsUntil('tbody').find('td:first').find('input').val();
 	  var password = $(e.target).parentsUntil('tbody').find('td:nth(1)').find('input').val();
-	  var admin = $(e.target).parentsUntil('tbody').find('td:nth(2)').find('input').is(':checked') ? 1 : 0;
+	  var admin = $(e.target).parentsUntil('tbody').find('td:nth(3)').find('input').is(':checked') ? 1 : 0;
 	  if (email == '') { BootstrapDialog.show({message: 'The email field cannot be empty.'}); return; }
         var user = {};
         user.email = email;
@@ -99,10 +101,11 @@ var cancel = 'glyphicon glyphicon-floppy-remove';
 	row.parent().find('td').each( function ( index, cell) {
 	 	var cellText = $(cell).text();
 	  switch(index) {
-	  	case 2: $(cell).html('<input type="checkbox" id="adminCheck_' + rowIndex + '" title="Admin" value="admin" name="admin">');
+	  	case 2: $(cell).html(''); break;
+	  	case 3: $(cell).html('<input type="checkbox" id="adminCheck_' + rowIndex + '" title="Admin" value="admin" name="admin">');
 	      		$('#adminCheck_' + rowIndex).prop('checked', cellText == 'yes' ? true : false); break;
-	  	case 3: $(cell).html('<span class="' + save + '" id="saveButton_' + rowIndex + '"></span>'); break;
-	  	case 4: $(cell).html('<span class="' + cancel + '" id="cancelButton_' + rowIndex + '"></span>'); break;
+	  	case 4: $(cell).html('<span class="' + save + '" id="saveButton_' + rowIndex + '"></span>'); break;
+	  	case 5: $(cell).html('<span class="' + cancel + '" id="cancelButton_' + rowIndex + '"></span>'); break;
 	  	default: //$(cell).html('<input type="text" title="Email" value="' + cellText + '"/>');
 			}
 	});
@@ -140,6 +143,105 @@ var cancel = 'glyphicon glyphicon-floppy-remove';
 
 	function loadListener () {
 	    initSearchbar();
+	    $('.taxonomySettings').unbind().css('cursor','pointer').on('click', function (e) {
+	      var email = $(e.target).parentsUntil('tbody').find('td:first').text();
+	      if (!email || email == '') {
+	      	handleError('Cannot change user taxonomy edit permissions for user with empty email.');
+	      	return;
+	      }
+	      $.ajax
+	        ({
+	            type: "POST",
+	            url: 'taxonomyPermissions',
+	            dataType: 'json',
+	            contentType:'application/json',
+	            async: true,
+	            data: JSON.stringify({email: email}),
+	            success: function ( taxonomyPermissions ) {
+	            	if (!taxonomyPermissions) taxonomyPermissions = [];
+			      	var taxonomyIDs = [];
+			      	taxonomyPermissions.forEach ( function ( taxonomyPermission ) {
+			      		taxonomyIDs.push(taxonomyPermission.id);
+			      	});
+			      	console.log("permissions: ", taxonomyIDs);
+				      $.get('taxonomy', function ( taxonomies ) {
+				      	if (!taxonomies) {
+				      		var msg = 'Error loading taxonomies.';
+				      		//if (!!handleErrorHelper) handleErrorHelper(msg);
+				      		handleError(msg);
+				      		return;
+				      	}
+				      	if (!taxonomies.response) taxonomies.response = [];
+				      	var taxonomyArray = [];
+				      	var allTaxonomyIDs = [];
+				      	taxonomies.response.forEach ( function ( taxonomy ) {
+				      		taxonomyArray.push({id: taxonomy.id, title: taxonomy.text});
+				      		allTaxonomyIDs.push(taxonomy.id);
+				      	});
+					    BootstrapDialog.show({
+					    	title: 'Taxonomy Edit Permissions',
+					    	message: '<div id="taxonomyTableContainer"></div>',
+					    	closeable : true,
+					    	onshown: function () {
+						     var fields = [{
+						     	field: 'id',
+						     	title: 'ID',
+						     	visible: false
+						     },
+						     {
+						       field: 'title',
+						       title: 'Taxonomy'
+						     }];
+						     var selected = taxonomyArray.filter( function ( taxonomy ) {
+						     	return taxonomyIDs.indexOf(taxonomy.id) >= 0;
+						     });
+						     var notSelected = taxonomyArray.filter ( function ( taxonomy ) {
+						     	return taxonomyIDs.indexOf(taxonomy.id) < 0;
+						     })
+						     var list = selected.concat(notSelected);
+						     showTable(list, 'taxonomyTable', true, false, [], fields, 10);
+						     $('#taxonomyTable').bootstrapTable('checkBy', { field : 'id', values : taxonomyIDs });
+						     $('')
+						   },
+				            buttons: [{
+				                label: 'Cancel',
+				                cssClass: 'btn',
+				                action: function ( dialogRef ) {
+				                    dialogRef.close();
+				                }
+				            }, {
+				                label: 'Save',
+				                cssClass: 'btn-primary',
+				                action: function ( dialogRef ) {
+							   		var selections = '';
+							   		$('#taxonomyTable').bootstrapTable('getSelections').forEach ( function ( entry ) {
+							   			if (entry.id > 0) selections += (selections != '' ? ',' : '') + entry.id;
+							   		});
+								    $.ajax
+								        ({
+								          type: "POST",
+								          url: 'updateTaxonomyPermissions',
+								          dataType: 'json',
+								          contentType:'application/json',
+								          async: true,
+								          data: JSON.stringify({email: email, permissions: selections}),
+								          success: function ( result ) {
+								          	if (!result || !result.success) {
+								          		var msg = 'Cannot update taxonomy permissions for user with email: ' + email + '.';
+								          		//if (!!handleErrorHelper) handleErrorHelper(msg);
+								          		handleError(msg);
+								          		return;
+								          	}
+								          	dialogRef.close();
+								          }
+								        });
+				                }
+				            }]
+						  });
+					    });
+				    }
+				});
+	    	});
 	    $('.glyphicon-pencil').css('cursor','pointer').on('click', function (e) { disableButtons(); editRow(e); });
 	    $('.glyphicon-trash').css('cursor','pointer').on('click', function  (e) {
 	      e.preventDefault();
@@ -182,12 +284,11 @@ var cancel = 'glyphicon glyphicon-floppy-remove';
 		 		handleError('Cannot get users from DB.');
 		 		return;
 		 	}
-		  console.log("users: ", data)
-		  var table = '<div class="table-responsive"><table class="table table-striped table-hover" id="showTable"><thead><tr><th style="width:20%;">Email</th><th style="width:20%;	">Password</th><th>Admin</th></tr></thead><tbody>';
-		  data.forEach ( function (entry) { 
-		    table = table + '<tr><td style="width:20%;">' + entry.email + '</td><td style="width:20%;"></td><td>' + (entry.admin == 1 ? 'yes' : 'no') + '</td><td><span class="' + edit + '"></span></td><td><span class="' + trash + '"></span></td></tr>';  }); 
-		 	table+='</tbody></table></div>';
-		 	$(table).appendTo('#tblSpan');
-		 	loadListener();
+			var table = '<div class="table-responsive"><table class="table table-striped table-hover" id="showTable"><thead><tr><th style="width:20%;">Email</th><th style="width:20%;">Password</th><th>Permissions</th><th>Admin</th></tr></thead><tbody>';
+			data.forEach ( function (entry) { 
+			    table = table + '<tr><td style="width:20%;">' + entry.email + '</td><td style="width:20%;"></td><td><span class="' + settings + '" title="Edit taxonomy permissions"></span></td><td>' + (entry.admin == 1 ? 'yes' : 'no') + '</td><td><span class="' + edit + '"></span></td><td><span class="' + trash + '"></span></td></tr>';  }); 
+				table+='</tbody></table></div>';
+				$(table).appendTo('#tblSpan');
+				loadListener();
 		});
 	}
