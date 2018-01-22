@@ -158,7 +158,7 @@ func main() {
 		        adminInt = 0
 		    }
 		    var taxonomies string
-		    taxonomies, err := session.GetString("taxonomies")
+		    taxonomies, err = session.GetString("taxonomies")
 		    if err != nil {
 		        taxonomies = ""
 		    }
