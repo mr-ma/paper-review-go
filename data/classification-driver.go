@@ -6,6 +6,7 @@ import (
 	"../gabs"
 	//"../docconv"
 	"fmt"
+	"math/rand"
 	//overriding MySqlDriver
 	_ "../mysql"
 		"../model"
@@ -93,6 +94,7 @@ type ClassificationDriver interface {
 	UpdateRelationshipTables(int64) (model.Result)
 	MergeAttributes(int64, model.Attribute, model.Attribute) (model.Result, error)
 	ForkAttribute(int64, string, string, []model.AttributeRelation, []model.AttributeRelation, []model.AttributeRelation, []model.AttributeRelation, []model.Paper, []model.Paper) (model.Result, error)
+	KMeans(int64, int) ([]model.Cluster, error)
 }
 
 
@@ -1728,4 +1730,97 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		dbRef.Exec("DELETE FROM dimension WHERE id_dimension = " + dimensionIDStr + ";")
 		result.Success = true
 		return result, err
+		}
+
+	func (d MySQLDriver) KMeans(taxonomyId int64, n int) (clusters []model.Cluster, err error){
+		dbRef, err := d.OpenDB()
+		defer dbRef.Close()
+		checkErr(err)
+		if n <= 0 {
+			return clusters, err
+		}
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		db, stmt, err := d.Query("SELECT id_paper, citation FROM paper;")
+		checkErr(err)
+		rows, err := stmt.Query()
+		checkErr(err)
+		stmt.Close()
+		db.Close()
+		papers := []model.Paper{}
+		for rows.Next() {
+			a := model.Paper{}
+			rows.Scan(&a.ID,&a.Citation)
+			papers = append(papers, a)
+		}
+		rows.Close()
+		// shuffle papers
+	    for k := len(papers) - 1; k > 0; k-- {
+	        l := rand.Intn(k + 1)
+	        papers[k], papers[l] = papers[l], papers[k]
+	    }
+		i := int(len(papers) / n)
+		for j := 0; j < n; j++ {
+			a := model.Cluster{ID: j}
+			a.Papers = []int{}
+			a.Attributes = []string{}
+			clusters = append(clusters, a)
+		}
+		index := 0
+		counter := 0
+		for _, elem := range papers {
+			clusters[index].Papers = append(clusters[index].Papers, elem.ID)
+			counter++
+			if counter >= i && index < n-1 {
+				index++
+				counter = 0
+			}
+		}
+		db, stmt, err = d.Query("SELECT id_attribute, text FROM attribute WHERE id_taxonomy = " + taxonomyIdStr + ";")
+		checkErr(err)
+		defer stmt.Close()
+		defer db.Close()
+		rows, err = stmt.Query()
+		checkErr(err)
+		attributes := []model.Attribute{}
+		for rows.Next() {
+			a := model.Attribute{}
+			rows.Scan(&a.ID,&a.Text)
+			attributes = append(attributes, a)
+		}
+		defer rows.Close()
+		for _, elem := range attributes {
+			idStr := strconv.Itoa(elem.ID)
+			db, stmt, err = d.Query("SELECT id_paper FROM mapping WHERE id_attribute = " + idStr + ";")
+			checkErr(err)
+			rows, err = stmt.Query()
+			checkErr(err)
+			stmt.Close()
+			db.Close()
+			paperIDs := []int{}
+			for rows.Next() {
+				var paperID int
+				rows.Scan(&paperID)
+				paperIDs = append(paperIDs, paperID)
+			}
+			rows.Close()
+			max := 0
+			clusterIndex := 0
+			for clusterID, cluster := range clusters {
+				count := 0
+				for _, id := range cluster.Papers {
+					for _, paperID := range paperIDs {
+						if id == paperID {
+							count++
+							break
+						}
+					}
+				}
+				if count > max {
+					max = count
+					clusterIndex = clusterID
+				}
+			}
+			clusters[clusterIndex].Attributes = append(clusters[clusterIndex].Attributes, elem.Text)
+		}
+		return clusters, err
 		}

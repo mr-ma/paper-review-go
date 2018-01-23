@@ -38,11 +38,11 @@ text.active {
     <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
     <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
 
-    <link href="selectize.css" rel="stylesheet" type="text/css" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.css">
+    <link href="selectize.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.css">
     <script src="selectize.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/js/standalone/selectize.min.js"></script>
-    <link href="selectize.bootstrap3.css" rel="stylesheet" type="text/css" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.bootstrap3.css">
+    <link href="selectize.bootstrap3.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.bootstrap3.css">
 
-    <!-- <script src="bootstrap-waitingfor.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-waitingfor/1.2.4/bootstrap-waitingfor.min.js"></script> -->
+    <script src="bootstrap-waitingfor.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-waitingfor/1.2.4/bootstrap-waitingfor.min.js"></script>
 
     <link href="d3-context-menu.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
     <script src="d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
@@ -313,6 +313,7 @@ text.active {
   const DEFAULT_MIN_SIMILARITY = 1;
   const DEFAULT_TEXT_FILL = 'white';
   const FONT_SIZE = '8pt';
+  const FACTOR = 7;
   const ROTATION_FACTOR = 6;
   const SHORTEN_VALUE = 0.035;
   const SHORTEN_VALUE_ROTATION = 2.25;
@@ -1521,7 +1522,7 @@ text.active {
                     // TODO
                     var shortenValue = (rowIndex >= 0 && rowIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[rowIndex].parents.length)) : SHORTEN_VALUE;
                     shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
-                    if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
+                    if (lastValueX.length * FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
                       lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
                       lastTextRef.attr('data-fulltext', lastValueX);
                     }
@@ -1572,7 +1573,7 @@ text.active {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
                     var shortenValue = (rowIndex >= 0 && rowIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[rowIndex].parents.length)) : SHORTEN_VALUE;
                     shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
-                  if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
+                  if (lastValueX.length * FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
                     lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
                     lastTextRef.attr('data-fulltext', lastValueX);
                   }
@@ -1605,7 +1606,7 @@ text.active {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
                 var shortenValue = (rowIndex >= 0 && rowIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[rowIndex].parents.length)) : SHORTEN_VALUE;
                 shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
-                if (lastValueX.length * ROTATION_FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
+                if (lastValueX.length * FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
                   lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
                   lastTextRef.attr('data-fulltext', lastValueX);
                 }
@@ -1723,7 +1724,7 @@ text.active {
               if (!!lastTextRef && !!lastDimension && lastDimension != '') {
                 if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-                  if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                  if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
                     lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
                     lastTextRef.attr('data-fulltext', lastDimension);
                   }
@@ -1744,7 +1745,7 @@ text.active {
             if (!!lastTextRef && !!lastDimension && lastDimension != '') {
               if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
                 lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-                if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
                   lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
                   lastTextRef.attr('data-fulltext', lastDimension);
                 }
@@ -1764,7 +1765,7 @@ text.active {
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
           if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-            if (lastDimension.length * ROTATION_FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+            if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
               lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
               lastTextRef.attr('data-fulltext', lastDimension);
             }
@@ -2508,13 +2509,17 @@ text.active {
       //buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true, selectableCells, nodesOriginalX, nodesOriginalY);
     }
 
-    refreshColorGradients(minValue, maxValue);
-    var colorThemeIndex = $('#colorTheme')[0].value - 0;
-    if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) svg.selectAll(".cell").style("fill", function (d,i) { return COLOR_GRADIENTS[colorThemeIndex].colorScale(COLOR_GRADIENTS[colorThemeIndex].colorInterpolate(d.z)); });
+    function onColorThemeChange () {
+      refreshColorGradients(minValue, maxValue);
+      var colorThemeIndex = $('#colorTheme')[0].value - 0;
+      if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) svg.selectAll(".cell").style("fill", function (d,i) { return COLOR_GRADIENTS[colorThemeIndex].colorScale(COLOR_GRADIENTS[colorThemeIndex].colorInterpolate(d.z)); });
+    }
     $('#colorTheme').unbind().on('change', function ( e ) {
-      var index = this.value - 0;
-      if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue, true);
+      //var index = this.value - 0;
+      //if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue, true);
+      onColorThemeChange();
     });
+    onColorThemeChange();
     $('#order').unbind().on("change", function() {
       order(this.value);
     });
@@ -2915,7 +2920,9 @@ text.active {
                 }
         });
       } else {
-        callback(STATIC_ATTRIBUTESX, STATIC_ATTRIBUTESY, correlations, maxValue, onClickURL);
+        var attributesX = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')];
+        var attributesY = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')];
+        callback(attributesX, attributesY, correlations, maxValue, onClickURL);
       }
     }
 
@@ -2968,7 +2975,8 @@ function getCorrelationOptions () {
   return {url: url, coverageURL: coverageURL, maxValue: maxValue};
 }
 
-function initFields ( request, citations, citationCount, dimensions, allAttributes, correlations, maxValue ) {
+function initFields ( citations, citationCount, dimensions, allAttributes, correlations, maxValue ) {
+  var request = {'taxonomy_id': TAXONOMY_ID};
   dimensions.response.sort( function ( a, b ) {
     return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
   });
@@ -3161,7 +3169,7 @@ function loadData ( correlationURL, coverageURL, maxValue ) {
       var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
       var allAttributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ALLATTRIBUTES')];
       var correlations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')];
-      initFields(request, citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+      initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
     }).catch ( function ( err ) {
       console.log('Error loading data from DB: ', err);
       handleError(err);
@@ -3193,9 +3201,10 @@ function initPage () {
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')] = correlations;
       var coverage = JSON.parse(STATIC_COVERAGE);
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('COVERAGE')] = coverage;
-      initFields(request, citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+      initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
     } catch ( err ) {
-      handleErrorHelper('Error parsing STATIC data.');
+      console.log('Error parsing STATIC data: ', err);
+      handleError('Error parsing STATIC data.');
     }
   }
 }

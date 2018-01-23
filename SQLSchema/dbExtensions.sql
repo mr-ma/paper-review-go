@@ -164,14 +164,15 @@ UPDATE taxonomy_relation as relation SET id_dimension = (SELECT DISTINCT id_dime
 
 /* store all children per attribute in a table */
 
-DROP TABLE IF EXISTS allChildrenPerAttribute;
-CREATE TABLE allChildrenPerAttribute (
+DROP TABLE IF EXISTS allchildrenperattribute;
+CREATE TABLE allchildrenperattribute (
   id_attribute int(10) unsigned NOT NULL,
   id_taxonomy int(11) unsigned NOT NULL,
   text varchar(50) NOT NULL,
   children longtext,
   PRIMARY KEY (id_attribute),
-  UNIQUE KEY allChildrenPerAttribute_id_attribute_UNIQUE (id_attribute)
+  UNIQUE KEY allchildrenperattribute_id_attribute_UNIQUE (id_attribute),
+  CONSTRAINT allchildrenperattribute_id_taxonomy_foreign FOREIGN KEY (id_taxonomy) REFERENCES taxonomy (id_taxonomy) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
 
 /* procedure creation + call has to be run after every db import/recreation: */
@@ -186,14 +187,14 @@ BEGIN
   DECLARE done INT DEFAULT FALSE;
   DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-  DELETE FROM allChildrenPerAttribute WHERE id_taxonomy = taxonomyId;
+  DELETE FROM allchildrenperattribute WHERE id_taxonomy = taxonomyId;
   OPEN cursor_i;
   read_loop: LOOP
     FETCH cursor_i INTO cursor_id_attribute, cursor_text;
     IF done THEN
       LEAVE read_loop;
     END IF;
-    INSERT IGNORE INTO allChildrenPerAttribute(id_attribute, id_taxonomy, text, children) VALUES(cursor_id_attribute, taxonomyId, cursor_text, (SELECT (CASE WHEN b.children IS NULL THEN CAST(cursor_id_attribute AS CHAR(50)) ELSE CONCAT(CAST(cursor_id_attribute AS CHAR(50)), ",", b.children) END) AS children FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = taxonomyId AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation AS relation2 JOIN (SELECT @pv:=cursor_id_attribute) tmp ON (relation2.id_taxonomy = taxonomyId)) a) b));
+    INSERT IGNORE INTO allchildrenperattribute(id_attribute, id_taxonomy, text, children) VALUES(cursor_id_attribute, taxonomyId, cursor_text, (SELECT (CASE WHEN b.children IS NULL THEN CAST(cursor_id_attribute AS CHAR(50)) ELSE CONCAT(CAST(cursor_id_attribute AS CHAR(50)), ",", b.children) END) AS children FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS children FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT relation1.id_src_attribute SEPARATOR ',') FROM taxonomy_relation AS relation1 WHERE relation1.id_taxonomy = taxonomyId AND relation1.id_relation > 2 AND FIND_IN_SET(relation1.id_dest_attribute, @pv)) AS lv FROM taxonomy_relation AS relation2 JOIN (SELECT @pv:=cursor_id_attribute) tmp ON (relation2.id_taxonomy = taxonomyId)) a) b));
   END LOOP;
   CLOSE cursor_i;
 END;
@@ -201,14 +202,15 @@ END;
 
 /* CALL insertallchildrenperattribute(1); */
 
-DROP TABLE IF EXISTS allParentsPerAttribute;
-CREATE TABLE allParentsPerAttribute (
+DROP TABLE IF EXISTS allparentsperattribute;
+CREATE TABLE allparentsperattribute (
   id_attribute int(11) unsigned NOT NULL,
   id_taxonomy int(11) unsigned NOT NULL,
   text varchar(50) NOT NULL,
   parents longtext,
   PRIMARY KEY (id_attribute),
-  UNIQUE KEY allParentsPerAttribute_id_attribute_UNIQUE (id_attribute)
+  UNIQUE KEY allparentsperattribute_id_attribute_UNIQUE (id_attribute),
+  CONSTRAINT allparentsperattribute_id_taxonomy_foreign FOREIGN KEY (id_taxonomy) REFERENCES taxonomy (id_taxonomy) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
 
 DROP PROCEDURE IF EXISTS insertallparentsperattribute;
@@ -221,14 +223,14 @@ BEGIN
   DECLARE done INT DEFAULT FALSE;
   DECLARE cursor_i CURSOR FOR SELECT id_attribute, text FROM attribute;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-  DELETE FROM allParentsPerAttribute WHERE id_taxonomy = taxonomyId;
+  DELETE FROM allparentsperattribute WHERE id_taxonomy = taxonomyId;
   OPEN cursor_i;
   read_loop: LOOP
     FETCH cursor_i INTO cursor_id_attribute, cursor_text;
     IF done THEN
       LEAVE read_loop;
     END IF;
-    INSERT IGNORE INTO allParentsPerAttribute(id_attribute, id_taxonomy, text, parents) VALUES(cursor_id_attribute, taxonomyId, cursor_text, (SELECT (CASE WHEN b.parents IS NULL THEN "" ELSE b.parents END) AS parents FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS parents FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT parent.text SEPARATOR ',') FROM taxonomy_relation AS relation1 INNER JOIN attribute as parent ON (relation1.id_dest_attribute = parent.id_attribute AND parent.id_taxonomy = taxonomyId) WHERE relation1.id_taxonomy = taxonomyId AND relation1.id_relation > 2 AND FIND_IN_SET((SELECT DISTINCT text FROM attribute WHERE id_attribute = relation1.id_src_attribute AND id_taxonomy = taxonomyId), @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=text FROM attribute WHERE id_attribute = cursor_id_attribute AND id_taxonomy = taxonomyId) tmp) a) b));
+    INSERT IGNORE INTO allparentsperattribute(id_attribute, id_taxonomy, text, parents) VALUES(cursor_id_attribute, taxonomyId, cursor_text, (SELECT (CASE WHEN b.parents IS NULL THEN "" ELSE b.parents END) AS parents FROM (SELECT GROUP_CONCAT(lv SEPARATOR ',') AS parents FROM (SELECT @pv:=(SELECT GROUP_CONCAT(DISTINCT parent.text SEPARATOR ',') FROM taxonomy_relation AS relation1 INNER JOIN attribute as parent ON (relation1.id_dest_attribute = parent.id_attribute AND parent.id_taxonomy = taxonomyId) WHERE relation1.id_taxonomy = taxonomyId AND relation1.id_relation > 2 AND FIND_IN_SET((SELECT DISTINCT text FROM attribute WHERE id_attribute = relation1.id_src_attribute AND id_taxonomy = taxonomyId), @pv)) AS lv FROM taxonomy_relation JOIN (SELECT @pv:=text FROM attribute WHERE id_attribute = cursor_id_attribute AND id_taxonomy = taxonomyId) tmp) a) b));
   END LOOP;
   CLOSE cursor_i;
 END;

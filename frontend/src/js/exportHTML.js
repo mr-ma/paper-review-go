@@ -7,8 +7,7 @@ function exportHTML ( fileName ) {
   var fullHTMLTmp = fullHTML.split(DELIMITER);
   if (fullHTMLTmp.length <= 1) {
     var msg = 'Error occurred while extracting HTML from page.';
-    if (!!handleErrorHelper) handleErrorHelper(msg);
-    else handleError(msg);
+    handleError(msg);
     return;
   }
   fullHTML = fullHTMLTmp[0] + DELIMITER + '\n</body>\n</html>';
@@ -79,8 +78,7 @@ function exportHTML ( fileName ) {
         saveAs(new Blob([fullHTML], {type: "text/html;charset=utf-8"}), fileName);
       }).catch ( function ( err ) {
         console.log("Error occurred while fetching script from server: ", err);
-        if (!!handleErrorHelper) handleErrorHelper(err);
-        else handleError(err);
+        handleError(err);
       });
   }
 }

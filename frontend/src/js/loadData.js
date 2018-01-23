@@ -1,4 +1,4 @@
-  function showDimension ( dimension ) {
+  function showDimension ( dimension, useCY ) {
     console.log("showing dimension: " + dimension)
     var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
     var relationTypes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('RELATIONTYPES')];
@@ -22,10 +22,13 @@
       dimensions = [{text: dimension}];
     }
     console.log("dimensions: ", dimensions)
-    createJSON(!!dimensions ? dimensions : [], interDimensional, !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
+    if (!!useCY) {
+      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CY')] = JSON.parse(STATIC_CY);
+      createJSON(true, !!dimensions ? dimensions : [], interDimensional, !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
+    } else createJSON(false, !!dimensions ? dimensions : [], interDimensional, !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
   }
 
-    function loadTaxonomyData ( taxonomyID, attributeURL, citationCountsURL ) {
+    function loadTaxonomyData ( taxonomyID, attributeURL, citationCountsURL, useCY ) {
       if (!IS_STATIC) {
         var request = {'taxonomy_id': taxonomyID};
         var promises = [];
@@ -198,10 +201,10 @@
               } else DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
             });
             displayedDimension = 'Interdimensional view';
-            showDimension(displayedDimension);
+            showDimension(displayedDimension, useCY);
           }).catch ( function ( err ) {
             console.log('Error loading data from DB: ', err);
-            handleErrorHelper(err);
+            handleError(err);
           });
       } else {
         try {
@@ -223,9 +226,10 @@
             if (attributeRelations.length > i) DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTERELATIONS')][i] = attributeRelations[i];
           }
           displayedDimension = 'Interdimensional view';
-          showDimension(displayedDimension);
+          showDimension(displayedDimension, useCY);
         } catch ( err ) {
-          handleErrorHelper('Error parsing STATIC data.');
+          console.log('Error parsing STATIC data: ', err);
+          handleError('Error parsing STATIC data.');
         }
       }
     }

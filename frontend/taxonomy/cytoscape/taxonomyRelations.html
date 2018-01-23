@@ -133,7 +133,7 @@
 <script id="mainScript">
   const IS_STATIC = false;
 
-  const STATIC_ARRAY = ['DIMENSIONS', 'MAJORATTRIBUTES', 'ATTRIBUTESPERDIMENSION', 'ATTRIBUTERELATIONS', 'INTERDIMENSIONALRELATIONS', 'RELATIONTYPES', 'CITATIONCOUNTS'];
+  const STATIC_ARRAY = ['DIMENSIONS', 'MAJORATTRIBUTES', 'ATTRIBUTESPERDIMENSION', 'ATTRIBUTERELATIONS', 'INTERDIMENSIONALRELATIONS', 'RELATIONTYPES', 'CITATIONCOUNTS', 'CY'];
 
   var STATIC_DIMENSIONS;
   var STATIC_MAJORATTRIBUTES;
@@ -142,6 +142,7 @@
   var STATIC_INTERDIMENSIONALRELATIONS;
   var STATIC_RELATIONTYPES;
   var STATIC_CITATIONCOUNTS;
+  var STATIC_CY;
   var DYNAMIC_ARRAY = [];
 
   const DEFAULT_TAXONOMY_ID = 1;
@@ -1037,69 +1038,70 @@
     return qtipOptions;
   }
 
-  function createJSON ( dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
+  function createJSON ( useCY, dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
     //var items = [{data: { id: INTER_DIMENSIONAL_VIEW, table: 'dimension'}, classes: 'interdimensional'}];
     var items = [];
     var menuItems = [];
     isInterDimensional = interDimensional;
     var interDimensionalPosition = {x: $(window).width() / 2, y: $(window).height() / 2};
-    console.log("isInter: " + isInterDimensional)
-    dimensions.forEach ( function ( dimension ) {
-      if (dimension.text == INTER_DIMENSIONAL_VIEW) {
-        var classText = 'interdimensional';
-        var position = interDimensionalPosition;
-      } else var classText = 'dimension';
-      if (!!position) {
-        if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText, position: position});
-        else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText, position: position }); // , style: { events: 'no' }
-      } else {
-        if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText});
-        else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText }); // , style: { events: 'no' }
-      }
-    });
+    if (!useCY) {
+      dimensions.forEach ( function ( dimension ) {
+        if (dimension.text == INTER_DIMENSIONAL_VIEW) {
+          var classText = 'interdimensional';
+          var position = interDimensionalPosition;
+        } else var classText = 'dimension';
+        if (!!position) {
+          if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText, position: position});
+          else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText, position: position }); // , style: { events: 'no' }
+        } else {
+          if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText});
+          else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText }); // , style: { events: 'no' }
+        }
+      });
 
-    console.log("dim: ", items)
-    attributes.forEach ( function ( attribute ) {
-      var x = attribute.x - 0;
-      var y = attribute.y - 0;
-      if (!isNaN(x) && !isNaN(y)) {
-        var found = false;
-        for ( var i = 0; i < citationCounts.length; i++ ) {
-          if (citationCounts[i].attribute == attribute.text) {
-            items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
-            found = true;
-            break;
+      console.log("dim: ", items)
+      attributes.forEach ( function ( attribute ) {
+        var x = attribute.x - 0;
+        var y = attribute.y - 0;
+        if (!isNaN(x) && !isNaN(y)) {
+          var found = false;
+          for ( var i = 0; i < citationCounts.length; i++ ) {
+            if (citationCounts[i].attribute == attribute.text) {
+              items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: citationCounts[i].citationCount, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: 0, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
           }
         }
-        if (!found) {
-          items.push({ data: { id: attribute.text, table: 'attribute', major: attribute.major, citationCount: 0, parent: attribute.dimension, width: attribute.text.length * 10 }, classes: (attribute.major == 1) ? 'parent' : 'child', position: {x: (attribute.x - 0), y: (attribute.y - 0)} });
+      });
+      relations.forEach ( function ( relation ) {
+        var relationObj = { data: { id: relation.attributeSrc + '_' + relation.attributeDest, source: relation.attributeSrc, target: relation.attributeDest, annotation: !!relation.annotation ? relation.annotation : '', dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), relation: relation.relation }, classes: relation.relation };
+        var points = [];
+        if (!!relation.edgeBendPoints) {
+          var edgeBendPoints = relation.edgeBendPoints != '' ? relation.edgeBendPoints.split(';') : [];
+          try {
+            edgeBendPoints.forEach ( function ( edgeBendPoint ) {
+              points.push(JSON.parse(edgeBendPoint.replace(/\'/g, '"')));
+            });
+          } catch ( err ) {
+            console.log('JSON parse error of edge bend points: ', relation.edgeBendPoints);
+          }
         }
-      }
-    });
-    relations.forEach ( function ( relation ) {
-      var relationObj = { data: { id: relation.attributeSrc + '_' + relation.attributeDest, source: relation.attributeSrc, target: relation.attributeDest, annotation: !!relation.annotation ? relation.annotation : '', dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), relation: relation.relation }, classes: relation.relation };
-      var points = [];
-      if (!!relation.edgeBendPoints) {
-        var edgeBendPoints = relation.edgeBendPoints != '' ? relation.edgeBendPoints.split(';') : [];
-        try {
-          edgeBendPoints.forEach ( function ( edgeBendPoint ) {
-            points.push(JSON.parse(edgeBendPoint.replace(/\'/g, '"')));
-          });
-        } catch ( err ) {
-          console.log('JSON parse error of edge bend points: ', relation.edgeBendPoints);
+        /*
+        var x, y;
+        var points = [];
+        for ( var i = 0; i < edgePoints.length; i++ ) {
+          if (i % 2 == 0) x = edgePoints[i];
+          else points.push({x: x, y: edgePoints[i]});
         }
-      }
-      /*
-      var x, y;
-      var points = [];
-      for ( var i = 0; i < edgePoints.length; i++ ) {
-        if (i % 2 == 0) x = edgePoints[i];
-        else points.push({x: x, y: edgePoints[i]});
-      }
-      */
-      relationObj.data.bendPointPositions = points;
-      items.push(relationObj);
-    });
+        */
+        relationObj.data.bendPointPositions = points;
+        items.push(relationObj);
+      });
+    }
 
 
     var options = {
@@ -1129,6 +1131,7 @@
       },
       style: STYLES
     });
+    if (!!useCY) cy.json(DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CY')]);
     var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
     var nodeCommands = [];
     nodeCommands.push({
@@ -1585,6 +1588,7 @@
       delete dataLink;
     });
     $('#exportHTML').unbind().click ( function () {
+      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CY')] = cy.json();
       exportHTML('TaxonomyRelations.html');
     });
     $('#exportJSON').unbind().click ( function () {

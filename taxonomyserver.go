@@ -110,6 +110,7 @@ func main() {
 	mux.Handle("POST", "/attributeCoverage", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandler), "getAttributeCoverageHandler", nil)))
 	mux.Handle("POST", "/attributeCoverageWithOccurrenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithOccurrenceCountsHandler), "getAttributeCoverageWithOccurrenceCountsHandler", nil)))
 	mux.Handle("POST", "/attributeCoverageWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithReferenceCountsHandler), "getAttributeCoverageWithReferenceCountsHandler", nil)))
+	mux.Handle("POST", "/kMeans", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getKMeansHandler), "getKMeansHandler", nil)))
 
 	mux.HandleFunc("POST", "/login", func(w http.ResponseWriter, r *http.Request) {
         var loginRequest model.LoginRequest
@@ -1979,6 +1980,14 @@ func getAttributeCoverageWithReferenceCountsHandler(u *url.URL, h http.Header, t
 	checkErr(err)
 	return http.StatusOK, nil,
 		&MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
+}
+func getKMeansHandler(u *url.URL, h http.Header, kMeansRequest *model.KMeansRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	clusters, err := driver.KMeans(
+		kMeansRequest.TaxonomyID, kMeansRequest.N)
+	checkErr(err)
+	return http.StatusOK, nil,
+		&MyResponse{"0", len(clusters), clusters}, nil
 }
 
 func loadPage(filename string) (body []byte) {

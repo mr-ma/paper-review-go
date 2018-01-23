@@ -311,6 +311,17 @@ type UserResult struct {
   Users []User `json:"users"`
 }
 
+type Cluster struct  {
+  ID int `json:"id"`
+  Papers []int `json:"papers"`
+  Attributes []string `json:"attributes"`
+}
+
+type KMeansRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  N int `json:"n"`
+}
+
 //
 // type VoteStatus int
 //
