@@ -73,7 +73,11 @@ function validateEmail(email) {
   }
 
   function loadNavbar ( user, resolve, reject ) {
-    if (!!user.admin && (user.admin - 0) == 1) var navbarPath = '/navbarAdmin.html';
+    if (!user) {
+      if (!!resolve) resolve();
+      return;
+    }
+    if (user.admin == 1) var navbarPath = '/navbarAdmin.html';
     else var navbarPath = '/navbar.html';
     $.get(navbarPath, function (data ) {
       $('.navbar').replaceWith(data);
@@ -84,15 +88,16 @@ function validateEmail(email) {
         var link = $(this).attr('href');
         if (!!link && link != '' && link.split('javascript').length <= 1) window.location.href = window.location.origin + link + hash;
       });
-      if (!!user.admin) {
-        $('#taxonomyDropdown').html('');
-        $.get('taxonomy', function ( taxonomies ) {
-          if (!!taxonomies && !!taxonomies.response) {
-            $('#taxonomyDropdown').append('<li><table class="table" style="max-height:500px;overflow-y:auto;"><thead><tr><th>Taxonomy</th><th>Delete</th></tr></thead><tbody>');
-            taxonomies.response.forEach ( function ( taxonomy ) {
-              $('#taxonomyDropdown').append('<tr><td><a href="#' + taxonomy.text + '" name="' + taxonomy.id + '" style="margin-left:5px;">' + taxonomy.text + '</a></td><td><i class="glyphicon glyphicon-trash removeTaxonomy" data-id="' + taxonomy.id + '" data-name="' + taxonomy.text + '" title="Delete Taxonomy" style="margin-left:20px;"></i></td></tr>');
-            });
-            $('#taxonomyDropdown').append('</tbody></table></li>');
+      $('#taxonomyDropdown').html('');
+      $.get('taxonomy', function ( taxonomies ) {
+        if (!!taxonomies && !!taxonomies.response) {
+          $('#taxonomyDropdown').append('<li><table class="table" style="max-height:500px;overflow-y:auto;"><thead><tr><th>Taxonomies</th><th></th></tr></thead><tbody>');
+          taxonomies.response.forEach ( function ( taxonomy ) {
+            if (!!user.admin) $('#taxonomyDropdown').append('<tr><td><a href="#' + taxonomy.text + '" name="' + taxonomy.id + '" style="margin-left:5px;">' + taxonomy.text + '</a></td><td><i class="glyphicon glyphicon-trash removeTaxonomy" data-id="' + taxonomy.id + '" data-name="' + taxonomy.text + '" title="Delete Taxonomy" style="margin-left:20px;"></i></td></tr>');
+            else $('#taxonomyDropdown').append('<tr><td><a href="#' + taxonomy.text + '" name="' + taxonomy.id + '" style="margin-left:5px;">' + taxonomy.text + '</a></td><td></td></tr>');
+          });
+          $('#taxonomyDropdown').append('</tbody></table></li>');
+          if (user.admin == 1) {
             $('.removeTaxonomy').unbind().css('cursor', 'pointer').on('click', function () {
               var taxonomyID = $(this).attr('data-id') - 0;
               var taxonomyName = $(this).attr('data-name');
@@ -126,10 +131,10 @@ function validateEmail(email) {
               });
             });
           }
-          $('#taxonomyDropdown').append('<li><input type="button" class="btn btn-primary" id="addTaxonomy" value="Add Taxonomy" style="margin-left:20px;margin-top:10px;" onclick="addTaxonomy()"></li>');
-          if (!!resolve) resolve();
-        });
-      } else if (!!resolve) resolve();
+        }
+        if (user.admin == 1) $('#taxonomyDropdown').append('<li><input type="button" class="btn btn-primary" id="addTaxonomy" value="Add Taxonomy" style="margin-left:20px;margin-top:10px;" onclick="addTaxonomy()"></li>');
+        if (!!resolve) resolve();
+      });
     });
   }
 
@@ -323,10 +328,14 @@ function validateEmail(email) {
   }
 
   function initUserManagement( resolve, reject ) {
+    console.time('Init User');
     var loginPromise = new Promise( function ( resolve, reject ) {
       getUser(resolve, reject);
     }).then( function ( user ) {
-      loginUser(user, true, resolve, reject);
+      loginUser(user, true, function ( result ) {
+        console.timeEnd('Init User');
+        resolve(result);
+      }, reject);
     }).catch( function ( err ) {
       reject(err);
     });

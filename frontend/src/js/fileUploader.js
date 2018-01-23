@@ -13,19 +13,18 @@
 	function uploadFiles ( files, callback ) {
 		var formData = new FormData();
 		for ( var i = 0; i < files.length; i++ ) {
-			formData.append('uploads[file]', files[i], files[i].name);
+			formData.append('file', files[i], files[i].name);
 		}
 		$.ajax({
 		  url: '/upload',
 		  type: 'POST',
 		  data: formData,
+		  contentType: "application/pdf",
 		  processData: false,
 		  contentType: false,
 		  success: function ( result ) {
 	        if (!result || !result.response || !result.response.success) {
-	          var msg = 'Cannot upload files to server.';
-	          if (!!handleErrorHelper) handleErrorHelper(msg);
-	          else handleError(msg);
+	          handleError('Cannot upload files to server.');
 	          return;
 	        }
 	        console.log('File upload successful.');

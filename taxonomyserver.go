@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
+    "mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +14,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-	"io"
 	"encoding/json"
 	"strconv"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"./model"
 	"./go-tigertonic"
 	"./scs"
+	"./pdf"
 )
 
 //MyRequest standard request
@@ -492,6 +494,10 @@ func main() {
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/runner.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/runner.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/bootstrap.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/bootstrap.min.js")
 		fmt.Fprintf(w, "%s", p)
@@ -694,6 +700,10 @@ func main() {
 		p := loadPage("frontend/taxonomy/index.html")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/benchmark", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/Benchmark.html")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/users", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/users/users.html")
 		fmt.Fprintf(w, "%s", p)
@@ -843,7 +853,7 @@ func main() {
 	})
 	*/
 	mux.HandleFunc("POST", "/upload", func(w http.ResponseWriter, r *http.Request) {
-
+/*
 		file, header, err := r.FormFile("file")
 
 		if err != nil {
@@ -867,6 +877,8 @@ func main() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+*/
+		UploadFile(w, r)
 	})
 
 	// c := &Config{}
@@ -896,6 +908,193 @@ func checkErr(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func parsePDF(path string) (string, error) {
+	r, err := pdf.Open(path)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	buf.ReadFrom(r.GetPlainText())
+	return buf.String(), nil
+}
+
+/*
+func parsePDF(path string) (string, error) {
+	res, err := docconv.ConvertPath(path)
+	checkErr(err)
+	if err != nil {
+		return "", err
+	}
+	return res.Body, nil
+}
+*/
+
+func deleteFile(path string) (error) {
+	// delete file
+	var err = os.Remove(path)
+	return err
+}
+
+func UploadHandler(w http.ResponseWriter, r *http.Request) {  
+      var (  
+           status int  
+           err  error  
+      )  
+      defer func() {  
+           if nil != err {  
+                http.Error(w, err.Error(), status)  
+           }  
+      }()  
+      if err = r.ParseMultipartForm(32 << 20); nil != err {  
+           status = http.StatusInternalServerError  
+           return  
+      }
+      paths := []string{}
+      for _, fheaders := range r.MultipartForm.File {
+           for _, hdr := range fheaders {
+           		path := "./files/" + hdr.Filename
+                var infile multipart.File  
+                if infile, err = hdr.Open(); nil != err {  
+                     status = http.StatusInternalServerError  
+                     return  
+                }  
+                var outfile *os.File  
+                if outfile, err = os.Create(path); nil != err {  
+                     status = http.StatusInternalServerError  
+                     return  
+                }   
+                var written int64  
+                if written, err = io.Copy(outfile, infile); nil != err {  
+                     status = http.StatusInternalServerError  
+                     return  
+                }
+                fmt.Println("written: " + strconv.Itoa(int(written)))
+				text, err := parsePDF(path)
+				if err == nil {
+					fmt.Println("parsed file: " + strconv.Itoa(len(text)))
+				} else {
+					fmt.Println("parse file Error")
+				}
+				defer infile.Close()
+				defer outfile.Close()
+				paths = append(paths, path)
+           }
+        }
+        for _, elem := range paths {
+			err = deleteFile(elem)
+			if err != nil {
+				fmt.Println("deleting file failed.")
+			}
+        }
+        /*
+        for _, fheaders := range r.MultipartForm.File {
+            for _, hdr := range fheaders {
+				path := "./files/" + hdr.Filename
+				err = deleteFile(path)
+				if err != nil {
+					fmt.Println("deleting file failed.")
+				}
+			}
+		}
+		*/
+ } 
+
+func UploadFile(w http.ResponseWriter, r *http.Request) {
+/*
+    if r.Method != http.MethodPost {
+        http.Redirect(w, r, "/", http.StatusSeeOther)
+        return
+    }
+
+    file, handle, err := r.FormFile("file")
+    if err != nil {
+        fmt.Fprintf(w, "%v", err)
+        return
+    }
+    defer file.Close()
+
+    mimeType := handle.Header.Get("Content-Type")
+    switch mimeType {
+    case "application/pdf":
+        saveFile(w, file, handle)
+    default:
+        jsonResponse(w, http.StatusBadRequest, "The format file is not valid.")
+    }
+*/
+/*
+ 		err := r.ParseMultipartForm(100000)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		//get a ref to the parsed multipart form
+		m := r.MultipartForm
+
+		//get the *fileheaders
+		files := m.File["file"]
+		for i, _ := range files {
+			//for each fileheader, get a handle to the actual file
+			file, err := files[i].Open()
+			defer file.Close()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			path := "./files/" + files[i].Filename
+			//create destination file making sure the path is writeable.
+			dst, err := os.Create(path)
+			defer dst.Close()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			//copy the uploaded file to the destination file
+			if _, err := io.Copy(dst, file); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			text, err := parsePDF(path)
+			if err == nil {
+				fmt.Println("parsed file: " + strconv.Itoa(len(text)))
+			}
+		}
+*/
+		UploadHandler(w, r)
+		jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
+/*
+		result := model.Result{Success: true}
+		output, err := json.Marshal(result)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("content-type", "application/json")
+		w.Write(output)
+*/
+}
+
+func saveFile(w http.ResponseWriter, file multipart.File, handle *multipart.FileHeader) {
+    data, err := ioutil.ReadAll(file)
+    if err != nil {
+        fmt.Fprintf(w, "%v", err)
+        return
+    }
+
+    err = ioutil.WriteFile("./files/"+handle.Filename, data, 0666)
+    if err != nil {
+        fmt.Fprintf(w, "%v", err)
+        return
+    }
+    jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
+}
+
+func jsonResponse(w http.ResponseWriter, code int, message string) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(code)
+    fmt.Fprint(w, message)
 }
 
 func checkAdmin (w http.ResponseWriter, r *http.Request, callback fn) {
