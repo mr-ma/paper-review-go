@@ -35,6 +35,8 @@ type Attribute struct{
   Dimension string `json:"dimension"`
   MappedPapers []Paper `json:"papers"`
   Relations []Relation `json:"relations"`
+  Synonyms string `json:"synonyms"`
+  PaperIDs []int `json:"paperIDs"`
 }
 type Paper struct {
   ID int `json:"id"`
@@ -97,6 +99,12 @@ type RenameAttributeRequest struct {
   TaxonomyID int64 `json:"taxonomy_id"`
   PreviousName string `json:"previousName"`
   NewName string `json:"newName"`
+}
+
+type UpdateSynonymsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  Attribute string `json:"attribute"`
+  Synonyms string `json:"synonyms"`
 }
 
 type AttributeRelationsRequest struct {

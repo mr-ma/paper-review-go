@@ -124,7 +124,7 @@ var cancel = 'glyphicon glyphicon-floppy-remove';
 	
 	function initTable( tableHeader, rowData ) {
 		$('#addRow').prop('disabled', false);
-		var table = '<div class="table-responsive"><table class="table table-striped table-hover" id="showTable">' + tableHeader + '<tbody>';
+		var table = '<div class="table-responsive" style="max-height:300px;overflow-y:auto;"><table class="table table-striped table-hover" id="showTable">' + tableHeader + '<tbody>';
 		rowData.forEach ( function (entry) { 
 		  table = table + '<tr><td><span style="margin-right:10px;">' + entry + '</span></td><td><span class="' + edit + '"></span></td><td><span class="' + trash + '"></span></td></tr>';
 		}); 

@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/mr-ma/paper-review-go/data"
-	"github.com/mr-ma/paper-review-go/model"
-	"github.com/rcrowley/go-tigertonic"
+	"../data"
+	"../model"
+	"../go-tigertonic"
 )
 
 //MyRequest standard request
@@ -26,7 +26,7 @@ type MyResponse struct {
 // 	return http.StatusOK, nil, &MyResponse{"ID", "STUFF"}, nil
 // }
 func postResearchHandler(u *url.URL, h http.Header, research *model.Research) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	_, id, err := driver.InsertResearch(*research)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), "Research inserted"}, nil
@@ -41,14 +41,14 @@ func postVoteHandler(u *url.URL, h http.Header, vote *model.Vote) (int, http.Hea
 	if vote.AssociatedArticleID <= 0 {
 		return http.StatusNotAcceptable, nil, &MyResponse{"0", "Article id is missing"}, nil
 	}
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	_, id, err := driver.InsertVote(*vote)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), "Vote inserted"}, nil
 }
 func getResearchHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	//	fmt.Println("in getResearchHandler")
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
 		//	fmt.Println(u.Query().Get("id"))
@@ -64,7 +64,7 @@ func getResearchHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Head
 	return http.StatusOK, nil, &resp, nil
 }
 func getVoteHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
 		//fmt.Println(u.Query().Get("id"))
@@ -80,7 +80,7 @@ func getVoteHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, 
 	return http.StatusOK, nil, &resp, nil
 }
 func getVotesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("researchID"), 10, 64); i > 0 {
 		//fmt.Println(u.Query().Get("researchID"))
@@ -97,7 +97,7 @@ func getVotesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header,
 	return http.StatusOK, nil, &resp, nil
 }
 func getReviewHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 32)
 	if err != nil {
 		return http.StatusNotAcceptable, nil, &MyResponse{"0", "researchID is missing"}, nil
@@ -127,13 +127,13 @@ func getReviewHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header
 }
 
 func postMitarbeiterHandler(u *url.URL, h http.Header, mitarbeiter *model.Mitarbeiter) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	_, id, err := driver.InsertMitarbeiter(*mitarbeiter)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), "Mitarbeiter inserted"}, nil
 }
 func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	resp := MyResponse{}
 	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
 		//fmt.Println(u.Query().Get("id"))
@@ -150,7 +150,7 @@ func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.H
 }
 
 func getTagsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	if i, _ := strconv.ParseInt(u.Query().Get("researchID"), 10, 64); i > 0 {
 		tags, err := driver.SelectAllTags(i)
 		if err != nil {
@@ -163,7 +163,7 @@ func getTagsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, 
 }
 
 func getApprovedHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 64)
 	if err != nil {
 		return http.StatusNotAcceptable, nil, &MyResponse{"0", "researchID is missing"}, nil
@@ -178,7 +178,7 @@ func getApprovedHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Head
 }
 
 func getReviewStatsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitMySQLDriver()
+	driver := data.InitMysqlDriver(*mysqlUser, *mysqlPassword)
 	resp := MyResponse{}
 	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 64)
 	if err != nil {

@@ -10,17 +10,18 @@
     <meta name="description" content="Source code generated using layoutit.com">
     <meta name="author" content="LayoutIt!">
 
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
 	
-	 <script src="js/jquery.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/scripts.js"></script>
+	 <script src="jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <script src="scripts.js"></script>
 	
 <script>
-		var APIURL = location.protocol + '//' + location.hostname+':8000/';
+		//var APIURL = location.protocol + '//' + location.hostname+':8000/';
+	  var APIURL = '';
 	  function onLoad() {
-
+	  APIURL = window.location.origin + '/';
 	  PopulateResearchList();
 	  }
  function PopulateResearchList() {
@@ -145,7 +146,7 @@ $links.onclick=function(e){
     var name =element.getAttribute("name");
    var id = element.getAttribute("id");
    var researchId= getSelectedResearch();
-   var url = "./review.html?name="+name+"&id="+id+"&researchID="+researchId;
+   var url = "./review/" + researchId + "/" + id;
    console.log(url);
 	window.location.replace(url);
   }

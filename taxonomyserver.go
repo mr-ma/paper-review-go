@@ -71,6 +71,32 @@ func main() {
 	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen) //.AddAllowedHeaders("Origin, X-Requested-With, Content-Type, Accept")
 
 	mux := tigertonic.NewTrieServeMux()
+
+	// paper-review start
+	mux.Handle("POST", "/research", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postResearchHandler), "postResearchHandler", nil)))
+	mux.Handle("GET", "/research/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getResearchHandler), "getResearchHandler", nil)))
+	mux.Handle("GET", "/research", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getResearchHandler), "getAllResearchHandler", nil)))
+
+	mux.Handle("POST", "/vote", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postVoteHandler), "postVoteHandler", nil)))
+	mux.Handle("GET", "/vote/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getVoteHandler), "getVoteHandler", nil)))
+	mux.Handle("GET", "/votes/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getVotesHandler), "getResearchVotesHandler", nil)))
+	mux.Handle("GET", "/votes", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getVotesHandler), "getAllVotesHandler", nil)))
+
+	mux.Handle("GET", "/review/{researchID}/{mitarbeiterID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewHandler), "getAllReviewsHandler", nil)))
+	mux.Handle("GET", "/review/{researchID}/{mitarbeiterID}/{limit}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewHandler), "getNumReviewsHandler", nil)))
+	mux.Handle("GET", "/review/stats/{researchID}/{mitarbeiterID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewStatsHandler), "getReviewStatsPerMitarbeiterHandler", nil)))
+	mux.Handle("GET", "/review/stats/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getReviewStatsHandler), "getReviewStatsHandler", nil)))
+
+	mux.Handle("GET", "/approved/{researchID}/{threshold}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getApprovedHandler), "getApprovedHandler", nil)))
+
+	mux.Handle("POST", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postMitarbeiterHandler), "postMitarbeiterHandler", nil)))
+	mux.Handle("GET", "/mitarbeiter/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getMitarbeiterHandler", nil)))
+	mux.Handle("GET", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getAllMitarbeitersHandler", nil)))
+
+	mux.Handle("GET", "/tag/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTagsHandler), "getResearchTags", nil)))
+
+	// paper-review end
+
 	mux.Handle("GET", "/taxonomy", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTaxonomyHandler), "getTaxonomyHandler", nil)))
 	mux.Handle("POST", "/getTaxonomyID", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTaxonomyIDHandler), "getTaxonomyIDHandler", nil)))
 	mux.Handle("POST", "/correlation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCorrelationHandler), "getCorrelationHandler", nil)))
@@ -327,6 +353,9 @@ func main() {
 	mux.HandleFunc("POST", "/renameAttribute", func(w http.ResponseWriter, r *http.Request) {
 		checkTaxonomyPermissions(w, r, renameAttributeHandler)
 	})
+	mux.HandleFunc("POST", "/updateSynonyms", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, updateSynonymsHandler)
+	})
 	mux.HandleFunc("POST", "/renameDimension", func(w http.ResponseWriter, r *http.Request) {
 		checkTaxonomyPermissions(w, r, renameDimensionHandler)
 	})
@@ -359,6 +388,15 @@ func main() {
 	})
 	mux.HandleFunc("POST", "/forkAttribute", func(w http.ResponseWriter, r *http.Request) {
 		checkTaxonomyPermissions(w, r, getForkAttributeHandler)
+	})
+
+	mux.HandleFunc("GET", "/review.html", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/review.html")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/landing", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/landing.html")
+		fmt.Fprintf(w, "%s", p)
 	})
 
 	mux.HandleFunc("GET", "/error.js", func(w http.ResponseWriter, r *http.Request) {
@@ -401,6 +439,14 @@ func main() {
 		p := loadPage("frontend/src/js/compare-strings.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/levenshtein.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/levenshtein.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/liquidmetal.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/liquidmetal.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/fuzzysort.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/fuzzysort.js")
 		fmt.Fprintf(w, "%s", p)
@@ -431,38 +477,6 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/multiselect.min.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/multiselect.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/three.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/three/three.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/threex.dynamictexture.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/three/threex.dynamictexture.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/threex.dynamictext2dobject.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/three/threex.dynamictext2dobject.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/DragControls.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/three/DragControls.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/TrackballControls.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/three/TrackballControls.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/PointerLockControls.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/three/PointerLockControls.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/FlyControls.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/three/FlyControls.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/stats.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/stats.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/cytoscape.min.js", func(w http.ResponseWriter, r *http.Request) {
@@ -541,6 +555,10 @@ func main() {
 	mux.HandleFunc("GET", "/selectize.bootstrap3.css", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/css/selectize.bootstrap3.css")
 		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/scripts.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/scripts.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/style.css", func(w http.ResponseWriter, r *http.Request) {
@@ -700,10 +718,6 @@ func main() {
 		p := loadPage("frontend/taxonomy/index.html")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/benchmark", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/Benchmark.html")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/users", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/users/users.html")
 		fmt.Fprintf(w, "%s", p)
@@ -724,60 +738,12 @@ func main() {
 		p := loadPage("frontend/taxonomy/hierarchy/circlePacking.html")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/treemap", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/hierarchy/treemap.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/treemap2", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/hierarchy/treemap2.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/conceptCorrelationMatrix", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations.html")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/conceptCorrelationMatrix2D", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_two_dimensional.html")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/conceptCorrelationMatrix2DCluster", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_two_dimensional_cluster.html")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/conceptCorrelationMatrix3D", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_three_dimensional.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/conceptCorrelationMatrix3D2", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_three_dimensional2.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/attributeCoverageMatrix", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/correlationMap/interactive/attributeCoverage.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/3D", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/3D/hierarchy.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/chord", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/chordMap.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/horizontal", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/BPHorizontal.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/vertical", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/BPVertical.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/correlationMap", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/correlationMap/index.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/coverage", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/correlationMap/attributeCoverage.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomyRelations", func(w http.ResponseWriter, r *http.Request) {
@@ -1737,6 +1703,28 @@ func renameAttributeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	w.Write(output)
 }
+func updateSynonymsHandler(w http.ResponseWriter, r *http.Request) {
+    var updateSynonymsRequest model.UpdateSynonymsRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&updateSynonymsRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.UpdateSynonyms(updateSynonymsRequest.TaxonomyID, updateSynonymsRequest.Attribute, updateSynonymsRequest.Synonyms)
+	checkErr(err)
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
 func renameDimensionHandler(w http.ResponseWriter, r *http.Request) {
     var renameDimensionRequest model.RenameAttributeRequest
     if r.Body == nil {
@@ -2195,4 +2183,178 @@ func loadPage(filename string) (body []byte) {
 	// fmt.Printf("%d", len(body))
 	checkErr(err)
 	return body
+}
+
+// paper-review
+
+func postResearchHandler(u *url.URL, h http.Header, research *model.Research) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	_, id, err := driver.InsertResearch(*research)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), 1, "Research inserted"}, nil
+}
+func postVoteHandler(u *url.URL, h http.Header, vote *model.Vote) (int, http.Header, *MyResponse, error) {
+	if vote.State < -1 || vote.State > 1 {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "Vote State value can strictly be set to [-1,1]"}, nil
+	}
+	if vote.Voter.ID <= 0 {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "Mitarbeiter id is missing"}, nil
+	}
+	if vote.AssociatedArticleID <= 0 {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "Article id is missing"}, nil
+	}
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	_, id, err := driver.InsertVote(*vote)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), 1, "Vote inserted"}, nil
+}
+func getResearchHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	//	fmt.Println("in getResearchHandler")
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	resp := MyResponse{}
+	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
+		//	fmt.Println(u.Query().Get("id"))
+		research, err := driver.SelectResearchWithArticles(i)
+		checkErr(err)
+		resp.Response = research
+	} else {
+		//select all researches
+		all, err := driver.SelectAllResearch()
+		checkErr(err)
+		resp.Response = all
+	}
+	return http.StatusOK, nil, &resp, nil
+}
+func getVoteHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	resp := MyResponse{}
+	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
+		//fmt.Println(u.Query().Get("id"))
+		research, err := driver.SelectVote(i)
+		checkErr(err)
+		resp.Response = research
+	} else {
+		//select all votes
+		all, err := driver.SelectAllVotes()
+		checkErr(err)
+		resp.Response = all
+	}
+	return http.StatusOK, nil, &resp, nil
+}
+func getVotesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	resp := MyResponse{}
+	if i, _ := strconv.ParseInt(u.Query().Get("researchID"), 10, 64); i > 0 {
+		//fmt.Println(u.Query().Get("researchID"))
+		research, err := driver.SelectResearchVotes(i)
+		//fmt.Printf("HERE tryping %v\n", i)
+		checkErr(err)
+		resp.Response = research
+	} else {
+		//select all votes
+		all, err := driver.SelectAllVotes()
+		checkErr(err)
+		resp.Response = all
+	}
+	return http.StatusOK, nil, &resp, nil
+}
+func getReviewHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 32)
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "researchID is missing"}, nil
+	}
+	mitarbeiterID, err := strconv.ParseInt(u.Query().Get("mitarbeiterID"), 10, 64)
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "mitarbeiterID is missing"}, nil
+	}
+	limit := 0
+	if i, err := strconv.Atoi(u.Query().Get("limit")); err == nil {
+		limit = i
+	}
+
+	if limit == 0 {
+		a, _, err := driver.ReviewPapers(researchID, mitarbeiterID)
+		if err != nil {
+			return http.StatusNotAcceptable, nil, &MyResponse{"0", 0, err.Error()}, nil
+		}
+		return http.StatusOK, nil, &MyResponse{"0", 1, a}, nil
+	}
+	a, _, err := driver.ReviewNumPapers(researchID, mitarbeiterID, limit)
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 0, err.Error()}, nil
+	}
+	return http.StatusOK, nil, &MyResponse{"0", 1, a}, nil
+
+}
+
+func postMitarbeiterHandler(u *url.URL, h http.Header, mitarbeiter *model.Mitarbeiter) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	_, id, err := driver.InsertMitarbeiter(*mitarbeiter)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), 1, "Mitarbeiter inserted"}, nil
+}
+func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	resp := MyResponse{}
+	if i, _ := strconv.ParseInt(u.Query().Get("id"), 10, 64); i > 0 {
+		//fmt.Println(u.Query().Get("id"))
+		research, err := driver.SelectMitarbeiter(i)
+		checkErr(err)
+		resp.Response = research
+	} else {
+		//select all researches
+		all, err := driver.SelectAllMitarbeiters()
+		checkErr(err)
+		resp.Response = all
+	}
+	return http.StatusOK, nil, &resp, nil
+}
+
+func getTagsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	if i, _ := strconv.ParseInt(u.Query().Get("researchID"), 10, 64); i > 0 {
+		tags, err := driver.SelectAllTags(i)
+		if err != nil {
+
+		}
+		return http.StatusOK, nil, &MyResponse{"0", 1, tags}, nil
+	}
+	return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "researchID is missing/malformed"}, nil
+
+}
+
+func getApprovedHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 64)
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "researchID is missing"}, nil
+	}
+	threshold, err := strconv.Atoi(u.Query().Get("threshold"))
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 0, err.Error()}, nil
+	}
+	papers, err := driver.GetApprovedPapers(researchID, threshold)
+	checkErr(err)
+	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
+}
+
+func getReviewStatsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	resp := MyResponse{}
+	researchID, err := strconv.ParseInt(u.Query().Get("researchID"), 10, 64)
+	if err != nil {
+		return http.StatusNotAcceptable, nil, &MyResponse{"0", 1, "researchID is missing"}, nil
+	}
+	if mitarbeiterID, _ := strconv.ParseInt(u.Query().Get("mitarbeiterID"), 10, 64); mitarbeiterID > 0 {
+		stats, err := driver.GetResearchStatsPerMitarbeiter(researchID, mitarbeiterID)
+		checkErr(err)
+		resp.Response = stats
+	} else {
+		//select all researches
+		all, err := driver.GetResearchStats(researchID)
+		checkErr(err)
+		resp.Response = all
+	}
+	return http.StatusOK, nil, &resp, nil
 }

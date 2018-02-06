@@ -63,18 +63,29 @@
   <div class="navbar"></div>
   <div class="modals"></div>
 
-  <div style="width:165px;margin-top:30px;margin-bottom:30px;margin-left:10px;">
-    <form>
-      <label for="dataType">Data Type: </label><select class="form-control" id="dataType">
-        <option value="citationCount" selected="selected">Citation count</option>
-        <option value="referenceCount">Sum of references</option>
-      </select>
-      <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
-      <input type="button" class="btn btn-success" id="exportPNG" style="margin-top:5px;" value="Export PNG">
-      <input type="button" class="btn btn-success" id="exportHTML" style="margin-top:5px;" value="Export HTML">
-  </form>
+  <!-- <div class="col-sm-2" style="width:165px;margin-top:30px;margin-bottom:30px;margin-left:10px;"> -->
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-2">
+      <div class="btn btn-group" role="group" aria-label="...">
+        <button type="button" class="btn btn-default" id="exportPNG" title="Export PNG"><span class="glyphicon glyphicon-picture" value="Export PNG" ></span></button>
+        <button type="button" class="btn btn-default" id="exportHTML" title="Export HTML"><span class="glyphicon glyphicon-file" value="Export HTML" ></span></button>
+      </div>
+    </div>
+    <div class="col-sm-2">
+      <form>
+        <label for="dataType">Data Type: </label>
+          <select class="form-control" id="dataType">
+            <option value="citationCount" selected="selected">Citation count</option>
+            <option value="referenceCount">Sum of references</option>
+          </select>
+        <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
+      </form>
+    </div>
   </div>
-  <div id="colorLegend" style="margin-left:330px;margin-top:30px;margin-bottom:15px;"></div>
+</div>
+  <!-- </div> -->
+  <div id="colorLegend" style="margin-left:250px;margin-top:30px;margin-bottom:15px;"></div>
   <div id="svgContainer">
   </div>
 <script id="mainScript">
@@ -94,6 +105,8 @@
 
   const DEFAULT_TAXONOMY_ID = 1;
   var TAXONOMY_ID;
+
+  const MIN_SIZE_VALUE = 1;
 
   const ATTRIBUTE_URL = 'attribute';
   const CITATION_COUNTS_URL = 'citationCounts';
@@ -316,6 +329,17 @@
       });
   }
 
+  function sumOriginalValues ( d ) {
+    var sum = !!d.data.originalValue ? d.data.originalValue : 0;
+    if (!!d.children && d.children.length > 0) {
+      d.children.forEach ( function ( child ) {
+        sum += sumOriginalValues(child);
+      });
+    }
+    return sum;
+  }
+
+  // based on https://bl.ocks.org/mbostock/7607535
   function showHierarchy ( json, minValue, maxValue ) {
     d3.selectAll("svg").remove();
     $('#svgContainer').html('<svg id="circlePackingSVG" width="960" height="960"></svg>');
@@ -326,7 +350,7 @@
 
     var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) {
       var text = d.data.name; 
-      if (!!d.data.size) text += ': ' + d.data.size;
+      text += ': ' + d.data.originalValue;
       return text;
     });
     svg.call(d3Tip);
@@ -347,7 +371,8 @@
 
       var rootNode = d3.hierarchy(json)
           .sum(function(d) { return d.size; })
-          .sort(function(a, b) { return b.value - a.value; });
+          .sort(function(a, b) { return b.value - a.value; })
+          .each ( function (d) { d.data.originalValue = sumOriginalValues(d); });
 
       var focus = rootNode,
           nodes = pack(rootNode).descendants(),
@@ -427,8 +452,13 @@
   function traverseTree ( json, attributes, parents, counter, useReferenceCount ) {
     if (attributes.length == 0 || counter > 100) {
       parents.forEach ( function ( parent ) {
-        if (!!useReferenceCount) parent.size = !!parent.referenceCountSum ? (parent.referenceCountSum) : 0;
-        else parent.size = !!parent.citationCount ? (parent.citationCount) : 0;
+        if (!!useReferenceCount) {
+          parent.size = !!parent.referenceCountSum ? parent.referenceCountSum : MIN_SIZE_VALUE;
+          parent.originalValue = !!parent.referenceCountSum ? parent.referenceCountSum : 0;
+        } else {
+          parent.size = !!parent.citationCount ? parent.citationCount : MIN_SIZE_VALUE;
+          parent.originalValue = !!parent.citationCount ? parent.citationCount : 0;
+        }
       });
       return json;
     }

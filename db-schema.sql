@@ -1,8 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `paper_review` /*!40100 DEFAULT CHARACTER SET utf8 */;
-USE `paper_review`;
+CREATE DATABASE  IF NOT EXISTS `classification` /*!40100 DEFAULT CHARACTER SET utf8 */;
+USE `classification`;
 -- MySQL dump 10.13  Distrib 5.7.9, for Win64 (x86_64)
 --
--- Host: localhost    Database: paper_review
+-- Host: localhost    Database: classification
 -- ------------------------------------------------------
 -- Server version	5.7.12-log
 
@@ -176,7 +176,7 @@ CREATE TABLE `votes` (
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `articles_view` AS select `distict_articles`.`ArticleId` AS `ArticleId`,`distict_articles`.`Title` AS `Title`,`distict_articles`.`year` AS `year`,`distict_articles`.`cited_by` AS `cited_by`,`distict_articles`.`Keywords` AS `Keywords`,`distict_articles`.`Abstract` AS `Abstract`,`distict_articles`.`Journal` AS `Journal`,`distict_articles`.`ResearchId` AS `ResearchId`,`distict_articles`.`Authors` AS `Authors`,`distict_articles`.`File` AS `File`,`distict_articles`.`Source` AS `Source` from (select max(`a`.`ArticleId`) AS `ArticleId`,`a`.`Title` AS `Title`,max(cast(`a`.`year` as unsigned)) AS `year`,max(cast(`a`.`cited_by` as unsigned)) AS `cited_by`,max(`a`.`Keywords`) AS `Keywords`,max(`a`.`Abstract`) AS `Abstract`,max(`a`.`Journal`) AS `Journal`,`a`.`ResearchId` AS `ResearchId`,max(`a`.`Authors`) AS `Authors`,min(`a`.`File`) AS `File`,max(`a`.`Source`) AS `Source`,max(`a`.`Enabled`) AS `Enabled` from `paper_review`.`articles` `a` group by `a`.`Title`,`a`.`ResearchId`) `distict_articles` where (`distict_articles`.`Enabled` = 1) */;
+/*!50001 VIEW `articles_view` AS select `distict_articles`.`ArticleId` AS `ArticleId`,`distict_articles`.`Title` AS `Title`,`distict_articles`.`year` AS `year`,`distict_articles`.`cited_by` AS `cited_by`,`distict_articles`.`Keywords` AS `Keywords`,`distict_articles`.`Abstract` AS `Abstract`,`distict_articles`.`Journal` AS `Journal`,`distict_articles`.`ResearchId` AS `ResearchId`,`distict_articles`.`Authors` AS `Authors`,`distict_articles`.`File` AS `File`,`distict_articles`.`Source` AS `Source` from (select max(`a`.`ArticleId`) AS `ArticleId`,`a`.`Title` AS `Title`,max(cast(`a`.`year` as unsigned)) AS `year`,max(cast(`a`.`cited_by` as unsigned)) AS `cited_by`,max(`a`.`Keywords`) AS `Keywords`,max(`a`.`Abstract`) AS `Abstract`,max(`a`.`Journal`) AS `Journal`,`a`.`ResearchId` AS `ResearchId`,max(`a`.`Authors`) AS `Authors`,min(`a`.`File`) AS `File`,max(`a`.`Source`) AS `Source`,max(`a`.`Enabled`) AS `Enabled` from `classification`.`articles` `a` group by `a`.`Title`,`a`.`ResearchId`) `distict_articles` where (`distict_articles`.`Enabled` = 1) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -194,7 +194,7 @@ CREATE TABLE `votes` (
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `unique_articles_view` AS select `distict_articles`.`ArticleId` AS `ArticleId`,`distict_articles`.`Title` AS `Title`,`distict_articles`.`year` AS `year`,`distict_articles`.`cited_by` AS `cited_by`,`distict_articles`.`Keywords` AS `Keywords`,`distict_articles`.`Abstract` AS `Abstract`,`distict_articles`.`Journal` AS `Journal`,`distict_articles`.`ResearchId` AS `ResearchId`,`distict_articles`.`Authors` AS `Authors`,`distict_articles`.`File` AS `File`,`distict_articles`.`Source` AS `Source` from (select max(`a`.`ArticleId`) AS `ArticleId`,`a`.`Title` AS `Title`,max(cast(`a`.`year` as unsigned)) AS `year`,max(cast(`a`.`cited_by` as unsigned)) AS `cited_by`,max(`a`.`Keywords`) AS `Keywords`,max(`a`.`Abstract`) AS `Abstract`,max(`a`.`Journal`) AS `Journal`,`a`.`ResearchId` AS `ResearchId`,max(`a`.`Authors`) AS `Authors`,min(`a`.`File`) AS `File`,max(`a`.`Source`) AS `Source`,max(`a`.`Enabled`) AS `Enabled` from `paper_review`.`articles` `a` group by `a`.`Title`,`a`.`ResearchId`) `distict_articles` */;
+/*!50001 VIEW `unique_articles_view` AS select `distict_articles`.`ArticleId` AS `ArticleId`,`distict_articles`.`Title` AS `Title`,`distict_articles`.`year` AS `year`,`distict_articles`.`cited_by` AS `cited_by`,`distict_articles`.`Keywords` AS `Keywords`,`distict_articles`.`Abstract` AS `Abstract`,`distict_articles`.`Journal` AS `Journal`,`distict_articles`.`ResearchId` AS `ResearchId`,`distict_articles`.`Authors` AS `Authors`,`distict_articles`.`File` AS `File`,`distict_articles`.`Source` AS `Source` from (select max(`a`.`ArticleId`) AS `ArticleId`,`a`.`Title` AS `Title`,max(cast(`a`.`year` as unsigned)) AS `year`,max(cast(`a`.`cited_by` as unsigned)) AS `cited_by`,max(`a`.`Keywords`) AS `Keywords`,max(`a`.`Abstract`) AS `Abstract`,max(`a`.`Journal`) AS `Journal`,`a`.`ResearchId` AS `ResearchId`,max(`a`.`Authors`) AS `Authors`,min(`a`.`File`) AS `File`,max(`a`.`Source`) AS `Source`,max(`a`.`Enabled`) AS `Enabled` from `classification`.`articles` `a` group by `a`.`Title`,`a`.`ResearchId`) `distict_articles` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

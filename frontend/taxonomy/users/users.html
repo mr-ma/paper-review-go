@@ -44,6 +44,9 @@
 </div>
 
 	<script>
+    const DEFAULT_TAXONOMY_ID = 1;
+    var TAXONOMY_ID;
+    
     $(document).ready(function  () {
       var initUserPromise = new Promise( function ( resolve, reject ) {
         initUserManagement(resolve, reject);

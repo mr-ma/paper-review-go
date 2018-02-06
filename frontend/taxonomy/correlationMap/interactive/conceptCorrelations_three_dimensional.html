@@ -78,6 +78,10 @@ text.active {
 <div id="graph"></div>
 
 <script>
+  const IS_STATIC = false;
+
+  const DEFAULT_TAXONOMY_ID = 1;
+  var TAXONOMY_ID;
 
   var admin = false;
   var lastParentText = '';
@@ -716,33 +720,28 @@ function initPage () {
 }
 
 $(document).ready( function () {
-  var promises = [];
-  var initPagePromise = new Promise ( function ( resolve, reject ) {
+  window.onhashchange = function () {
+    var hash = window.location.hash;
+    console.log("hash changed to: " + hash);
+    window.location.reload(false);
+  };
+  $(this).on('contextmenu', function ( e ) {
+    e.preventDefault();
+  });
+  if (!!IS_STATIC) {
+    loadBanner('STATIC');
     initPage();
-    resolve();
+    return;
+  }
+  var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+    initUserManagement(resolve, reject);
+  }).then ( function ( user ) {
+    initPage();
+  }).catch ( function ( err ) {
+    console.log('Error loading user: ', err);
+    handleError(err);
+    initPage();
   });
-  promises.push(initPagePromise);
-  var initUserPromise = new Promise( function ( resolve, reject ) {
-    var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
-      initUserManagement(resolve, reject);
-    }).then ( function ( user ) {
-      if (!!user && user.admin == 1) {
-        admin = true;
-      }
-      resolve(user);
-    }).catch ( function ( err ) {
-      reject(err);
-    });
-  });
-  promises.push(initUserPromise);
-  Promise.all(promises)
-    .then ( function ( results ) {
-      console.log('Page is loaded.');
-    }).catch ( function ( err ) {
-      console.log('Error: ', err);
-      handleError(err);
-      initPage();
-    });
 });
 
 </script>

@@ -33,8 +33,8 @@ type PaperReviewDriver interface {
 
 
 //InitMySQLDriver initialize a new my sql driver instance
-func InitMySQLDriver(user string, password string) PaperReviewDriver {
-	return MySQLDriver{username: user, pass: password, database: "paper_review"}
+func InitPaperReviewDriver(user string, password string) PaperReviewDriver {
+	return MySQLDriver{username: user, pass: password, database: "classification"}
 }
 
 

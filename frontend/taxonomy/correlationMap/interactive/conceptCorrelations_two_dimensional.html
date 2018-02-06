@@ -42,7 +42,7 @@ text.active {
     <script src="selectize.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/js/standalone/selectize.min.js"></script>
     <link href="selectize.bootstrap3.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.bootstrap3.css">
 
-    <script src="bootstrap-waitingfor.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-waitingfor/1.2.4/bootstrap-waitingfor.min.js"></script>
+    <!--<script src="bootstrap-waitingfor.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-waitingfor/1.2.4/bootstrap-waitingfor.min.js"></script>-->
 
     <link href="d3-context-menu.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
     <script src="d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
@@ -52,6 +52,8 @@ text.active {
 
     <script src="lodash.core.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
     <!-- <script src="compare-strings.js" data-web="https://cdn.rawgit.com/aceakash/string-similarity/0bc73e79/compare-strings.js"></script> -->
+    <script src="levenshtein.min.js" data-web="https://cdn.rawgit.com/hiddentao/fast-levenshtein/master/levenshtein.min.js"></script>
+    <script src="liquidmetal.js" data-web="https://cdn.rawgit.com/rmm5t/liquidmetal/master/liquidmetal.js"></script>
     <script src="fuzzysort.js" data-web="https://cdn.rawgit.com/farzher/fuzzysort/19e81c13/fuzzysort.js"></script>
 
     <link href="loginForm.css" type="text/css" rel="stylesheet">
@@ -69,6 +71,10 @@ text.active {
     <script src="userManagement.js"></script>
     <script src="error.js"></script>
 
+<script>
+// bootstrap-waitingfor.min.js
+!function(e,a){"use strict";"function"==typeof define&&define.amd?define(["jquery"],function(d){return e.waitingDialog=a(d)}):e.waitingDialog=e.waitingDialog||a(e.jQuery)}(this,function(e){"use strict";function a(a){return a&&a.remove(),e('<div class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true" style="padding-top:15%; overflow-y:visible;"><div class="modal-dialog modal-m"><div class="modal-content"><div class="modal-header" style="display: none;"></div><div class="modal-body"><div class="progress progress-striped active" style="margin-bottom:0;"><div class="progress-bar" style="width: 100%"></div></div></div></div></div></div>')}var d,t,n={};return{show:function(n,i){"undefined"==typeof i&&(i={}),"undefined"==typeof n&&(n="Loading");var r,o,s=e.extend({headerText:"",headerSize:3,headerClass:"",dialogSize:"m",progressType:"",contentElement:"p",contentClass:"content",ltr:!0,timer:500,timeout:0,onHide:null},i);t=s,d=a(d),d.find(".modal-dialog").attr("class","modal-dialog").addClass("modal-"+s.dialogSize),d.find(".progress-bar").attr("class","progress-bar"),s.progressType&&d.find(".progress-bar").addClass("progress-bar-"+s.progressType),s.ltr&&d.find(".progress-bar").css("float","left").end().attr("dir","ltr"),r=e("<h"+s.headerSize+" />"),r.css({margin:0}),s.headerClass&&r.addClass(s.headerClass),o=e("<"+s.contentElement+" />"),s.contentClass&&o.addClass(s.contentClass),s.headerText===!1?(o.html(n),d.find(".modal-body").prepend(o)):s.headerText?(r.html(s.headerText),d.find(".modal-header").html(r).show(),o.html(n),d.find(".modal-body").prepend(o)):(r.html(n),d.find(".modal-header").html(r).show()),"function"==typeof s.onHide&&d.off("hidden.bs.modal").on("hidden.bs.modal",function(){s.onHide.call(d)}),d.modal()},hide:function(){"undefined"!=typeof d&&d.modal("hide")},message:function(e){return"undefined"!=typeof d?"undefined"!=typeof e?d.find(".modal-header>h"+t.headerSize).html(e):d.find(".modal-header>h"+t.headerSize).html():void 0},animate:function(e,a,i){if(a=a||t.timer,i=i||t.timeout,e=e||d.find(".modal-header>h"+t.headerSize).html(),n.animate=n.animate||[],"string"==typeof e&&(e=["..","....","......"].map(function(a){return e+a})),"object"==typeof e&&e instanceof Array){var r=e;e=function(e){var a=r.indexOf(e.html());if(0>a)e.html(r[0]);else{var d=a+1>=r.length?0:a+1;e.html(r[d])}}}if("function"==typeof e){a>i&&setTimeout(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},i);var o=setInterval(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},a);return n.animate.push(o),o}},stopAnimate:function(e){return e=e||n.animate[n.animate.length-1],clearInterval(e),delete n.animate[n.animate.indexOf(e)],d},progress:function(e,a){return arguments.length?(a&&(e=parseInt(e/a*100)),d.find(".progress-bar").css("width",e+"%"),d):parseInt(d.find(".progress-bar")[0].style.width)}}});
+</script>
 <script>
   function compareTwoStrings(str1, str2) {
     var result = null;
@@ -175,7 +181,7 @@ text.active {
       var targetStringsIsAnArrayOfStrings = Array.isArray(targetStrings) &&
         targetStrings.length > 0 &&
         _.every(targetStrings, function (targetString) {
-          return (typeof targetString === 'string');
+          return (typeof targetString === 'string');  
         });
 
       return mainStringIsAString && targetStringsIsAnArrayOfStrings;
@@ -235,59 +241,69 @@ text.active {
   </div>
 </div>
 
-<div style="margin-left:20px;margin-top:50px;">
-    <form style="width:165px;">
-      <label for="parents1">x property: </label>
-      <select class="form-control" id="parents2" hidden>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-2">
+        <div class="btn btn-group" role="group" aria-label="...">
+          <button type="button" class="btn btn-default" id="exportPNG" title="Export PNG"><span class="glyphicon glyphicon-picture" value="Export PNG" ></span></button>
+          <button type="button" class="btn btn-default" id="exportHTML" title="Export HTML"><span class="glyphicon glyphicon-file" value="Export HTML" ></span></button>
+          <button type="button" class="btn btn-default" id="import" title="Import"><span class=" glyphicon glyphicon-folder-open" value="Import" ></span></button>
+          <button type="button" class="btn btn-default" id="saveMappings" title="Save Mappings"><span class="glyphicon glyphicon-floppy-disk" value="Save Mappings" ></span></button>
+        </div>
+        <div style="margin-top:20px;">
+          <label for="importMinSimilarity">Min Similarity: </label><input type="text" id="importMinSimilarity" value="" style="width:50px;margin-left:10px;" title="Min similarity">
+        </div>
+        <div>
+          <label for="showCellNumbers">Show Cell Numbers: </label><input type="checkbox" id="showCellNumbers" style="margin-left:10px;" title="Show Cell Numbers" checked>
+        </div>
+    </div>
+    <div class="col-sm-2">
+      <form style="padding:10px;width:200px;">
+      <div hidden>
+        <label for="showChildAttributes">Show child attributes</label>
+        <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
+        <label for="includeChildAttributes">Include child attributes</label>
+        <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;" checked>
+      </div>
+      <label for="dataType">Data Type: </label><select class="form-control" id="dataType">
+        <option value="citationCount" selected="selected">Citation count</option>
+        <option value="referenceCount">Sum of references</option>
       </select>
-      <label for="parents2">y property: </label>
-      <select class="form-control" id="parents1" hidden>
+      <label for="order">Order by: </label><select class="form-control" id="order">
+        <option value="default" selected="selected"></option>
+        <option value="name">by Name</option>
+        <option value="count">by Value</option>
       </select>
-    </form>
+      <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
+      </form>
+    </div>
+    <div class="col-sm-2">
+      <div style="margin-left:20px;margin-top:50px;">
+          <form style="width:165px;">
+            <label for="parents1">x property: </label>
+            <select class="form-control" id="parents2" hidden>
+            </select>
+            <label for="parents2">y property: </label>
+            <select class="form-control" id="parents1" hidden>
+            </select>
+          </form>
+      </div>
+    </div>
 </div>
-
-<form style="padding:10px;width:200px;">
-<div hidden>
-  <label for="showChildAttributes">Show child attributes</label>
-  <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
-  <label for="includeChildAttributes">Include child attributes</label>
-  <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;" checked>
 </div>
-<label for="dataType">Data Type: </label><select class="form-control" id="dataType">
-  <option value="citationCount" selected="selected">Citation count</option>
-  <option value="referenceCount">Sum of references</option>
-</select>
-<label for="order">Order by: </label><select class="form-control" id="order">
-  <option value="default" selected="selected"></option>
-  <option value="name">by Name</option>
-  <option value="count">by Value</option>
-</select>
-<label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
-<input type="button" class="btn btn-success" id="exportPNG" style="margin-top:15px;" value="Export PNG">
-<input type="button" class="btn btn-success" id="exportHTML" style="margin-top:15px;" value="Export HTML">
-<div style="margin-top:15px;">
-  <input type="text" id="importMinSimilarity" value="" style="width:50px;" title="Min similarity">
-</div>
-<div>
-  <input type="button" class="btn btn-success" id="import" style="margin-top:15px;" value="Import">
-  <input type="button" class="btn btn-success" id="importServerside" style="margin-top:15px;" value="Import serverside">
-  <input type="button" class="btn btn-success" id="saveMappings" style="display:none;margin-top:15px;" value="Save Mappings">
-</div>
-</form>
-<div id="colorLegend" style="margin-left:10px;"></div>
-</div>
+<div id="colorLegend"></div>
 
 <script id="mainScript">
   const IS_STATIC = false;
 
-  const STATIC_ARRAY = ['CITATIONS', 'CITATIONCOUNT', 'DIMENSIONS', 'ALLATTRIBUTES', 'ATTRIBUTESX', 'ATTRIBUTESY', 'CORRELATIONS', 'COVERAGE'];
+  const STATIC_ARRAY = ['CITATIONS', 'CITATIONCOUNT', 'DIMENSIONS', 'ALLATTRIBUTES', 'ATTRIBUTESY', 'ATTRIBUTESX', 'CORRELATIONS', 'COVERAGE'];
 
   var STATIC_CITATIONS;
   var STATIC_CITATIONCOUNT;
   var STATIC_DIMENSIONS;
   var STATIC_ALLATTRIBUTES;
-  var STATIC_ATTRIBUTESX;
   var STATIC_ATTRIBUTESY;
+  var STATIC_ATTRIBUTESX;
   var STATIC_CORRELATIONS;
   var STATIC_COVERAGE;
   var DYNAMIC_ARRAY = [];
@@ -295,6 +311,7 @@ text.active {
   const DEFAULT_TAXONOMY_ID = 1;
   var TAXONOMY_ID;
 
+  const KMEANS_CLUSTERS = 7;
   const FUZZY_SORT_MIN_SIMILARITY = -150; // TODO
 
   var totalNumberOfCitations, maxReferenceCount;
@@ -302,7 +319,6 @@ text.active {
   var parents = [];
   var buildingMatrix = false;
 
-  const BACKGROUND_COLOR = 'rgb(28, 181, 224)';
   const colorsBlue = ["#1CB5E0", "#189ECC", "#1587B9", "#1171A6", "#0E5A93", "#0A437F", "#072D6C", "#031659", "#000046"];
   const colorsYGB = ["#F0F8FF","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"]; // #FFFFDD
   const colorsRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
@@ -317,7 +333,8 @@ text.active {
   const DEFAULT_TEXT_FILL = 'white';
   const FONT_SIZE = '8pt';
   const FACTOR = 7;
-  const ROTATION_FACTOR = 6;
+  const ROTATION_FACTOR = 5.5;
+  const ROTATION_FACTOR_2 = 6;
   const SHORTEN_VALUE = 0.035;
   const SHORTEN_VALUE_ROTATION = 2.25;
   const SHORTEN_VALUE_DIMENSION = 3;
@@ -325,44 +342,6 @@ text.active {
   const SHORTEN_LEAF_VALUE = 18;
   const MIN_SHORTEN_VALUE = 3;
   const MIN_SHORTEN_FACTOR = 3;
-
-  function updateSynonyms ( elm ) {
-    var that = d3.select(elm);
-    var synonymText = that.attr('data-synonyms');
-    var synonyms = (!!synonymText && synonymText != '') ? synonymText.split(',') : [];
-    var synonymRows = '';
-    synonyms.forEach ( function ( synonym ) {
-      synonymRows += '<tr>' + synonym + '</tr>';
-    });
-    var tableHeader = '<thead><th>Synonym</th></thead>';
-    var text = that.text();
-    if (!text || text == '') return;
-    var fullText = that.attr('data-fulltext');
-    if (text.split('...').length > 1) {
-      if (!fullText) return;
-      text = fullText;
-    }
-    $('#defaultModalTitle').html(text);
-    $('#searchTableField').val('');
-    $('#defaultModalTableContainer').html(initTable(tableHeader, synonyms));
-    $('#defaultModalButton').prop('disabled', false);
-    $('#defaultModalForm').unbind().on('submit', function ( evt ) {
-      evt.preventDefault();
-      var synonymString = '';
-      $('#defaultModalTableContainer').find('tbody').find('tr').each ( function ( index, entry ) {
-        var cellText = $(entry).find('td:first');
-        cellText = !!cellText ? $(cellText).text() : '';
-        if (!!cellText && cellText != '') synonymString += (synonymString != '' ? ',' : '') + cellText;
-      });
-      that.attr('data-synonyms', synonymString);
-      //$('#defaultModalButton').prop('disabled', true);
-      $('#default-modal').modal('hide');
-    });
-    $('#default-modal').unbind().on('shown.bs.modal', function () {
-      loadTableListeners();
-    });
-    $('#default-modal').modal('show');
-  }
 
   function getSVGString( svgNode ) {
     svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
@@ -588,27 +567,6 @@ text.active {
     updateColorLegend(gradientID, 300, 50, maxValue);
   }
 
-  function sortDefaultX ( a, b ) {
-    if (a.dimension != '' && b.dimension == '') return -1;
-    if (a.dimension == '' && b.dimension != '') return 1;
-    if (a.dimension < b.dimension) return -1;
-    else if (a.dimension > b.dimension) return 1;
-    var i = a.parents.length - 1;
-    var j = b.parents.length - 1;
-    while (i >= 0 && j >= 0) {
-      if (a.parents[i] < b.parents[j]) return -1;
-      if (b.parents[j] < a.parents[i]) return 1;
-      i--;
-      j--;
-    }
-    if (i >= 0) return -1;
-    if (j >= 0) return 1;
-    if (a.text != '' && b.text == '') return -1;
-    if (a.text == '' && b.text != '') return 1;
-    if (a.text == '' && b.text == '') return 0;
-    return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
-  }
-
   function sortDefaultY ( a, b ) {
     if (a.dimension != '' && b.dimension == '') return -1;
     if (a.dimension == '' && b.dimension != '') return 1;
@@ -630,42 +588,58 @@ text.active {
     return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
   }
 
-  function sortNodes ( value, nodesX, nodesY ) {
-    var sortX, sortY;
-    if (value == 'name') {
-      sortX = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else { var value = d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); return value != 0 ? value : sortDefaultX(a, b); }};
-      sortY = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else { var value = d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); return value != 0 ? value : sortDefaultY(a, b); }};
-    } else if (value == 'count') {
-      sortX = function (a, b) { if (a.count == b.count) return sortDefaultX(a, b); return b.count - a.count; };
-      sortY = function (a, b) { if (a.count == b.count) return sortDefaultY(a, b); return b.count - a.count; };
-    } else {
-      sortX = sortDefaultX;
-      sortY = sortDefaultY;
+  function sortDefaultX ( a, b ) {
+    if (a.dimension != '' && b.dimension == '') return -1;
+    if (a.dimension == '' && b.dimension != '') return 1;
+    if (a.dimension < b.dimension) return -1;
+    else if (a.dimension > b.dimension) return 1;
+    var i = a.parents.length - 1;
+    var j = b.parents.length - 1;
+    while (i >= 0 && j >= 0) {
+      if (a.parents[i] < b.parents[j]) return -1;
+      if (b.parents[j] < a.parents[i]) return 1;
+      i--;
+      j--;
     }
-    nodesX.sort(sortX);
-    nodesY.sort(sortY);
-    return {x: nodesX, y: nodesY};
+    if (i >= 0) return -1;
+    if (j >= 0) return 1;
+    if (a.text != '' && b.text == '') return -1;
+    if (a.text == '' && b.text != '') return 1;
+    if (a.text == '' && b.text == '') return 0;
+    return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
   }
 
-  function buildMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalX, nodesOriginalY ) {
-    if (!!buildingMatrix) return;
-    console.time('Build Matrix');
-    if (!!sortValues && !!selectedOrder && selectedOrder != 'default') {
-      var sortedNodes = sortNodes(selectedOrder, nodesX, nodesY);
-      buildingMatrix = false;
-      return buildMatrix({response: sortedNodes.x}, {response: sortedNodes.y}, correlations, maxValue, onClickURL, false, selectableCells, nodesOriginalX, nodesOriginalY);
+  function sortNodes ( value, nodesY, nodesX ) {
+    var sortY, sortX;
+    if (value == 'name') {
+      sortY = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else { var value = d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); return value != 0 ? value : sortDefaultY(a, b); }};
+      sortX = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else { var value = d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); return value != 0 ? value : sortDefaultX(a, b); }};
+    } else if (value == 'count') {
+      sortY = function (a, b) { if (a.count == b.count) return sortDefaultY(a, b); return b.count - a.count; };
+      sortX = function (a, b) { if (a.count == b.count) return sortDefaultX(a, b); return b.count - a.count; };
+    } else {
+      sortY = sortDefaultY;
+      sortX = sortDefaultX;
     }
+    nodesY.sort(sortY);
+    nodesX.sort(sortX);
+    return {y: nodesY, x: nodesX};
+  }
+
+  function buildMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalY, nodesOriginalX ) {
+    if (!!buildingMatrix) return;
     buildingMatrix = true;
+    console.time('Build Matrix');
     d3.selectAll(".d3-tip").remove();
 
-    //var rootsX = buildParentTree(attributesX.response);
     //var rootsY = buildParentTree(attributesY.response);
-    var matrixX = [],
-        matrixY = [],
-        nodesX = attributesX.response,
-        n = attributesX.response.length,
+    //var rootsX = buildParentTree(attributesX.response);
+    var matrixY = [],
+        matrixX = [],
         nodesY = attributesY.response,
-        m = attributesY.response.length;
+        n = attributesY.response.length,
+        nodesX = attributesX.response,
+        m = attributesX.response.length;
 
     if (n == 0 || m == 0) return;
 
@@ -673,96 +647,97 @@ text.active {
     // making the matrix quadratic
     if (n > m) {
       for ( var i = 0; i < (n - m); i++ ) {
-        nodesY.push({id: -1, text: '', parentText: '', dimension: ''});
+        nodesX.push({id: -1, text: '', parentText: '', dimension: ''});
       }
       m = n;
     } else if (n < m) {
       for ( var i = 0; i < (m - n); i++ ) {
-        nodesX.push({id: -1, text: '', parentText: '', dimension: ''});
+        nodesY.push({id: -1, text: '', parentText: '', dimension: ''});
       }
       n = m;
     }
 */
 
-    nodesX.forEach ( function (node, i) {
+    nodesY.forEach ( function (node, i) {
       node.index = i;
       if (node.id < 0) node.count = -1;
       else node.count = 0;
-      matrixX[i] = d3.range(m).map(function(j) { return {x: j, y: i+1, z: 0}; });
+      matrixY[i] = d3.range(m).map(function(j) { return {x: j, y: i+1, z: 0}; });
       maxHeight += node.text.length;
       node.parents = (!!node.parentText && node.parentText != '') ? node.parentText.split(',') : [];
     });
 
     // Compute index per node.
-    nodesY.forEach(function(node, i) {
+    nodesX.forEach(function(node, i) {
       node.index = i;
       if (node.id < 0) node.count = -1;
       else node.count = 0;
-      matrixY[i] = d3.range(n).map(function(j) { return {x: i+1, y: j, z: 0}; });
+      matrixX[i] = d3.range(n).map(function(j) { return {x: i+1, y: j, z: 0}; });
       maxWidth += node.text.length;
       node.parents = (!!node.parentText && node.parentText != '') ? node.parentText.split(',') : [];
     });
 
-    if (!nodesOriginalX) nodesOriginalX = nodesX.slice(0);
     if (!nodesOriginalY) nodesOriginalY = nodesY.slice(0);
+    if (!nodesOriginalX) nodesOriginalX = nodesX.slice(0);
 
     var maxWidth = 0;
     var maxHeight = 0;
 
-    console.log('nodesY: ', nodesY, 'nodesX: ', nodesX);
+    console.log('nodesX: ', nodesX, 'nodesY: ', nodesY);
 /*
-    nodesX.sort ( function ( a, b ) {
+    nodesY.sort ( function ( a, b ) {
       return a.parents.length < b.parents.length ? 1 : (a.parents.length > b.parents.length ? -1 : (a.text < b.text ? -1 : (a.text == b.text ? 0 : 1)));
     });
 
-    nodesY.sort ( function ( a, b ) {
+    nodesX.sort ( function ( a, b ) {
       return a.parents.length < b.parents.length ? 1 : (a.parents.length > b.parents.length ? -1 : (a.text < b.text ? -1 : (a.text == b.text ? 0 : 1)));
     });
 */
 
     if (onClickURL == 'citationDetails') selectableCells = true; // TODO
 
-    var hasDimensionsX = hasDimensions(nodesX);
     var hasDimensionsY = hasDimensions(nodesY);
+    var hasDimensionsX = hasDimensions(nodesX);
 
-    var treeDepthX = getTreeDepth(nodesX);
     var treeDepthY = getTreeDepth(nodesY);
+    var treeDepthX = getTreeDepth(nodesX);
 
-    var hasParentsX = treeDepthX > 0;
     var hasParentsY = treeDepthY > 0;
-    if (hasDimensionsX) treeDepthX++;
+    var hasParentsX = treeDepthX > 0;
     if (hasDimensionsY) treeDepthY++;
+    if (hasDimensionsX) treeDepthX++;
 
-    //var marginLeft = getMaxNameLength(nodesX) * 3;
-    //var marginTop = getMaxNameLength(nodesY) * 3 + 5;
+    //var marginLeft = getMaxNameLength(nodesY) * 3;
+    //var marginTop = getMaxNameLength(nodesX) * 3 + 5;
     var marginLeft = 100;
     var marginTop = 105;
 
-    var textTransformFactorX = 105;
     var textTransformFactorY = 105;
+    var textTransformFactorX = 105;
 
-    if (!hasDimensionsX && !hasParentsX) {
-      marginLeft = 150;
-      textTransformFactorX = 125;
-    }
     if (!hasDimensionsY && !hasParentsY) {
-      marginTop = 150;
+      marginLeft = 150;
       textTransformFactorY = 125;
+    }
+    if (!hasDimensionsX && !hasParentsX) {
+      marginTop = 150;
+      textTransformFactorX = 125;
     }
 
     // TODO
-    var left = marginLeft + Math.max(1, treeDepthX) * 35;
-    var sortedLeft = marginLeft + Math.max(1, treeDepthX) * 60;
-    var top = marginTop + Math.max(1, treeDepthY) * 35;
-    var sortedTop = marginTop + Math.max(1, treeDepthY) * 60;
+    var left = marginLeft + Math.max(1, treeDepthY) * 35;
+    var sortedLeft = marginLeft + Math.max(1, treeDepthY) * 60;
+    var top = marginTop + Math.max(1, treeDepthX) * 35;
+    var sortedTop = marginTop + Math.max(1, treeDepthX) * 60;
 
     var svgMarginLeft = sortedLeft - left;
     var svgMarginTop = sortedTop - top;
 
     var selectedOrder = $('#order').val();
+
     if (!selectedOrder || selectedOrder == 'default') {
-      nodesX.sort (sortDefaultX);
-      nodesY.sort (sortDefaultY);
+      nodesY.sort(sortDefaultY);
+      nodesX.sort(sortDefaultX);
     } // else ?
     left = sortedLeft;
     top = sortedTop;
@@ -773,24 +748,24 @@ text.active {
     correlations.response.forEach(function(link) {
       var foundLinks = 0;
       if (link.text1 == link.text2) {
-        for ( var k = 0; k < nodesX.length; k++) {
-          if (nodesX[k].text == link.text1) {
-            for ( var l = 0; l < nodesY.length; l++) {
-              if (nodesY[l].text == link.text2) {
-                matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesX[k].text;
-                matrixX[k][l].dest = nodesY[l].text;
-                matrixX[k][l].onClickURL = onClickURL;
-                matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesX[k].text;
-                matrixY[l][k].dest = nodesY[l].text;
-                matrixY[l][k].onClickURL = onClickURL;
+        for ( var k = 0; k < nodesY.length; k++) {
+          if (nodesY[k].text == link.text1) {
+            for ( var l = 0; l < nodesX.length; l++) {
+              if (nodesX[l].text == link.text2) {
+                matrixY[k][l].z += link.value;
+                matrixY[k][l].src = nodesY[k].text;
+                matrixY[k][l].dest = nodesX[l].text;
+                matrixY[k][l].onClickURL = onClickURL;
+                matrixX[l][k].z += link.value;
+                matrixX[l][k].src = nodesY[k].text;
+                matrixX[l][k].dest = nodesX[l].text;
+                matrixX[l][k].onClickURL = onClickURL;
                 if (!!link.occurrences) {
-                  matrixX[k][l].occurrences = link.occurrences;
-                  matrixY[l][k].occurrences = link.occurrences;
+                  matrixY[k][l].occurrences = link.occurrences;
+                  matrixX[l][k].occurrences = link.occurrences;
                 }
-                nodesX[k].count += link.value;
-                nodesY[l].count += link.value;
+                nodesY[k].count += link.value;
+                nodesX[l].count += link.value;
                 foundLinks++;
                 break;
               }
@@ -799,41 +774,41 @@ text.active {
           }
         }
       } else {
-        for ( var k = 0; k < nodesX.length; k++ ) {
-          if (nodesX[k].text == link.text1 || nodesX[k].text == link.text2) {
-            for ( var l = 0; l < nodesY.length; l++) {
-              if (nodesY[l].text == link.text2 && nodesX[k].text != nodesY[l].text) {
-                matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesX[k].text;
-                matrixX[k][l].dest = nodesY[l].text;
-                matrixX[k][l].onClickURL = onClickURL;
-                matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesX[k].text;
-                matrixY[l][k].dest = nodesY[l].text;
-                matrixY[l][k].onClickURL = onClickURL;
+        for ( var k = 0; k < nodesY.length; k++ ) {
+          if (nodesY[k].text == link.text1 || nodesY[k].text == link.text2) {
+            for ( var l = 0; l < nodesX.length; l++) {
+              if (nodesX[l].text == link.text2 && nodesY[k].text != nodesX[l].text) {
+                matrixY[k][l].z += link.value;
+                matrixY[k][l].src = nodesY[k].text;
+                matrixY[k][l].dest = nodesX[l].text;
+                matrixY[k][l].onClickURL = onClickURL;
+                matrixX[l][k].z += link.value;
+                matrixX[l][k].src = nodesY[k].text;
+                matrixX[l][k].dest = nodesX[l].text;
+                matrixX[l][k].onClickURL = onClickURL;
                 if (!!link.occurrences) {
-                  matrixX[k][l].occurrences = link.occurrences;
-                  matrixY[l][k].occurrences = link.occurrences;
+                  matrixY[k][l].occurrences = link.occurrences;
+                  matrixX[l][k].occurrences = link.occurrences;
                 }
-                nodesX[k].count += link.value;
-                nodesY[l].count += link.value;
+                nodesY[k].count += link.value;
+                nodesX[l].count += link.value;
                 foundLinks++;
                 break;
-              } else if (nodesY[l].text == link.text1 && nodesX[k].text != nodesY[l].text) {
-                matrixX[k][l].z += link.value;
-                matrixX[k][l].src = nodesX[k].text;
-                matrixX[k][l].dest = nodesY[l].text;
-                matrixX[k][l].onClickURL = onClickURL;
-                matrixY[l][k].z += link.value;
-                matrixY[l][k].src = nodesX[k].text;
-                matrixY[l][k].dest = nodesY[l].text;
-                matrixY[l][k].onClickURL = onClickURL;
+              } else if (nodesX[l].text == link.text1 && nodesY[k].text != nodesX[l].text) {
+                matrixY[k][l].z += link.value;
+                matrixY[k][l].src = nodesY[k].text;
+                matrixY[k][l].dest = nodesX[l].text;
+                matrixY[k][l].onClickURL = onClickURL;
+                matrixX[l][k].z += link.value;
+                matrixX[l][k].src = nodesY[k].text;
+                matrixX[l][k].dest = nodesX[l].text;
+                matrixX[l][k].onClickURL = onClickURL;
                 if (!!link.occurrences) {
-                  matrixX[k][l].occurrences = link.occurrences;
-                  matrixY[l][k].occurrences = link.occurrences;
+                  matrixY[k][l].occurrences = link.occurrences;
+                  matrixX[l][k].occurrences = link.occurrences;
                 }
-                nodesX[k].count += link.value;
-                nodesY[l].count += link.value;
+                nodesY[k].count += link.value;
+                nodesX[l].count += link.value;
                 foundLinks++;
                 break;
               }
@@ -850,50 +825,54 @@ text.active {
     if (!maxValue) maxValue = -1;
     if (maxValue < 0) {
       maxValue = 0;
-      for ( var i = 0; i < matrixX.length; i++ ) {
-        for ( var j = 0; j < matrixX[i].length; j++ ) {
-          if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
-        }
-      }
-/*
       for ( var i = 0; i < matrixY.length; i++ ) {
         for ( var j = 0; j < matrixY[i].length; j++ ) {
           if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
         }
       }
+/*
+      for ( var i = 0; i < matrixX.length; i++ ) {
+        for ( var j = 0; j < matrixX[i].length; j++ ) {
+          if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
+        }
+      }
 */
     }
-
+    if (!!sortValues && !!selectedOrder && selectedOrder != 'default') {
+      var sortedNodes = sortNodes(selectedOrder, nodesY, nodesX);
+      buildingMatrix = false;
+      return buildMatrix({response: sortedNodes.y}, {response: sortedNodes.x}, correlations, maxValue, onClickURL, false, selectableCells, nodesOriginalY, nodesOriginalX);
+    }
     console.log('max value: ' + maxValue);
 
     var minValue = 0;
     var margin = {top: top, right: 0, bottom: 30, left: left}, // left/top: 240
-        width =  nodesY.length * 20, // 1440 or 4500
-        height = nodesX.length * 20; // 1440 or 4500
+        width =  nodesX.length * 20, // 1440 or 4500
+        height = nodesY.length * 20; // 1440 or 4500
 
     console.log("width: " + width + ', height: ' + height)
 
-    function getXPosition ( d ) {
-      var sum = 0;
-      for ( var i = 0; i < d.x; i++ ) {
-        sum += nodesY[i].text.length / maxWidth * width;
-      }
-      return sum;
-    }
-
     function getYPosition ( d ) {
       var sum = 0;
-      for ( var i = 0; i < d.y; i++ ) {
-        sum += nodesX[i].text.length / maxHeight * height;
+      for ( var i = 0; i < d.x; i++ ) {
+        sum += nodesX[i].text.length / maxWidth * width;
       }
       return sum;
     }
 
-    for ( var i = 0; i < nodesX.length; i++ ) {
-      nodesX[i].yPosition = getYPosition({y: i});
+    function getXPosition ( d ) {
+      var sum = 0;
+      for ( var i = 0; i < d.y; i++ ) {
+        sum += nodesY[i].text.length / maxHeight * height;
+      }
+      return sum;
     }
+
     for ( var i = 0; i < nodesY.length; i++ ) {
-      nodesY[i].xPosition = getXPosition({x: i});
+      nodesY[i].yPosition = getXPosition({y: i});
+    }
+    for ( var i = 0; i < nodesX.length; i++ ) {
+      nodesX[i].xPosition = getYPosition({x: i});
     }
 
     d3.selectAll("svg").remove();
@@ -914,15 +893,15 @@ text.active {
       if (!minValue) minValue = 0;
       if (!maxValue) {
         maxValue = 0;
-        for ( var i = 0; i < matrixX.length; i++ ) {
-          for ( var j = 0; j < matrixX[i].length; j++ ) {
-            if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
-          }
-        }
-  /*
         for ( var i = 0; i < matrixY.length; i++ ) {
           for ( var j = 0; j < matrixY[i].length; j++ ) {
             if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
+          }
+        }
+  /*
+        for ( var i = 0; i < matrixX.length; i++ ) {
+          for ( var j = 0; j < matrixX[i].length; j++ ) {
+            if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
           }
         }
   */
@@ -939,8 +918,8 @@ text.active {
     }
 
     var maxScale = Math.max(width, height);
-    var x = d3.scale.ordinal().domain(d3.range(n)).rangeBands([0, maxScale]),
-        y = d3.scale.ordinal().domain(d3.range(m)).rangeBands([0, maxScale]),
+    var y = d3.scale.ordinal().domain(d3.range(n)).rangeBands([0, maxScale]),
+        x = d3.scale.ordinal().domain(d3.range(m)).rangeBands([0, maxScale]),
         z = d3.scale.linear().clamp(true),
         c = d3.scale.category10().domain(d3.range(10));
 
@@ -948,20 +927,20 @@ text.active {
  
     var orders = [];
     orders.push({
-      name: d3.range(m).sort(function(a, b) { if (nodesY[a].text == '') return 1; if (nodesY[b].text == '') return -1; else return d3.ascending(nodesY[a].text.toLowerCase(), nodesY[b].text.toLowerCase()); }),
-      count: d3.range(m).sort(function(a, b) { return nodesY[b].count - nodesY[a].count; }),
+      name: d3.range(m).sort(function(a, b) { if (nodesX[a].text == '') return 1; if (nodesX[b].text == '') return -1; else return d3.ascending(nodesX[a].text.toLowerCase(), nodesX[b].text.toLowerCase()); }),
+      count: d3.range(m).sort(function(a, b) { return nodesX[b].count - nodesX[a].count; }),
       default: d3.range(m)
     });
     orders.push({
-      name: d3.range(n).sort(function(a, b) { if (nodesX[a].text == '') return 1; if (nodesX[b].text == '') return -1; else return d3.ascending(nodesX[a].text.toLowerCase(), nodesX[b].text.toLowerCase()); }),
-      count: d3.range(n).sort(function(a, b) { return nodesX[b].count - nodesX[a].count; }),
+      name: d3.range(n).sort(function(a, b) { if (nodesY[a].text == '') return 1; if (nodesY[b].text == '') return -1; else return d3.ascending(nodesY[a].text.toLowerCase(), nodesY[b].text.toLowerCase()); }),
+      count: d3.range(n).sort(function(a, b) { return nodesY[b].count - nodesY[a].count; }),
       default: d3.range(n)
     });
 
     var maxAxisLength = Math.max(m, n);
 
-    x.domain(d3.range(maxAxisLength));
     y.domain(d3.range(maxAxisLength));
+    x.domain(d3.range(maxAxisLength));
 
     var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { if (!!d.fullText) { if (d.fullText == -1) return ''; return d.fullText; } return '' + d.z + (d.z != 1 ? labelText + 's' : labelText); });
     svg.call(d3Tip);
@@ -981,11 +960,11 @@ text.active {
     }
 */
 
-    var heightPerCell = height / nodesX.length;
-    var widthPerCell = width / nodesY.length;
+    var heightPerCell = height / nodesY.length;
+    var widthPerCell = width / nodesX.length;
 
-    var heightPerParentCell = (margin.top-marginTop)/(treeDepthY+1);
-    var widthPerParentCell = (margin.left-marginLeft)/(treeDepthX+1);
+    var heightPerParentCell = (margin.top-marginTop)/(treeDepthX+1);
+    var widthPerParentCell = (margin.left-marginLeft)/(treeDepthY+1);
 
     svg.append("line")
       .attr("class", "line")
@@ -1005,7 +984,7 @@ text.active {
       .attr("stroke-width", "1")
       .style("stroke", "black");
 
-    for ( var i = 0; i < treeDepthX; i++ ) {
+    for ( var i = 0; i < treeDepthY; i++ ) {
       if (i == 0) {
         svg.append("line")
           .attr("class", "line")
@@ -1036,7 +1015,7 @@ text.active {
       .attr("stroke-width", "1")
       .style("stroke", "black");
 
-    for ( var i = 0; i < treeDepthY; i++ ) {
+    for ( var i = 0; i < treeDepthX; i++ ) {
       if (i == 0) {
         svg.append("line")
           .attr("class", "line")
@@ -1050,29 +1029,38 @@ text.active {
     }
     svg.append("rect")
         .attr("class", "background")
+        //.style("fill", "white")
+        .style("fill-opacity", 0)
         .attr("width", width)
         .attr("height", height)
         .attr("stroke-width", "1")
         .style("stroke", "black");
 
     var row = svg.selectAll(".row")
-        .data(matrixX)
-      .enter().append("g")
-        .attr("class", "row")
-        .attr("y", function (d, i) { return x(i); })
-        .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
-        .each(row);
-
-    if (!!selectableCells) appendCellTexts();
-
-    var column = svg.selectAll(".column")
         .data(matrixY)
       .enter().append("g")
-        .attr("class", "column")
-        .attr("x", function (d, i) { return y(i); })
-        .attr("transform", function(d, i) { return "translate(" + y(i) + ")rotate(-90)"; });
+        .attr("class", "row")
+        .attr("y", function (d, i) { return y(i); })
+        .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
+        .each(row);
 
-    var maxNodeAmount = Math.max(nodesX.length, nodesY.length);
+    if (!!selectableCells) appendCellTexts(true); // TODO add button
+    else if ($('#showCellNumbers').is(':checked')) appendCellTexts(false);
+
+    $('#showCellNumbers').unbind().on('change', function () {
+      var isChecked = $(this).is(':checked');
+      if (isChecked) appendCellTexts(!!selectableCells);
+      else svg.selectAll(".occurrences").remove();
+    });
+
+    var column = svg.selectAll(".column")
+        .data(matrixX)
+      .enter().append("g")
+        .attr("class", "column")
+        .attr("x", function (d, i) { return x(i); })
+        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+
+    var maxNodeAmount = Math.max(nodesY.length, nodesX.length);
 
     function renameText ( elm, d ) {
       var that = d3.select(elm);
@@ -1095,13 +1083,13 @@ text.active {
         var newText = $('#renameModalText').val();
         if (!!newText) {
           if (isColumn) {
-            //nodesY[d[0].x-1].text = newText;
+            //nodesX[d[0].x-1].text = newText;
             if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
               that.attr('data-fulltext', newText)
               that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
             } else that.text(newText);
           } else {
-            //nodesX[d[0].y-1].text = newText;
+            //nodesY[d[0].y-1].text = newText;
             if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
               that.attr('data-fulltext', newText)
               that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
@@ -1114,6 +1102,66 @@ text.active {
         $('#rename-modal').modal('hide');
       });
       $('#rename-modal').modal('show');
+    }
+
+    function updateSynonyms ( elm, d ) {
+      console.log(d)
+      var that = d3.select(elm);
+      var isColumn = true;
+      var thatClass = that.attr('class');
+      if (!!thatClass && thatClass.split('rowText').length > 1) isColumn = false;
+      if (isColumn) {
+        var attribute = nodesX[d[0].x].text;
+        var synonymText = nodesX[d[0].x].synonyms;
+      } else {
+        var attribute = nodesY[d[0].y-1].text;
+        var synonymText = nodesY[d[0].y-1].synonyms;
+      }
+      var synonyms = (!!synonymText && synonymText != '') ? synonymText.split(',') : [];
+      var synonymRows = '';
+      synonyms.forEach ( function ( synonym ) {
+        synonymRows += '<tr>' + synonym + '</tr>';
+      });
+      var tableHeader = '<thead><th>Synonym</th></thead>';
+      var text = that.text();
+      if (!text || text == '') return;
+      var fullText = that.attr('data-fulltext');
+      if (text.split('...').length > 1) {
+        if (!fullText) return;
+        text = fullText;
+      }
+      $('#defaultModalTitle').html(text);
+      $('#searchTableField').val('');
+      $('#defaultModalTableContainer').html(initTable(tableHeader, synonyms));
+      $('#defaultModalButton').prop('disabled', false);
+      $('#defaultModalForm').unbind().on('submit', function ( evt ) {
+        evt.preventDefault();
+        var synonymString = '';
+        $('#defaultModalTableContainer').find('tbody').find('tr').each ( function ( index, entry ) {
+          var cellText = $(entry).find('td:first');
+          cellText = !!cellText ? $(cellText).text() : '';
+          if (!!cellText && cellText != '') synonymString += (synonymString != '' ? ',' : '') + cellText;
+        });
+        if (isColumn) nodesX[d[0].x].synonyms = synonymString;
+        else nodesY[d[0].y-1].synonyms = synonymString;
+        $('#default-modal').modal('hide');
+        $.ajax
+          ({
+            type: "POST",
+            url: 'updateSynonyms',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute, synonyms: synonymString}),
+            success: function ( result ) {
+              if (!!result && !!result.success) console.log('Updated synonyms successfully for attribute: ' + attribute + '.');
+            }
+          });
+      });
+      $('#default-modal').unbind().on('shown.bs.modal', function () {
+        loadTableListeners();
+      });
+      $('#default-modal').modal('show');
     }
 
     function addChild ( type, d, parent ) {
@@ -1142,9 +1190,9 @@ text.active {
             }
           }
           if (type == 'row') {
-            var attributesX = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')];
+            var attributesY = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')];
             // TODO
-            var parentNode = nodesX[d[0].y-1];
+            var parentNode = nodesY[d[0].y-1];
             var parentText = parentNode.parentText;
             var parents = parentNode.parents;
             if (!!parentText) parentText += parentNode.text + (parentText != '' ? ',' : '');
@@ -1152,9 +1200,9 @@ text.active {
             var attribute = {text: childName, dimension: parentNode.dimension, parentText: parentText, parents: parents};
 
           } else if (type == 'column') {
-            var attributesY = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')];
+            var attributesX = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')];
             // TODO
-            var parentNode = nodesY[d[0].x-1];
+            var parentNode = nodesX[d[0].x-1];
           }
         } else handleError('Invalid name.');
         //$('#renameModalButton').prop('disabled', true);
@@ -1190,21 +1238,10 @@ text.active {
     }
 
     function filterDimension ( elm, dimension, show ) {
-      var newNodesX = [];
       var newNodesY = [];
+      var newNodesX = [];
       switch(elm) {
         case 'row':
-          var nodes = show ? nodesOriginalX : nodesX;
-          nodes.forEach ( function ( node ) {
-            if (show) {
-              if (dimension == '' || (!!node.dimension && node.dimension == dimension)) newNodesX.push(node);
-            } else {
-              if (!node.dimension || node.dimension != dimension) newNodesX.push(node);
-            }
-          });
-          newNodesY = nodesY;
-          break;
-        case 'column':
           var nodes = show ? nodesOriginalY : nodesY;
           nodes.forEach ( function ( node ) {
             if (show) {
@@ -1215,27 +1252,27 @@ text.active {
           });
           newNodesX = nodesX;
           break;
+        case 'column':
+          var nodes = show ? nodesOriginalX : nodesX;
+          nodes.forEach ( function ( node ) {
+            if (show) {
+              if (dimension == '' || (!!node.dimension && node.dimension == dimension)) newNodesX.push(node);
+            } else {
+              if (!node.dimension || node.dimension != dimension) newNodesX.push(node);
+            }
+          });
+          newNodesY = nodesY;
+          break;
         default:
       }
-      if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalX, nodesOriginalY);
+      if (newNodesY.length > 0 && newNodesX.length > 0) buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
     }
 
     function filterChildAttributes ( elm, parent, show ) {
-      var newNodesX = [];
       var newNodesY = [];
+      var newNodesX = [];
      switch (elm) {
        case 'row':
-         var nodes = show ? nodesOriginalX : nodesX;
-         nodes.forEach ( function ( node ) {
-            if (show) {
-              if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesX.push(node);
-            } else {
-              if (node.text != parent && node.parents.indexOf(parent) < 0) newNodesX.push(node);
-            }
-         });
-         newNodesY = nodesY;
-         break;
-       case 'column':
          var nodes = show ? nodesOriginalY : nodesY;
          nodes.forEach ( function ( node ) {
             if (show) {
@@ -1246,9 +1283,20 @@ text.active {
          });
          newNodesX = nodesX;
          break;
+       case 'column':
+         var nodes = show ? nodesOriginalX : nodesX;
+         nodes.forEach ( function ( node ) {
+            if (show) {
+              if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesX.push(node);
+            } else {
+              if (node.text != parent && node.parents.indexOf(parent) < 0) newNodesX.push(node);
+            }
+         });
+         newNodesY = nodesY;
+         break;
        default:
      }
-     if (newNodesX.length > 0 && newNodesY.length > 0) buildMatrix({response: newNodesX}, {response: newNodesY}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalX, nodesOriginalY);
+     if (newNodesY.length > 0 && newNodesX.length > 0) buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
     }
 
     function deleteCitation ( elm ) {
@@ -1325,14 +1373,14 @@ text.active {
       };
 
     var menu = [hideOption];
-    var dimensionMenuX = [hideOption, {
+    var dimensionMenuY = [hideOption, {
       title: 'Show other dimensions',
       action: function(elm, d, i) {
         filterDimension('row', '', true);
       },
       disabled: false
     }];
-    var dimensionMenuY = [hideOption, {
+    var dimensionMenuX = [hideOption, {
       title: 'Show other dimensions',
       action: function(elm, d, i) {
         filterDimension('column', '', true);
@@ -1363,7 +1411,7 @@ text.active {
     var advancedMenu = menu.concat([{
         title: 'Synonyms',
         action: function(elm, d, i) {
-          updateSynonyms(elm);
+          updateSynonyms(elm, d);
         },
         disabled: false
       }
@@ -1388,6 +1436,7 @@ text.active {
     function make_editable(d, field)
     {
         this
+          .style("cursor", "text")
           .on("mouseover", function() {
             var cell = d3.select(this.previousSibling);
             d3.select(this).style("fill", "red");
@@ -1457,11 +1506,11 @@ text.active {
           });
     }
 
-    function appendCellTexts () {
-        d3.selectAll(".cellContainer").append("text")
+    function appendCellTexts ( editable ) {
+        var cellContainerText = d3.selectAll(".cellContainer").append("text")
             .attr("class", "occurrences")
-            .attr("x", function(d,i) { return y(d.x) + y.rangeBand() / 2; })
-            .attr("y", function(d,i) { return x.rangeBand() / 2; })
+            .attr("x", function(d,i) { return x(d.x) + x.rangeBand() / 2; })
+            .attr("y", function(d,i) { return y.rangeBand() / 2; })
             .attr("dy", ".32em")
             .attr("font-size", FONT_SIZE)
             .attr("text-anchor", "middle")
@@ -1472,445 +1521,66 @@ text.active {
               var value = d3.select(this.previousSibling).data()[0].z;
               if (value >= 1000) return ('' + Math.floor(value / 1000) + '...');
               return value > 0 ? value : '';
-            }).call(make_editable, "z");
+            });
+        if (!!editable) cellContainerText.call(make_editable, "z");
+        else {
+          cellContainerText
+          .style("cursor", "pointer")
+          .on("mouseover", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", "red");
+            var evt = new MouseEvent("mouseover");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("mouseout", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", DEFAULT_TEXT_FILL);
+            var evt = new MouseEvent("mouseout");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("click", function() {
+            var cell = d3.select(this.previousSibling);
+            var evt = new MouseEvent("click");
+            cell.node().dispatchEvent(evt);
+          })
+        }
     }
 
     function addRowText ( row ) {
       row.append("text")
           .attr("class", "rowText")
           .attr("x", -6)
-          .attr("y", x.rangeBand() / 2)
+          .attr("y", y.rangeBand() / 2)
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
-          .attr("font-size", FONT_SIZE)
-          .attr("data-originalText", function (d, i) { return nodesX[i].text; })
-          .text(function(d, i) {
-            if (!nodesX[i].text) return '';
-            if (nodesX[i].text.length * ROTATION_FACTOR > marginLeft && nodesX[i].text.length > SHORTEN_LEAF_VALUE) {
-              d3.select(this).attr('data-fulltext', nodesX[i].text)
-              return nodesX[i].text.substr(0, SHORTEN_LEAF_VALUE) + '...';
-            }
-            return nodesX[i].text;
-          })
-          .attr("transform", function (d, i) { return "translate(-" + textTransformFactorX + ",0)"; });
-    }
-
-    function addRowParentText ( row ) {
-      var lastTextRef;
-      var selectedOrder = $('#order').val();
-      for ( var k = 0; k < treeDepthX; k++ ) {
-        var lastValueX = '';
-        var rowIndex = -1;
-        var counter = 0;
-          var parentsX = [];
-          for ( var l = 0; l < treeDepthX; l++ ) {
-            parentsX.push([]);
-          }
-        row.append("text")
-            .attr("class", "rowParentText")
-            .attr("x", -6)
-            //.attr("y", function ( d ) { return nodesY[d[0].x].xPosition; })
-            .attr("dy", ".32em")
-            .attr("text-anchor", "start")
-            .attr("font-size", FONT_SIZE)
-            .text(function(d, i) {
-              if (!nodesX[i].indices) nodesX[i].indices = [];
-              nodesX[i].indices[k] = -1; // if (nodesX[i].indices.length < k)
-              counter++;
-              var index = (!!lastValueX && lastValueX != '') ? nodesX[i].parents.indexOf(lastValueX) : -1;
-              if (index == k) { // index > -1 && index < (treeDepthX-k+1)
-                nodesX[i].indices[k] = rowIndex;
-                return '';
-              }
-              if (index < 0) {
-                if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-                  if (counter <= 1) {//if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
-                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                    // TODO
-                    var shortenValue = (rowIndex >= 0 && rowIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[rowIndex].parents.length)) : SHORTEN_VALUE;
-                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
-                    if (lastValueX.length * FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
-                      lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
-                      lastTextRef.attr('data-fulltext', lastValueX);
-                    }
-                  } else {
-                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                    if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
-                      lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
-                      lastTextRef.attr('data-fulltext', lastValueX);
-                    }
-                  }
-                }
-                lastTextRef = null;
-                counter = 0;
-                lastValueX = '';
-                rowIndex = -1;
-              /*
-                parentsX.length = 0;
-                for ( var l = 0; l < treeDepthX; l++ ) {
-                  parentsX.push([]);
-                }
-              */
-              }
-              if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
-              else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
-              else var value = '';
-              if (!value || value == '') {
-                parentsX.length = 0;
-                for ( var l = 0; l < treeDepthX; l++ ) {
-                  parentsX.push([]);
-                }
-                nodesX[i].indices[k] = rowIndex;
-                return '';
-              }
-              value = nodesX[i].parents[k];
-              if (!value || value == '' || checkForOccurrence(parentsX, value) > k) {
-                nodesX[i].indices[k] = rowIndex;
-                return '';
-              }
-              parentsX.length = 0;
-              for ( var l = 0; l < treeDepthX; l++ ) {
-                parentsX.push([]);
-              }
-              for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
-                parentsX[k].push(nodesX[i].parents[l]);
-              }
-              if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-                if (counter <= 1) {//if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                    var shortenValue = (rowIndex >= 0 && rowIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[rowIndex].parents.length)) : SHORTEN_VALUE;
-                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
-                  if (lastValueX.length * FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
-                    lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
-                    lastTextRef.attr('data-fulltext', lastValueX);
-                  }
-                } else {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-                  if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
-                    lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
-                    lastTextRef.attr('data-fulltext', lastValueX);
-                  }
-                }
-              }
-              lastTextRef = $(this);
-              counter = 0;
-              lastValueX = value;
-              rowIndex = i+1;
-              nodesX[i].indices[k] = rowIndex;
-              var valueIndex = nodesX[i].parents.indexOf(value);
-              if (valueIndex == nodesX[i].parents.length-1 && k < treeDepthX-1) {
-                var currentRow = d3.select(d3.select(this).node().parentNode);
-                currentRow.append("line")
-                  .attr("class", "line")
-                  .attr("x1", -margin.left + widthPerParentCell)
-                  .attr("stroke-width", "1")
-                  .style("stroke", "black");
-              }
-              return value;
-            });
-        if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-          if (counter <= 1) {//if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
-            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)"});
-                var shortenValue = (rowIndex >= 0 && rowIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[rowIndex].parents.length)) : SHORTEN_VALUE;
-                shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
-                if (lastValueX.length * FACTOR > widthPerParentCell && lastValueX.length > shortenValue) {
-                  lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
-                  lastTextRef.attr('data-fulltext', lastValueX);
-                }
-          } else {
-            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthX-k-1)*widthPerParentCell + 10 + (k == treeDepthX-1 ? 10 : 0)) + ",12)rotate(90)"; });
-            if (heightPerCell*counter < lastValueX.length * ROTATION_FACTOR && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
-              lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
-              lastTextRef.attr('data-fulltext', lastValueX);
-            }
-          }
-          lastTextRef = null;
-        }
-      }
-      var lastParentsX = nodesX[0].parents;
-      var shownTextsX = lastParentsX;
-      row.append("line")
-          .attr("x1", function ( a, i ) {
-            if (i == 0 || lastParentsX.length == 0 || nodesX[i].parents.length == 0) {
-              var parentsLength = !!lastParentsX ? lastParentsX.length : 0;
-              if (nodesX[i].parents.length < parentsLength) parentsLength = nodesX[i].parents.length;
-              lastParentsX = nodesX[i].parents;
-              shownTextsX = lastParentsX;
-              if (!hasParentsX) return -margin.left + 10;
-              parentsLength++;
-              var factor = Math.max(1, parentsLength);
-              if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-              return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
-            }
-            var counter = 0;
-            var sameParents = [];
-            for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
-              var index = nodesX[i].parents.indexOf(lastParentsX[k]);
-              if (index < 0) {
-                var maxIndex = Infinity;
-                if (k < lastParentsX.length && sameParents.length > 0) {
-                  sameParents.forEach ( function ( sameParent ) {
-                    var s = shownTextsX.indexOf(sameParent);
-                    if (s < maxIndex) maxIndex = s;
-                  });
-                }
-                if (maxIndex < 0) maxIndex = 0;
-                if (maxIndex > shownTextsX.length-1) maxIndex = 0;
-                var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
-                if (parentsDiff > 0) {
-                  var parentsLength = nodesX[i].parents.length;
-                } else {
-                  parentsDiff = -parentsDiff;
-                  var parentsLength = lastParentsX.length;
-                }
-                if (counter == 0) {
-                  lastParentsX = nodesX[i].parents;
-                  shownTextsX = lastParentsX;
-                  if (parentsLength == 0) parentsLength++;
-                  var factor = Math.max(1, treeDepthX - parentsLength);
-                  if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-                  return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
-                }
-                if (parentsDiff == 0) parentsDiff++;
-                //if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
-                //if (counter > maxIndex) maxIndex = shownTextsX.length - maxIndex; // TODO
-                //if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
-                var result = -margin.left + (treeDepthX - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
-                lastParentsX = nodesX[i].parents;
-                if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-                return result;
-              } else sameParents.push(lastParentsX[k]);
-              counter++;
-            }
-            var maxIndex = Infinity;
-            if (k < lastParentsX.length && sameParents.length > 0) {
-              sameParents.forEach ( function ( sameParent ) {
-                var s = shownTextsX.indexOf(sameParent);
-                if (s < maxIndex) maxIndex = s;
-              });
-            }
-            if (maxIndex < 0) maxIndex = 0;
-            if (maxIndex > shownTextsX.length-1) maxIndex = 0;
-            var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
-            if (parentsDiff == 0) parentsDiff++;
-            lastParentsX = nodesX[i].parents;
-            if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
-            return -margin.left + (treeDepthX - (maxIndex - parentsDiff + 1))*widthPerParentCell + ((treeDepthX - (maxIndex - parentsDiff + 1)) == 0 ? 10 : 0);
-          })
-          .attr("class", "rowParentLine")
-          .attr("stroke-width", "1")
-          .style("stroke", "black");
-
-          for ( var k = 0; k < treeDepthX; k++ ) {
-            row.append("line")
-              .attr("class", "line")
-              .attr("x1", function (d,i) { return -margin.left + (treeDepthX-k)*widthPerParentCell; })
-              .attr("x2", function (d,i) { return -margin.left + (treeDepthX-k)*widthPerParentCell; })
-              .attr("y1", function (d,i) { return d3.select(this).attr('y'); })
-              .attr("y2", function (d,i) { var y = d3.select(this).attr('y'); if (nodesX[i].indices[k] < 0) return y; return y + x.rangeBand(); })
-              .attr("stroke-width", "1")
-              .style("stroke", "black");
-          }
-    }
-    function addRowDimensionText ( row ) {
-      var lastDimension = '';
-      var lastTextRef;
-      var counter = 0;
-      row.append("text")
-          .attr("class", "rowDimensionText")
-          .attr("x", -6)
-          //.attr("y", function ( d ) { return nodesY[d[0].x].xPosition; })
-          .attr("dy", ".32em")
-          .attr("text-anchor", "start")
-          .attr("font-size", FONT_SIZE)
-          .text(function(d, i) {
-            counter++;
-            if (nodesX[i].dimension == lastDimension) {
-              return '';
-            } else {
-              if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-                if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-                  if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
-                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
-                    lastTextRef.attr('data-fulltext', lastDimension);
-                  }
-                } else {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
-                  if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
-                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
-                    lastTextRef.attr('data-fulltext', lastDimension);
-                  }
-                }
-              }
-              lastTextRef = null;
-              counter = 0;
-              lastDimension = '';
-            }
-            var value = nodesX[i].dimension;
-            if (!value || value == '') return '';
-            if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-              if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
-                lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-                if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
-                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
-                  lastTextRef.attr('data-fulltext', lastDimension);
-                }
-              } else {
-                lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
-                if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
-                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
-                  lastTextRef.attr('data-fulltext', lastDimension);
-                }
-              }
-            }
-            lastTextRef = $(this);
-            counter = 0;
-            lastDimension = value;
-            return value.split(' ').shift();
-          });
-        if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-          if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
-            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
-            if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
-              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
-              lastTextRef.attr('data-fulltext', lastDimension);
-            }
-          } else {
-            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
-            if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
-              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
-              lastTextRef.attr('data-fulltext', lastDimension);
-            }
-          }
-          lastTextRef = null;
-        }
-      var counter = 0;
-      lastDimension = '';
-      row.append("line")
-          .attr("x1", function ( a, i ) {
-            if (i == 0) {
-              lastDimension = nodesX[0].dimension;
-              return -margin.left + 10;
-            }
-            if (!nodesX[i].dimension || nodesX[i].dimension == '') {
-              counter = 0;
-              return -margin.left + 10;
-            }
-            counter++;
-            if (nodesX[i].dimension == lastDimension) {
-              return -margin.left + widthPerParentCell;
-            }
-            lastDimension = nodesX[i].dimension;
-            counter = 0;
-            return -margin.left + 10;
-          })
-          .attr("x2", function (a, i) {
-            if (i == 0) {
-              lastDimension = nodesX[0].dimension;
-              return 0;
-            }
-            if (!nodesX[i].dimension || nodesX[i].dimension == '') {
-              counter = 0;
-              return 0;
-            }
-            counter++;  
-            if (nodesX[i].dimension == lastDimension) {
-              return -margin.left + widthPerParentCell;
-            }
-            lastDimension = nodesX[i].dimension;
-            counter = 0;
-            return 0;
-          })
-          .attr("class", "rowParentLine")
-          .attr("stroke-width", "1")
-          .style("stroke", "black");    
-    }
-    function addRowDimensionColors ( row ) {
-
-    }
-    function addRowHandlers ( row ) {
-      row.selectAll('.rowText,.rowParentText,.rowDimensionText')
-        .on ("mouseover", function ( p, j ) {
-          var that = d3.select(this);
-          var text = that.text().trim();
-          var fullText = that.attr('data-fulltext');
-          if (!fullText) fullText = -1;
-          if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
-          if (j > treeDepthX) {
-            var text = d3.select(this).text().trim();
-            d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return nodesX[d[0].y-1].dimension == text + ' view'; });
-          } else d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].y == p[0].y) || (i <= j && !!nodesX[d[0].y-1].indices && nodesX[d[0].y-1].indices[j-1] == p[0].y); });
-        })
-        .on("mouseout", mouseout)
-        .style("cursor", "pointer")
-        .on('click', function ( e, i ) {
-          var isDimension = false;
-          var that = d3.select(this);
-          var text = that.text().trim();
-          if (!text || text == '') return;
-          var fullText = that.attr('data-fulltext');
-          if (text.split('...').length > 1) {
-            if (!fullText) return;
-            text = fullText;
-          } else if (i >= treeDepthX && hasDimensionsX) text += ' view';
-          if (i >= treeDepthX && hasDimensionsX) isDimension = true;
-          if (false && !IS_STATIC) { // TODO
-            if (!selectize1) return;
-            if (parents.indexOf(text) < 0) return;
-            selectize1.setValue(text, false);
-          } else {
-            if (isDimension) filterDimension('row', text, true);
-            else filterChildAttributes('row', text, true);
-          }
-        });
-        row.selectAll('.rowParentText').on("contextmenu", d3.contextMenu(menu));
-        row.selectAll('.rowDimensionText').on("contextmenu", d3.contextMenu(dimensionMenuX));
-        row.selectAll('.rowText').on("contextmenu", d3.contextMenu(advancedMenu));
-    }
-    addRowText(row);
-    addRowParentText(row);
-    if (hasDimensionsX) {
-      addRowDimensionText(row);
-      addRowDimensionColors(row);
-    }
-    addRowHandlers(row);
-
-    function addColumnText ( column ) {
-      column.append("text")
-          .attr("class", "columnText")
-          .attr("x", 6) // 0
-          .attr("y", x.rangeBand() / 2)
-          .attr("dy", ".32em")
-          .attr("text-anchor", "end")
           .attr("font-size", FONT_SIZE)
           .attr("data-originalText", function (d, i) { return nodesY[i].text; })
           .text(function(d, i) {
             if (!nodesY[i].text) return '';
-            if (nodesY[i].text.length * ROTATION_FACTOR > marginTop && nodesY[i].text.length > SHORTEN_LEAF_VALUE) {
+            if (nodesY[i].text.length * ROTATION_FACTOR > marginLeft && nodesY[i].text.length > SHORTEN_LEAF_VALUE) {
               d3.select(this).attr('data-fulltext', nodesY[i].text)
               return nodesY[i].text.substr(0, SHORTEN_LEAF_VALUE) + '...';
             }
             return nodesY[i].text;
           })
-          .attr("transform", function (d, i) { return "translate(" + textTransformFactorY + ")"; }); // (-30,5)
+          .attr("transform", function (d, i) { return "translate(-" + textTransformFactorY + ",0)"; });
     }
 
-    function addColumnParentText ( column ) {
+    function addRowParentText ( row ) {
       var lastTextRef;
       var selectedOrder = $('#order').val();
       for ( var k = 0; k < treeDepthY; k++ ) {
         var lastValueY = '';
-        var columnIndex = -1;
+        var rowIndex = -1;
         var counter = 0;
-        var parentsY = [];
-        for ( var l = 0; l < treeDepthY; l++ ) {
-          parentsY.push([]);
-        }
-        column.append("text")
-            .attr("class", "columnParentText")
+          var parentsY = [];
+          for ( var l = 0; l < treeDepthY; l++ ) {
+            parentsY.push([]);
+          }
+        row.append("text")
+            .attr("class", "rowParentText")
             .attr("x", -6)
-            //.attr("y", function ( d ) { return nodesX[d[0].y].yPosition; })
+            //.attr("y", function ( d ) { return nodesX[d[0].x].xPosition; })
             .attr("dy", ".32em")
             .attr("text-anchor", "start")
             .attr("font-size", FONT_SIZE)
@@ -1920,22 +1590,23 @@ text.active {
               counter++;
               var index = (!!lastValueY && lastValueY != '') ? nodesY[i].parents.indexOf(lastValueY) : -1;
               if (index == k) { // index > -1 && index < (treeDepthY-k+1)
-                nodesY[i].indices[k] = columnIndex;
+                nodesY[i].indices[k] = rowIndex;
                 return '';
               }
               if (index < 0) {
                 if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-                  if (counter <= 1) { // if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
-                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)"});
-                    var shortenValue = (columnIndex >= 0 && columnIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[columnIndex].parents.length)) : SHORTEN_VALUE;
-                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
-                    if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > shortenValue) {
+                  if (counter <= 1) {//if (heightPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
+                    // TODO
+                    var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
+                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
+                    if (lastValueY.length * FACTOR > widthPerParentCell && lastValueY.length > shortenValue) {
                       lastTextRef.text(lastValueY.substr(0, shortenValue) + '...');
                       lastTextRef.attr('data-fulltext', lastValueY);
                     }
                   } else {
-                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
-                    if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
+                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)rotate(90)"; });
+                    if (heightPerCell*counter < lastValueY.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
                       lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
                       lastTextRef.attr('data-fulltext', lastValueY);
                     }
@@ -1944,7 +1615,7 @@ text.active {
                 lastTextRef = null;
                 counter = 0;
                 lastValueY = '';
-                columnIndex = -1;
+                rowIndex = -1;
               /*
                 parentsY.length = 0;
                 for ( var l = 0; l < treeDepthY; l++ ) {
@@ -1960,12 +1631,12 @@ text.active {
                 for ( var l = 0; l < treeDepthY; l++ ) {
                   parentsY.push([]);
                 }
-                nodesY[i].indices[k] = columnIndex;
+                nodesY[i].indices[k] = rowIndex;
                 return '';
               }
               value = nodesY[i].parents[k];
               if (!value || value == '' || checkForOccurrence(parentsY, value) > k) {
-                nodesY[i].indices[k] = columnIndex;
+                nodesY[i].indices[k] = rowIndex;
                 return '';
               }
               parentsY.length = 0;
@@ -1976,17 +1647,17 @@ text.active {
                 parentsY[k].push(nodesY[i].parents[l]);
               }
               if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-                if (counter <= 1) {//if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)"});
-                  var shortenValue = (columnIndex >= 0 && columnIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[columnIndex].parents.length)) : SHORTEN_VALUE;
-                  shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
-                  if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > shortenValue) {
+                if (counter <= 1) {//if (heightPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
+                    var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
+                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
+                  if (lastValueY.length * FACTOR > widthPerParentCell && lastValueY.length > shortenValue) {
                     lastTextRef.text(lastValueY.substr(0, shortenValue) + '...');
                     lastTextRef.attr('data-fulltext', lastValueY);
                   }
                 } else {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
-                  if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)rotate(90)"; });
+                  if (heightPerCell*counter < lastValueY.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
                     lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
                     lastTextRef.attr('data-fulltext', lastValueY);
                   }
@@ -1995,31 +1666,31 @@ text.active {
               lastTextRef = $(this);
               counter = 0;
               lastValueY = value;
-              columnIndex = i+1;
-              nodesY[i].indices[k] = columnIndex;
+              rowIndex = i+1;
+              nodesY[i].indices[k] = rowIndex;
               var valueIndex = nodesY[i].parents.indexOf(value);
               if (valueIndex == nodesY[i].parents.length-1 && k < treeDepthY-1) {
-                var currentColumn = d3.select(d3.select(this).node().parentNode);
-                currentColumn.append("line")
+                var currentRow = d3.select(d3.select(this).node().parentNode);
+                currentRow.append("line")
                   .attr("class", "line")
-                  .attr("x1", margin.top - heightPerParentCell)
+                  .attr("x1", -margin.left + widthPerParentCell)
                   .attr("stroke-width", "1")
                   .style("stroke", "black");
               }
               return value;
             });
         if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-          if (counter <= 1) {//if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
-            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)"});
-            var shortenValue = (columnIndex >= 0 && columnIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[columnIndex].parents.length)) : SHORTEN_VALUE;
-            shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
-            if (lastValueY.length * ROTATION_FACTOR > heightPerParentCell && lastValueY.length > shortenValue) {
-              lastTextRef.text(lastValueY.substr(0, shortenValue) + '...');
-              lastTextRef.attr('data-fulltext', lastValueY);
-            }
+          if (counter <= 1) {//if (heightPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
+                var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
+                shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
+                if (lastValueY.length * FACTOR > widthPerParentCell && lastValueY.length > shortenValue) {
+                  lastTextRef.text(lastValueY.substr(0, shortenValue) + '...');
+                  lastTextRef.attr('data-fulltext', lastValueY);
+                }
           } else {
-            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthY-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
-            if (widthPerCell*counter < lastValueY.length * ROTATION_FACTOR && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)rotate(90)"; });
+            if (heightPerCell*counter < lastValueY.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
               lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
               lastTextRef.attr('data-fulltext', lastValueY);
             }
@@ -2029,18 +1700,18 @@ text.active {
       }
       var lastParentsY = nodesY[0].parents;
       var shownTextsY = lastParentsY;
-      column.append("line")
+      row.append("line")
           .attr("x1", function ( a, i ) {
             if (i == 0 || lastParentsY.length == 0 || nodesY[i].parents.length == 0) {
               var parentsLength = !!lastParentsY ? lastParentsY.length : 0;
               if (nodesY[i].parents.length < parentsLength) parentsLength = nodesY[i].parents.length;
               lastParentsY = nodesY[i].parents;
               shownTextsY = lastParentsY;
-              if (!hasParentsY) return margin.top - 10;
+              if (!hasParentsY) return -margin.left + 10;
               parentsLength++;
               var factor = Math.max(1, parentsLength);
               if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
-              return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
+              return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
             }
             var counter = 0;
             var sameParents = [];
@@ -2058,11 +1729,9 @@ text.active {
                 if (maxIndex > shownTextsY.length-1) maxIndex = 0;
                 var parentsDiff = nodesY[i].parents.length - lastParentsY.length;
                 if (parentsDiff > 0) {
-                  parentsDiff++;
                   var parentsLength = nodesY[i].parents.length;
                 } else {
                   parentsDiff = -parentsDiff;
-                  if (parentsDiff > 1) parentsDiff--;
                   var parentsLength = lastParentsY.length;
                 }
                 if (counter == 0) {
@@ -2071,14 +1740,13 @@ text.active {
                   if (parentsLength == 0) parentsLength++;
                   var factor = Math.max(1, treeDepthY - parentsLength);
                   if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
-                  return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
+                  return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
                 }
                 if (parentsDiff == 0) parentsDiff++;
                 //if (maxIndex > nodesY[i].parents.length-1) parentsDiff--;
                 //if (counter > maxIndex) maxIndex = shownTextsY.length - maxIndex; // TODO
                 //if (maxIndex < lastParentsY.length) maxIndex = lastParentsY.length-1;
-                //if (treeDepthY - maxIndex + counter - parentsDiff >= treeDepthY) maxIndex++;
-                var result = margin.top - (treeDepthY - (maxIndex - parentsDiff + 1))*heightPerParentCell - (treeDepthY - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
+                var result = -margin.left + (treeDepthY - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthY - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsY = nodesY[i].parents;
                 if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
                 return result;
@@ -2098,32 +1766,31 @@ text.active {
             if (parentsDiff == 0) parentsDiff++;
             lastParentsY = nodesY[i].parents;
             if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
-            return margin.top - (treeDepthY - (maxIndex - parentsDiff + 1))*heightPerParentCell - ((treeDepthY - (maxIndex - parentsDiff + 1)) == 0 ? 10 : 0);
+            return -margin.left + (treeDepthY - (maxIndex - parentsDiff + 1))*widthPerParentCell + ((treeDepthY - (maxIndex - parentsDiff + 1)) == 0 ? 10 : 0);
           })
-          .attr("class", "columnParentLine")
+          .attr("class", "rowParentLine")
           .attr("stroke-width", "1")
           .style("stroke", "black");
 
           for ( var k = 0; k < treeDepthY; k++ ) {
-            column.append("line")
+            row.append("line")
               .attr("class", "line")
-              .attr("y1", function (d,i) { return d3.select(this).attr("x"); })
-              .attr("y2", function (d,i) { var x = d3.select(this).attr("x"); if (nodesY[i].indices[k] < 0) return x; return x + y.rangeBand(); })
-              .attr("x1", function (d,i) { return margin.top - (treeDepthY-k)*heightPerParentCell; })
-              .attr("x2", function (d,i) { return margin.top - (treeDepthY-k)*heightPerParentCell; })
+              .attr("x1", function (d,i) { return -margin.left + (treeDepthY-k)*widthPerParentCell; })
+              .attr("x2", function (d,i) { return -margin.left + (treeDepthY-k)*widthPerParentCell; })
+              .attr("y1", function (d,i) { return d3.select(this).attr('y'); })
+              .attr("y2", function (d,i) { var yTmp = d3.select(this).attr('y'); if (nodesY[i].indices[k] < 0) return yTmp; return yTmp + y.rangeBand(); })
               .attr("stroke-width", "1")
               .style("stroke", "black");
           }
     }
-
-    function addColumnDimensionText ( column ) {
+    function addRowDimensionText ( row ) {
       var lastDimension = '';
       var lastTextRef;
       var counter = 0;
-      column.append("text")
-          .attr("class", "columnDimensionText")
+      row.append("text")
+          .attr("class", "rowDimensionText")
           .attr("x", -6)
-          //.attr("y", function ( d ) { return nodesX[d[0].y].yPosition; })
+          //.attr("y", function ( d ) { return nodesX[d[0].x].xPosition; })
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
           .attr("font-size", FONT_SIZE)
@@ -2133,15 +1800,15 @@ text.active {
               return '';
             } else {
               if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-                if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
-                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
-                  if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+                  if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
                     lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
                     lastTextRef.attr('data-fulltext', lastDimension);
                   }
                 } else {
-                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
-                  if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+                  if (heightPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
                     lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
                     lastTextRef.attr('data-fulltext', lastDimension);
                   }
@@ -2154,15 +1821,419 @@ text.active {
             var value = nodesY[i].dimension;
             if (!value || value == '') return '';
             if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+              if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+                if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
+              } else {
+                lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+                if (heightPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
+              }
+            }
+            lastTextRef = $(this);
+            counter = 0;
+            lastDimension = value;
+            return value.split(' ').shift();
+          });
+        if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+          if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+            if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+            if (heightPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
+          }
+          lastTextRef = null;
+        }
+      var counter = 0;
+      lastDimension = '';
+      row.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0) {
+              lastDimension = nodesY[0].dimension;
+              return -margin.left + 10;
+            }
+            if (!nodesY[i].dimension || nodesY[i].dimension == '') {
+              counter = 0;
+              return -margin.left + 10;
+            }
+            counter++;
+            if (nodesY[i].dimension == lastDimension) {
+              return -margin.left + widthPerParentCell;
+            }
+            lastDimension = nodesY[i].dimension;
+            counter = 0;
+            return -margin.left + 10;
+          })
+          .attr("x2", function (a, i) {
+            if (i == 0) {
+              lastDimension = nodesY[0].dimension;
+              return 0;
+            }
+            if (!nodesY[i].dimension || nodesY[i].dimension == '') {
+              counter = 0;
+              return 0;
+            }
+            counter++;  
+            if (nodesY[i].dimension == lastDimension) {
+              return -margin.left + widthPerParentCell;
+            }
+            lastDimension = nodesY[i].dimension;
+            counter = 0;
+            return 0;
+          })
+          .attr("class", "rowParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");    
+    }
+    function addRowDimensionColors ( row ) {
+
+    }
+    function addRowHandlers ( row ) {
+      row.selectAll('.rowText,.rowParentText,.rowDimensionText')
+        .on ("mouseover", function ( p, j ) {
+          var that = d3.select(this);
+          var text = that.text().trim();
+          var fullText = that.attr('data-fulltext');
+          if (!fullText) fullText = -1;
+          if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
+          if (j > treeDepthY) {
+            var text = d3.select(this).text().trim();
+            d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return nodesY[d[0].y-1].dimension == text + ' view'; });
+          } else d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].y == p[0].y) || (i <= j && !!nodesY[d[0].y-1].indices && nodesY[d[0].y-1].indices[j-1] == p[0].y); });
+        })
+        .on("mouseout", mouseout)
+        .style("cursor", "pointer")
+        .on('click', function ( e, i ) {
+          var isDimension = false;
+          var that = d3.select(this);
+          var text = that.text().trim();
+          if (!text || text == '') return;
+          var fullText = that.attr('data-fulltext');
+          if (text.split('...').length > 1) {
+            if (!fullText) return;
+            text = fullText;
+          } else if (i >= treeDepthY && hasDimensionsY) text += ' view';
+          if (i >= treeDepthY && hasDimensionsY) isDimension = true;
+          if (false && !IS_STATIC) { // TODO
+            if (!selectize1) return;
+            if (parents.indexOf(text) < 0) return;
+            selectize1.setValue(text, false);
+          } else {
+            if (isDimension) filterDimension('row', text, true);
+            else filterChildAttributes('row', text, true);
+          }
+        });
+        row.selectAll('.rowParentText').on("contextmenu", d3.contextMenu(menu));
+        row.selectAll('.rowDimensionText').on("contextmenu", d3.contextMenu(dimensionMenuY));
+        row.selectAll('.rowText').on("contextmenu", d3.contextMenu(advancedMenu));
+    }
+    addRowText(row);
+    addRowParentText(row);
+    if (hasDimensionsY) {
+      addRowDimensionText(row);
+      addRowDimensionColors(row);
+    }
+    addRowHandlers(row);
+
+    function addColumnText ( column ) {
+      column.append("text")
+          .attr("class", "columnText")
+          .attr("x", 6) // 0
+          .attr("y", y.rangeBand() / 2)
+          .attr("dy", ".32em")
+          .attr("text-anchor", "end")
+          .attr("font-size", FONT_SIZE)
+          .attr("data-originalText", function (d, i) { return nodesX[i].text; })
+          .text(function(d, i) {
+            if (!nodesX[i].text) return '';
+            if (nodesX[i].text.length * ROTATION_FACTOR > marginTop && nodesX[i].text.length > SHORTEN_LEAF_VALUE) {
+              d3.select(this).attr('data-fulltext', nodesX[i].text)
+              return nodesX[i].text.substr(0, SHORTEN_LEAF_VALUE) + '...';
+            }
+            return nodesX[i].text;
+          })
+          .attr("transform", function (d, i) { return "translate(" + textTransformFactorX + ")"; }); // (-30,5)
+    }
+
+    function addColumnParentText ( column ) {
+      var lastTextRef;
+      var selectedOrder = $('#order').val();
+      for ( var k = 0; k < treeDepthX; k++ ) {
+        var lastValueX = '';
+        var columnIndex = -1;
+        var counter = 0;
+        var parentsX = [];
+        for ( var l = 0; l < treeDepthX; l++ ) {
+          parentsX.push([]);
+        }
+        column.append("text")
+            .attr("class", "columnParentText")
+            .attr("x", -6)
+            //.attr("y", function ( d ) { return nodesY[d[0].y].yPosition; })
+            .attr("dy", ".32em")
+            .attr("text-anchor", "start")
+            .attr("font-size", FONT_SIZE)
+            .text(function(d, i) {
+              if (!nodesX[i].indices) nodesX[i].indices = [];
+              nodesX[i].indices[k] = -1; // if (nodesX[i].indices.length < k)
+              counter++;
+              var index = (!!lastValueX && lastValueX != '') ? nodesX[i].parents.indexOf(lastValueX) : -1;
+              if (index == k) { // index > -1 && index < (treeDepthX-k+1)
+                nodesX[i].indices[k] = columnIndex;
+                return '';
+              }
+              if (index < 0) {
+                if (!!lastTextRef && !!lastValueX && lastValueX != '') {
+                  if (counter <= 1) { // if (widthPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
+                    var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
+                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
+                    if (lastValueX.length * FACTOR > heightPerParentCell && lastValueX.length > shortenValue) {
+                      lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueX);
+                    }
+                  } else {
+                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
+                    if (widthPerCell*counter < lastValueX.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
+                      lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueX);
+                    }
+                  }
+                }
+                lastTextRef = null;
+                counter = 0;
+                lastValueX = '';
+                columnIndex = -1;
+              /*
+                parentsX.length = 0;
+                for ( var l = 0; l < treeDepthX; l++ ) {
+                  parentsX.push([]);
+                }
+              */
+              }
+              if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
+              else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
+              else var value = '';
+              if (!value || value == '') {
+                parentsX.length = 0;
+                for ( var l = 0; l < treeDepthX; l++ ) {
+                  parentsX.push([]);
+                }
+                nodesX[i].indices[k] = columnIndex;
+                return '';
+              }
+              value = nodesX[i].parents[k];
+              if (!value || value == '' || checkForOccurrence(parentsX, value) > k) {
+                nodesX[i].indices[k] = columnIndex;
+                return '';
+              }
+              parentsX.length = 0;
+              for ( var l = 0; l < treeDepthX; l++ ) {
+                parentsX.push([]);
+              }
+              for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
+                parentsX[k].push(nodesX[i].parents[l]);
+              }
+              if (!!lastTextRef && !!lastValueX && lastValueX != '') {
+                if (counter <= 1) {//if (widthPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
+                  var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
+                  shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
+                  if (lastValueX.length * FACTOR > heightPerParentCell && lastValueX.length > shortenValue) {
+                    lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueX);
+                  }
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
+                  if (widthPerCell*counter < lastValueX.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
+                    lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueX);
+                  }
+                }
+              }
+              lastTextRef = $(this);
+              counter = 0;
+              lastValueX = value;
+              columnIndex = i+1;
+              nodesX[i].indices[k] = columnIndex;
+              var valueIndex = nodesX[i].parents.indexOf(value);
+              if (valueIndex == nodesX[i].parents.length-1 && k < treeDepthX-1) {
+                var currentColumn = d3.select(d3.select(this).node().parentNode);
+                currentColumn.append("line")
+                  .attr("class", "line")
+                  .attr("x1", margin.top - heightPerParentCell)
+                  .attr("stroke-width", "1")
+                  .style("stroke", "black");
+              }
+              return value;
+            });
+        if (!!lastTextRef && !!lastValueX && lastValueX != '') {
+          if (counter <= 1) {//if (widthPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
+            var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
+            shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
+            if (lastValueX.length * FACTOR > heightPerParentCell && lastValueX.length > shortenValue) {
+              lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
+              lastTextRef.attr('data-fulltext', lastValueX);
+            }
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
+            if (widthPerCell*counter < lastValueX.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
+              lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+              lastTextRef.attr('data-fulltext', lastValueX);
+            }
+          }
+          lastTextRef = null;
+        }
+      }
+      var lastParentsX = nodesX[0].parents;
+      var shownTextsX = lastParentsX;
+      column.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0 || lastParentsX.length == 0 || nodesX[i].parents.length == 0) {
+              var parentsLength = !!lastParentsX ? lastParentsX.length : 0;
+              if (nodesX[i].parents.length < parentsLength) parentsLength = nodesX[i].parents.length;
+              lastParentsX = nodesX[i].parents;
+              shownTextsX = lastParentsX;
+              if (!hasParentsX) return margin.top - 10;
+              parentsLength++;
+              var factor = Math.max(1, parentsLength);
+              if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+              return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
+            }
+            var counter = 0;
+            var sameParents = [];
+            for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
+              var index = nodesX[i].parents.indexOf(lastParentsX[k]);
+              if (index < 0) {
+                var maxIndex = Infinity;
+                if (k < lastParentsX.length && sameParents.length > 0) {
+                  sameParents.forEach ( function ( sameParent ) {
+                    var s = shownTextsX.indexOf(sameParent);
+                    if (s < maxIndex) maxIndex = s;
+                  });
+                }
+                if (maxIndex < 0) maxIndex = 0;
+                if (maxIndex > shownTextsX.length-1) maxIndex = 0;
+                var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
+                if (parentsDiff > 0) {
+                  parentsDiff++;
+                  var parentsLength = nodesX[i].parents.length;
+                } else {
+                  parentsDiff = -parentsDiff;
+                  if (parentsDiff > 1) parentsDiff--;
+                  var parentsLength = lastParentsX.length;
+                }
+                if (counter == 0) {
+                  lastParentsX = nodesX[i].parents;
+                  shownTextsX = lastParentsX;
+                  if (parentsLength == 0) parentsLength++;
+                  var factor = Math.max(1, treeDepthX - parentsLength);
+                  if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+                  return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
+                }
+                if (parentsDiff == 0) parentsDiff++;
+                //if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
+                //if (counter > maxIndex) maxIndex = shownTextsX.length - maxIndex; // TODO
+                //if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
+                //if (treeDepthX - maxIndex + counter - parentsDiff >= treeDepthX) maxIndex++;
+                var result = margin.top - (treeDepthX - (maxIndex - parentsDiff + 1))*heightPerParentCell - (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
+                lastParentsX = nodesX[i].parents;
+                if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+                return result;
+              } else sameParents.push(lastParentsX[k]);
+              counter++;
+            }
+            var maxIndex = Infinity;
+            if (k < lastParentsX.length && sameParents.length > 0) {
+              sameParents.forEach ( function ( sameParent ) {
+                var s = shownTextsX.indexOf(sameParent);
+                if (s < maxIndex) maxIndex = s;
+              });
+            }
+            if (maxIndex < 0) maxIndex = 0;
+            if (maxIndex > shownTextsX.length-1) maxIndex = 0;
+            var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
+            if (parentsDiff == 0) parentsDiff++;
+            lastParentsX = nodesX[i].parents;
+            if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+            return margin.top - (treeDepthX - (maxIndex - parentsDiff + 1))*heightPerParentCell - ((treeDepthX - (maxIndex - parentsDiff + 1)) == 0 ? 10 : 0);
+          })
+          .attr("class", "columnParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+
+          for ( var k = 0; k < treeDepthX; k++ ) {
+            column.append("line")
+              .attr("class", "line")
+              .attr("y1", function (d,i) { return d3.select(this).attr("x"); })
+              .attr("y2", function (d,i) { var xTmp = d3.select(this).attr("x"); if (nodesX[i].indices[k] < 0) return xTmp; return xTmp + x.rangeBand(); })
+              .attr("x1", function (d,i) { return margin.top - (treeDepthX-k)*heightPerParentCell; })
+              .attr("x2", function (d,i) { return margin.top - (treeDepthX-k)*heightPerParentCell; })
+              .attr("stroke-width", "1")
+              .style("stroke", "black");
+          }
+    }
+
+    function addColumnDimensionText ( column ) {
+      var lastDimension = '';
+      var lastTextRef;
+      var counter = 0;
+      column.append("text")
+          .attr("class", "columnDimensionText")
+          .attr("x", -6)
+          //.attr("y", function ( d ) { return nodesY[d[0].y].yPosition; })
+          .attr("dy", ".32em")
+          .attr("text-anchor", "start")
+          .attr("font-size", FONT_SIZE)
+          .text(function(d, i) {
+            counter++;
+            if (nodesX[i].dimension == lastDimension) {
+              return '';
+            } else {
+              if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+                if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
+                  if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
+                  if (widthPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
+                }
+              }
+              lastTextRef = null;
+              counter = 0;
+              lastDimension = '';
+            }
+            var value = nodesX[i].dimension;
+            if (!value || value == '') return '';
+            if (!!lastTextRef && !!lastDimension && lastDimension != '') {
               if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
                 lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
-                if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
                   lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
                   lastTextRef.attr('data-fulltext', lastDimension);
                 }
               } else {
                 lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
-                if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                if (widthPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
                   lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
                   lastTextRef.attr('data-fulltext', lastDimension);
                 }
@@ -2176,13 +2247,13 @@ text.active {
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
           if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
-            if (lastDimension.length * ROTATION_FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+            if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
               lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
               lastTextRef.attr('data-fulltext', lastDimension);
             }
           } else {
             lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
-            if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+            if (widthPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
               lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
               lastTextRef.attr('data-fulltext', lastDimension);
             }
@@ -2194,35 +2265,35 @@ text.active {
       column.append("line")
           .attr("x1", function ( a, i ) {
             if (i == 0) {
-              lastDimension = nodesY[0].dimension;
+              lastDimension = nodesX[0].dimension;
               return margin.top - 10;
             }
-            if (!nodesY[i].dimension || nodesY[i].dimension == '') {
+            if (!nodesX[i].dimension || nodesX[i].dimension == '') {
               counter = 0;
               return margin.top - 10;
             }
             counter++;
-            if (nodesY[i].dimension == lastDimension) {
+            if (nodesX[i].dimension == lastDimension) {
               return margin.top - heightPerParentCell;
             }
-            lastDimension = nodesY[i].dimension;
+            lastDimension = nodesX[i].dimension;
             counter = 0;
             return margin.top - 10;
           })
           .attr("x2", function (a, i) {
             if (i == 0) {
-              lastDimension = nodesY[0].dimension;
+              lastDimension = nodesX[0].dimension;
               return 0;
             }
-            if (!nodesY[i].dimension || nodesY[i].dimension == '') {
+            if (!nodesX[i].dimension || nodesX[i].dimension == '') {
               counter = 0;
               return 0;
             }
             counter++;
-            if (nodesY[i].dimension == lastDimension) {
+            if (nodesX[i].dimension == lastDimension) {
               return margin.top - heightPerParentCell;
             }
-            lastDimension = nodesY[i].dimension;
+            lastDimension = nodesX[i].dimension;
             counter = 0;
             return 0;
           })
@@ -2239,9 +2310,9 @@ text.active {
           var fullText = that.attr('data-fulltext');
           if (!fullText) fullText = -1;
           if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
-          if (j > treeDepthY) {
-            d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return nodesY[d[0].x-1].dimension == text + ' view'; });
-          } else d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesY[d[0].x-1].indices && nodesY[d[0].x-1].indices[j-1] == p[0].x); });
+          if (j > treeDepthX) {
+            d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return nodesX[d[0].x-1].dimension == text + ' view'; });
+          } else d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesX[d[0].x-1].indices && nodesX[d[0].x-1].indices[j-1] == p[0].x); });
         })
         .on("mouseout", mouseout)
         .style("cursor", "pointer")
@@ -2254,8 +2325,8 @@ text.active {
           if (text.split('...').length > 1) {
             if (!fullText) return;
             text = fullText;
-          } else if (i >= treeDepthY && hasDimensionsY) text += ' view';
-          if (i >= treeDepthY && hasDimensionsY) isDimension = true;
+          } else if (i >= treeDepthX && hasDimensionsX) text += ' view';
+          if (i >= treeDepthX && hasDimensionsX) isDimension = true;
           if (false && !IS_STATIC) { // TODO
             if (!selectize2) return;
             if (parents.indexOf(text) < 0) return;
@@ -2266,13 +2337,13 @@ text.active {
           }
         });
         column.selectAll('.columnParentText').on("contextmenu", d3.contextMenu(menu));
-        column.selectAll('.columnDimensionText').on("contextmenu", d3.contextMenu(dimensionMenuY));
+        column.selectAll('.columnDimensionText').on("contextmenu", d3.contextMenu(dimensionMenuX));
         if (!!selectableCells) column.selectAll('.columnText').on("contextmenu", d3.contextMenu(citationMenu));
         else column.selectAll('.columnText').on("contextmenu", d3.contextMenu(menu));
     }
     addColumnText(column);
     addColumnParentText(column);
-    if (hasDimensionsY) addColumnDimensionText(column);
+    if (hasDimensionsX) addColumnDimensionText(column);
     addColumnHandlers(column);
 
     function row(row) {
@@ -2281,14 +2352,16 @@ text.active {
           .enter()
           .append("g")
           .attr("class", "cellContainer")
-          .attr("width", y.rangeBand())
-          .attr("height", x.rangeBand())
+          .attr("width", x.rangeBand())
+          .attr("height", y.rangeBand())
           .append("rect")
           .attr("class", "cell")
           .attr("x", function(d) { return x(d.x); })
-          .attr("width", y.rangeBand())
-          .attr("height", x.rangeBand())
+          .attr("width", x.rangeBand())
+          .attr("height", y.rangeBand())
           .style("fill-opacity", function(d) { return z(d.z); })
+          .style("stroke", "black")
+          .style("stroke-width", "0.5")
           .on("mouseover", mouseover)
           .on("mouseout", mouseout)
           .on("click", clickCellOption);
@@ -2305,7 +2378,7 @@ text.active {
         });
         occurrencesTable += '</tbody></table>';
         BootstrapDialog.show({
-          title: '' + p.occurrences.total + ' occurrences for "' + nodesX[p.y-1].text + '"<br>Min similarity: ' + minSimilarity,
+          title: '' + p.occurrences.total + ' occurrences for "' + nodesY[p.y-1].text + '"<br>Min similarity: ' + minSimilarity,
           message: occurrencesTable,
           onshown: function () {
             $('.glyphicon-remove').unbind().on('click', function () {
@@ -2356,8 +2429,8 @@ text.active {
     function clickCell(p) {
       if (IS_STATIC) return;
       if (p.z == 0) return;
-      var text1 = nodesX[p.y-1].text;
-      var text2 = nodesY[p.x].text;
+      var text1 = nodesY[p.y-1].text;
+      var text2 = nodesX[p.x].text;
       $.ajax
          ({
           type: "POST",
@@ -2392,14 +2465,13 @@ text.active {
     function mouseover(p) {
       if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
       d3Tip.show(p);
-      d3.selectAll(".row").selectAll(".rowText,.rowParentText").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesX[p.y-1].indices && nodesX[p.y-1].indices.length > (i-1) && nodesX[p.y-1].indices[i-1] == d[0].y); });
-      var dimensionX = nodesX[p.y-1].dimension;
-      var dimensionY = nodesY[p.x].dimension;
-      if (!!dimensionX && dimensionX != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionX; });
-      d3.selectAll(".column").selectAll(".columnText,.columnParentText").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesY[p.x].indices && nodesY[p.x].indices.length > (i-1) && nodesY[p.x].indices[i-1] == d[0].x); });
-      if (!!dimensionY && dimensionY != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionY; });
-      console.log('value: ' + matrixX[p.y-1][p.x].z + ', src: ' + nodesX[p.y-1].text + ', dest: ' + nodesY[p.x].text);
-      //console.log('xCount: ' + nodesY[p.x].count + ', yCount: ' + nodesX[p.y].count)
+      d3.selectAll(".row").selectAll(".rowText,.rowParentText").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesY[p.y-1].indices && nodesY[p.y-1].indices.length > (i-1) && nodesY[p.y-1].indices[i-1] == d[0].y); });
+      var dimensionY = nodesY[p.y-1].dimension;
+      var dimensionX = nodesX[p.x].dimension;
+      if (!!dimensionY && dimensionY != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionY; });
+      d3.selectAll(".column").selectAll(".columnText,.columnParentText").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesX[p.x].indices && nodesX[p.x].indices.length > (i-1) && nodesX[p.x].indices[i-1] == d[0].x); });
+      if (!!dimensionX && dimensionX != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionX; });
+      console.log('value: ' + matrixY[p.y-1][p.x].z + ', src: ' + nodesY[p.y-1].text + ', dest: ' + nodesX[p.x].text);
     }
 
     function mouseout(p) {
@@ -2409,85 +2481,57 @@ text.active {
     }
 
     function order(value) {
-      var labelsX = [];
       var labelsY = [];
-      for ( var i = 0; i < nodesX.length; i++ ) {
-        labelsX.push(nodesX[i].text);
-        nodesX[i].indices = [];
-      }
+      var labelsX = [];
       for ( var i = 0; i < nodesY.length; i++ ) {
         labelsY.push(nodesY[i].text);
         nodesY[i].indices = [];
       }
-      var sortedLabelsX = [];
-      var sortedLabelsY = [];
-      var sortedNodes = sortNodes(value, nodesX, nodesY);
-      nodesX = sortedNodes.x;
-      nodesY = sortedNodes.y;
-      var sortedNodesX = sortedNodes.x;
-      var sortedNodesY = sortedNodes.y;
       for ( var i = 0; i < nodesX.length; i++ ) {
-        sortedLabelsX.push(sortedNodesX[i].text);
+        labelsX.push(nodesX[i].text);
+        nodesX[i].indices = [];
       }
+      var sortedLabelsY = [];
+      var sortedLabelsX = [];
+      var sortedNodes = sortNodes(value, nodesY, nodesX);
+      nodesY = sortedNodes.y;
+      nodesX = sortedNodes.x;
+      var sortedNodesY = sortedNodes.y;
+      var sortedNodesX = sortedNodes.x;
       for ( var i = 0; i < nodesY.length; i++ ) {
         sortedLabelsY.push(sortedNodesY[i].text);
       }
-      var rangeX = d3.range(n).sort( function ( a, b ) {
-        if (labelsX[a] == '' && labelsX[b] == '') return 0;
-        if (labelsX[a] == '') return 1;
-        if (labelsX[b] == '') return -1;
-        return sortedLabelsX.indexOf(labelsX[a]) - sortedLabelsX.indexOf(labelsX[b]);
-      });
-      var rangeY = d3.range(m).sort( function ( a, b ) {
+      for ( var i = 0; i < nodesX.length; i++ ) {
+        sortedLabelsX.push(sortedNodesX[i].text);
+      }
+      var rangeY = d3.range(n).sort( function ( a, b ) {
         if (labelsY[a] == '' && labelsY[b] == '') return 0;
         if (labelsY[a] == '') return 1;
         if (labelsY[b] == '') return -1;
         return sortedLabelsY.indexOf(labelsY[a]) - sortedLabelsY.indexOf(labelsY[b]);
       });
-      x.domain(rangeX).rangeBands([0, height]);
-      y.domain(rangeY).rangeBands([0, width]);
-
-/*
-      var matrixTmpX = matrixX.slice(0);
-      for ( var i = 0; i < matrixTmpX.length; i++ ) {
-        matrixTmpX[i] = matrixX[i].slice(0);
-      }
-      var matrixTmpY = matrixY.slice(0);
-      for ( var i = 0; i < matrixTmpY.length; i++ ) {
-        matrixTmpY[i] = matrixY[i].slice(0);
-      }
-      for ( var i = 0; i < matrixX.length; i++ ) {
-        for ( var j = 0; j < matrixX[i].length; j++ ) {
-          matrixX[i][j] = matrixTmpX[rangeX[i]][rangeY[j]];
-        }
-      }
-      for ( var i = 0; i < matrixY.length; i++ ) {
-        for ( var j = 0; j < matrixY[i].length; j++ ) {
-          matrixY[i][j] = matrixTmpY[rangeY[i]][rangeX[j]];
-        }
-      }
-*/
-
+      var rangeX = d3.range(m).sort( function ( a, b ) {
+        if (labelsX[a] == '' && labelsX[b] == '') return 0;
+        if (labelsX[a] == '') return 1;
+        if (labelsX[b] == '') return -1;
+        return sortedLabelsX.indexOf(labelsX[a]) - sortedLabelsX.indexOf(labelsX[b]);
+      });
+      svg.selectAll(".occurrences, .line,.rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
+      y.domain(rangeY).rangeBands([0, height]);
+      x.domain(rangeX).rangeBands([0, width]);
       var t = svg.transition().duration(3000);
-
-      svg.selectAll(".line,.rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
-
       const TRANSITION_FACTOR = 2;
-
       t.selectAll(".row")
-          //.filter(function (d, i) { return nodesX[i].text != ''; })
-          .delay(function(d, i) { return x(i) * TRANSITION_FACTOR; }) // * 4
-          .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
-          .attr("y", function(d) { return x(d.y); }) // TODO remove?
-        .selectAll(".cell")
-          .delay(function(d) { return y(d.x) * TRANSITION_FACTOR; })
-          .attr("x", function(d) { return y(d.x); });
-
-      t.selectAll(".column")
-          //.filter(function (d, i) { return nodesY[i].text != ''; })
           .delay(function(d, i) { return y(i) * TRANSITION_FACTOR; })
-          .attr("x", function(d) { return y(d.x); })
-          .attr("transform", function(d, i) { return "translate(" + y(i) + ",0)rotate(-90)"; });
+          .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
+          .attr("y", function(d) { return y(d.y); })
+        .selectAll(".cell")
+          .delay(function(d) { return x(d.x) * TRANSITION_FACTOR; })
+          .attr("x", function(d) { return x(d.x); });
+      t.selectAll(".column")
+          .delay(function(d, i) { return x(i) * TRANSITION_FACTOR; })
+          .attr("x", function(d) { return x(d.x); })
+          .attr("transform", function(d, i) { return "translate(" + x(i) + ",0)rotate(-90)"; });
 
       function endall(transition, callback) { 
         if (typeof callback !== "function") throw new Error("Wrong callback in endall");
@@ -2497,23 +2541,10 @@ text.active {
             .each(function() { ++n; }) 
             .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
       } 
-
       t.call(endall, function () {
-  /*
-        var row = svg.selectAll(".row");
-        addRowParentText(row);
-        if (hasDimensionsX) addRowDimensionText(row);
-        addRowHandlers(row);
-
-        var column = svg.selectAll(".column");
-        addColumnParentText(column);
-        if (hasDimensionsY) addColumnDimensionText(column);
-        addColumnHandlers(column);
-  */
         buildingMatrix = false;
-        buildMatrix({response: nodesX}, {response: nodesY}, correlations, -1, onClickURL, false, selectableCells, nodesOriginalX, nodesOriginalY);
+        buildMatrix({response: nodesY}, {response: nodesX}, correlations, -1, onClickURL, false, selectableCells, nodesOriginalY, nodesOriginalX);
       });
-      //buildMatrix({response: nodesOriginalX}, {response: nodesOriginalY}, correlations, -1, onClickURL, true, selectableCells, nodesOriginalX, nodesOriginalY);
     }
 
     function onColorThemeChange () {
@@ -2581,12 +2612,12 @@ text.active {
         console.time('File Import');
         var dataArray = [];
         var citations = [];
-        d3.selectAll(".rowText").each ( function () {
+        d3.selectAll(".rowText").each ( function ( entry, index ) {
           var that = d3.select(this);
           var entryText = that.text();
           if (!!entryText && entryText != '') {
             var texts = [entryText];
-            var synonyms = that.attr('data-synonyms');
+            var synonyms = nodesY[index].synonyms;
             if (!!synonyms && synonyms != '') texts = texts.concat(synonyms.split(','));
             dataArray.push({texts: texts, value: 0});
           }
@@ -2640,24 +2671,44 @@ text.active {
                 var tmpArray = dataArray.slice(0);
                 for ( var j = 0; j < dataArray.length; j++ ) {
                   if (minSimilarity < 1 && minSimilarity >= 0) {
-                    //var similarity = occurrencesStringSimilarity(text, dataArray[j].texts, minSimilarity);
-                  /*
+                  
                     console.time('Occurrences String Similarity');
                     var similarity = occurrencesStringSimilarity(text, dataArray[j].texts, minSimilarity);
                     console.timeEnd('Occurrences String Similarity');
+                  
+                  /*
+                    console.time('Occurrences LiquidMetal');
+                    var similarity = occurrencesLiquidMetal(text, dataArray[j].texts, minSimilarity);
+                    console.timeEnd('Occurrences LiquidMetal');
                   */
+                  /*
                     console.time('Occurrences Fuzzy Sort');
                     var similarity = occurrencesFuzzysort(text, dataArray[j].texts);
                     console.timeEnd('Occurrences Fuzzy Sort');
+                  */
                   } else {
-                    //var similarity = occurrences(text, dataArray[j].texts, false);
+                    console.time('Occurrences Levenshtein');
+                    var similarity = occurrencesLevenshtein(text, dataArray[j].texts, minSimilarity);
+                    console.timeEnd('Occurrences Levenshtein');
+                  /*
+                    console.time('Occurrences IndexOf');
+                    var similarity = occurrencesIndexOf(text, dataArray[j].texts, true);
+                    console.timeEnd('Occurrences IndexOf');
+                  */
+                  /*
                     console.time('Occurrences Regex');
                     var similarity = occurrencesRegex(text, dataArray[j].texts);
                     console.timeEnd('Occurrences Regex');
+                  */
                   }
                   var value = similarity.value;
                   if (value > 0) {
                     tmpArray[j].value += value;
+                    if (!!similarity.occurrences) {
+                      similarity.occurrences.sort( function ( a, b ) {
+                        return a.value > b.value ? -1 : (a.value == b.value ? 0 : 1);
+                      });
+                    }
                     correlations.push({text1: dataArray[j].texts[0], text2: fileName, value: value, occurrences: {data: similarity.occurrences, total: similarity.value}});
                   }
                 }
@@ -2701,12 +2752,13 @@ text.active {
               $('.progress-bar-text').html(files.length + '/' + files.length);
               waitingDialog.progress(100);
               $('.progress').hide();
+
               waitingDialog.hide();
               buildingMatrix = false;
               console.log('citations: ', citations);
               console.timeEnd('File Import');
               console.log('Imported ' + files.length + ' successfully.');
-              buildMatrix({response: nodesX}, {response: citations}, {response: correlations}, -1, onClickURL, false, true, nodesOriginalX, nodesOriginalY);
+              buildMatrix({response: nodesY}, {response: citations}, {response: correlations}, -1, onClickURL, true, true, nodesOriginalY, nodesOriginalX);
             }
             var scopusPromises = [];
             for ( var i = 0; i < fileTitles.length; i++ ) {
@@ -2764,28 +2816,42 @@ text.active {
     $('#importServerside').unbind().click ( function () {
       //$('#upload-input-server').click(); // TODO
     });
+    $('#clusterKMeans').unbind().click ( function () {
+      $.ajax
+        ({
+          type: "POST",
+          url: 'kMeans',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, n: KMEANS_CLUSTERS}),
+          success: function ( result ) {
+            console.log('K Means result: ', result);
+          }
+      });
+    });
     $('#saveMappings').unbind().click ( function () {
       if (IS_STATIC || !admin) return;
       if (!selectableCells) return; // TODO
       var mappings = [];
       d3.selectAll(".cell").each ( function ( cell ) {
 /*
-        var attributeText = d3.select('.rowText[data-originalText="' + nodesX[cell.y-1].text + '"]');
+        var attributeText = d3.select('.rowText[data-originalText="' + nodesY[cell.y-1].text + '"]');
         if (!!attributeText && attributeText.length > 0) attributeText = attributeText.text();
-        else attributeText = nodesX[cell.y-1].text;
+        else attributeText = nodesY[cell.y-1].text;
 */
-        var attributeText = nodesX[cell.y-1].text;
-        var that = d3.select('.columnText[data-originalText="' + nodesY[cell.x].text + '"]');
+        var attributeText = nodesY[cell.y-1].text;
+        var that = d3.select('.columnText[data-originalText="' + nodesX[cell.x].text + '"]');
         if (!!that && that.length > 0) {
           var citationText = that.text();
           if (!!citationText && citationText != '') {
             var fullText = that.attr('data-fulltext');
             if (citationText.split('...').length > 1 && !!fullText) citationText = fullText;
-          } else citationText = nodesY[cell.x].text;
-        } else var citationText = nodesY[cell.x].text;
-        var referenceCount = !!nodesY[cell.x].referenceCount ? nodesY[cell.x].referenceCount : 0;
-        var author = !!nodesY[cell.x].author ? nodesY[cell.x].author : '';
-        var keywords = !!nodesY[cell.x].keywords ? nodesY[cell.x].keywords : '';
+          } else citationText = nodesX[cell.x].text;
+        } else var citationText = nodesX[cell.x].text;
+        var referenceCount = !!nodesX[cell.x].referenceCount ? nodesX[cell.x].referenceCount : 0;
+        var author = !!nodesX[cell.x].author ? nodesX[cell.x].author : '';
+        var keywords = !!nodesX[cell.x].keywords ? nodesX[cell.x].keywords : '';
         mappings.push({attribute: attributeText, citation: citationText, occurrenceCount: cell.z, referenceCount: referenceCount, author: author, keywords: keywords});
       });
       $.ajax
@@ -2840,7 +2906,7 @@ text.active {
       return n;
   }
 
-  function occurrences(string, subStrings, allowOverlapping) {
+  function occurrencesIndexOf(string, subStrings, allowOverlapping) {
     var counter = 0;
     var occurrences = [];
     subStrings.forEach ( function ( subString ) {
@@ -2873,7 +2939,60 @@ text.active {
     words.forEach ( function ( entry ) {
       if (entry.length > 2) { // TODO
         subStrings.forEach ( function ( subString ) {
-          var value = compareTwoStrings(subString, entry);
+          var value = compareTwoStrings(entry, subString);
+          if (value >= minSimilarity) {
+            counter++;
+            var index = -1;
+            for ( var i = 0; i < occurrences.length; i++ ) {
+              if (occurrences[i].name == entry) {
+                index = i;
+                break;
+              }
+            }
+            if (index < 0) occurrences.push({name: entry, value: 1});
+            else occurrences[index].value++;
+          }
+        });
+      }
+    });
+    return {value: counter, occurrences: occurrences};
+  }
+
+  function occurrencesLevenshtein ( string, subStrings, minSimilarity ) {
+    var levenshtein = window.Levenshtein;
+    var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
+    var counter = 0;
+    var occurrences = [];
+    words.forEach ( function ( entry ) {
+      if (entry.length > 2) { // TODO
+        subStrings.forEach ( function ( subString ) {
+          var value = levenshtein.get(entry, subString);
+          if (value <= minSimilarity) {
+            counter++;
+            var index = -1;
+            for ( var i = 0; i < occurrences.length; i++ ) {
+              if (occurrences[i].name == entry) {
+                index = i;
+                break;
+              }
+            }
+            if (index < 0) occurrences.push({name: entry, value: 1});
+            else occurrences[index].value++;
+          }
+        });
+      }
+    });
+    return {value: counter, occurrences: occurrences};
+  }
+
+  function occurrencesLiquidMetal ( string, subStrings, minSimilarity ) {
+    var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
+    var counter = 0;
+    var occurrences = [];
+    words.forEach ( function ( entry ) {
+      if (entry.length > 2) { // TODO
+        subStrings.forEach ( function ( subString ) {
+          var value = LiquidMetal.score(entry, subString);
           if (value >= minSimilarity) {
             counter++;
             var index = -1;
@@ -2919,51 +3038,51 @@ text.active {
     return {value: counter, occurrences: occurrences};
   }
 
-  function showMatrix ( attributesX, attributesY, correlations, maxValue, onClickURL ) {
-    buildMatrix(attributesX, attributesY, correlations, maxValue, onClickURL, true, false);
+  function showMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL ) {
+    buildMatrix(attributesY, attributesX, correlations, maxValue, onClickURL, true, false);
   }
 
   function loadAttributes ( init, correlations, options, maxValue, onClickURL, callback, filter ) {
     if (!IS_STATIC) {
       $.ajax
         ({
-            type: options.ajaxTypeX,
-            url: options.attributeUrlX, // allChildrenAttributes
+            type: options.ajaxTypeY,
+            url: options.attributeUrlY, // allChildrenAttributes
             dataType: 'json',
             contentType:'application/json',
             async: true,
-            data: JSON.stringify(options.requestX),
-            success: function ( attributesResultX) {
-              if (!attributesResultX) {
+            data: JSON.stringify(options.requestY),
+            success: function ( attributesResultY) {
+              if (!attributesResultY) {
                 handleError('Cannot get attributes from DB.');
                 return;
               }
-              if (!attributesResultX.response) attributesResultX.response = [];
-              DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')] = attributesResultX;
+              if (!attributesResultY.response) attributesResultY.response = [];
+              DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = attributesResultY;
               $.ajax
                 ({
-                    type: options.ajaxTypeY,
-                    url: options.attributeUrlY, // allChildrenAttributes
+                    type: options.ajaxTypeX,
+                    url: options.attributeUrlX, // allChildrenAttributes
                     dataType: 'json',
                     contentType:'application/json',
                     async: true,
-                    data: JSON.stringify(options.requestY),
-                    success: function ( attributesResultY) {
-                      if (!attributesResultY) {
+                    data: JSON.stringify(options.requestX),
+                    success: function ( attributesResultX) {
+                      if (!attributesResultX) {
                         handleError('Cannot get attributes from DB.');
                         return;
                       }
-                      if (!attributesResultY.response) attributesResultY.response = [];
-                      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = attributesResultY;
-                      callback(attributesResultX, attributesResultY, correlations, maxValue, onClickURL);
+                      if (!attributesResultX.response) attributesResultX.response = [];
+                      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')] = attributesResultX;
+                      callback(attributesResultY, attributesResultX, correlations, maxValue, onClickURL);
                     }
                   });
                 }
         });
       } else {
-        var attributesX = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')];
         var attributesY = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')];
-        callback(attributesX, attributesY, correlations, maxValue, onClickURL);
+        var attributesX = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')];
+        callback(attributesY, attributesX, correlations, maxValue, onClickURL);
       }
     }
 
@@ -2973,9 +3092,9 @@ function renderMatrixHelper () {
     var parent2 = $('#parents2').val();
     if (parent1 == '') parent1 = 'All attributes';
     if (parent2 == '') parent2 = 'All attributes';
-    var ajaxTypeX, ajaxTypeY, attributeUrlX, attributeUrlY;
-    var requestX = request;
-    var requestY = request;
+    var ajaxTypeY, ajaxTypeX, attributeUrlY, attributeUrlX;
+    var requestY = {'taxonomy_id': TAXONOMY_ID};
+    var requestX = {'taxonomy_id': TAXONOMY_ID};
     var correlationURLObj = getCorrelationOptions();
     var correlationURL = correlationURLObj.url;
     var maxValue = correlationURLObj.maxValue;
@@ -2983,18 +3102,18 @@ function renderMatrixHelper () {
     var showChildAttributes = $('#showChildAttributes').is(':checked');
     var dataTypeIsReferenceCount = $('#dataType')[0].value == 'referenceCount';
     switch(parent1) {
-      case 'All attributes': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttribute'; break;
-      case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent1; break;
-      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent1; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent1; }
-    }
-    switch(parent2) {
       case 'All attributes': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttribute'; break;
       case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent2; break;
-      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent2; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent2; }
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent1; break;
+      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent1; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent1; }
     }
-    var options = {ajaxTypeX: ajaxTypeX, ajaxTypeY: ajaxTypeY, attributeUrlX: attributeUrlX, attributeUrlY: attributeUrlY, requestX: requestX, requestY: requestY};
+    switch(parent2) {
+      case 'All attributes': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttribute'; break;
+      case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent2; break;
+      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent2; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent2; }
+    }
+    var options = {ajaxTypeY: ajaxTypeY, ajaxTypeX: ajaxTypeX, attributeUrlY: attributeUrlY, attributeUrlX: attributeUrlX, requestY: requestY, requestX: requestX};
     if (onClickURL == 'citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('COVERAGE')], options, -1, onClickURL, showMatrix);
     else loadAttributes(false, DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')], options, -1, onClickURL, showMatrix);
 }
@@ -3069,7 +3188,7 @@ function initFields ( citations, citationCount, dimensions, allAttributes, corre
   $('#parents2-selectized').off('focus').on('focus', function () {
     $(this).trigger({type: 'keydown', keyCode: 8});
   });
-  var options = {ajaxTypeX: 'POST', ajaxTypeY: 'POST', attributeUrlX: 'leafAttribute', attributeUrlY: 'leafAttribute', requestX: request, requestY: request};
+  var options = {ajaxTypeY: 'POST', ajaxTypeX: 'POST', attributeUrlY: 'leafAttribute', attributeUrlX: 'leafAttribute', requestY: request, requestX: request};
   var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
 
   loadAttributes(true, correlations, options, maxValue, onClickURL, showMatrix);
@@ -3238,7 +3357,7 @@ function initPage () {
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')] = dimensions;
       var allAttributes = JSON.parse(STATIC_ALLATTRIBUTES);
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ALLATTRIBUTES')] = allAttributes;
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')] = JSON.parse(STATIC_ATTRIBUTESX);
+      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = JSON.parse(STATIC_ATTRIBUTESY);
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = JSON.parse(STATIC_ATTRIBUTESY);
       var correlations = JSON.parse(STATIC_CORRELATIONS);
       DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')] = correlations;
@@ -3262,7 +3381,6 @@ $(document).ready( function () {
   $(this).on('contextmenu', function ( e ) {
     e.preventDefault();
   });
-  $('#import').html('<span>Import from xlsx<div class="progress" style="margin-left:29%;display:none;"><div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><span class="progress-bar-text"></span></div></div></span>');
   $('#importMinSimilarity').val(DEFAULT_MIN_SIMILARITY);
   if (!!IS_STATIC) {
     loadBanner('STATIC');

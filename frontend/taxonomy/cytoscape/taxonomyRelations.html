@@ -75,12 +75,11 @@
 <div class="navbar"></div>
 <div class="modals"></div>
 
-  <div>
-    <input type="button" class="btn btn-success" id="exportPNG" style="margin-top:5px;" value="Export PNG">
-    <input type="button" class="btn btn-success" id="exportHTML" style="margin-top:5px;" value="Export HTML">
-    <input type="button" class="btn btn-success" id="exportJSON" style="margin-top:5px;" value="Export JSON">
-    <input type="button" class="btn btn-primary" id="getEdges" value="Save positions" style="display:none;">
-    <input type="button" class="btn btn-primary" id="merge" value="Merge nodes" style="display:none;">
+  <div class="btn btn-group" role="group" aria-label="...">
+    <button type="button" class="btn btn-default" id="exportPNG" title="Export PNG"><span class="glyphicon glyphicon-picture" value="Export PNG" ></span></button>
+    <button type="button" class="btn btn-default" id="exportHTML" title="Export HTML"><span class="glyphicon glyphicon-file" value="Export HTML" ></span></button>
+    <button type="button" class="btn btn-default" id="getEdges" title="Save Positions" style="display:none;"><span class="glyphicon glyphicon-floppy-disk" value="Save Positions" ></span></button>
+    <button type="button" class="btn btn-default" id="merge" title="Merge nodes" style="display:none;"><span class="glyphicon glyphicon-resize-small" value="Merge nodes" ></span></button>
   </div>
   <div id="cyContainer">
   </div>
@@ -1125,7 +1124,7 @@
       layout: {
         name: 'preset',
         zoom: 1,
-        pan: {x: !!isInterDimensional ? ($(window).width() - 300) : 0, y: !!isInterDimensional ? $(window).height() : 0}
+        pan: {x: !!isInterDimensional ? ($(window).width() - 300) : 0, y: !!isInterDimensional ? $(window).height() + 200 : 0}
         //rows: 3
       },
       style: STYLES
@@ -1562,7 +1561,7 @@
               right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
           },
           fireSearch: function(value) {
-              return value.length > 3;
+              return value.length > 0;
           }
       });
     });
