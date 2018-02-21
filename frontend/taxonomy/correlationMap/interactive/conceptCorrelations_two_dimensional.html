@@ -249,12 +249,16 @@ text.active {
           <button type="button" class="btn btn-default" id="exportHTML" title="Export HTML"><span class="glyphicon glyphicon-file" value="Export HTML" ></span></button>
           <button type="button" class="btn btn-default" id="import" title="Import"><span class=" glyphicon glyphicon-folder-open" value="Import" ></span></button>
           <button type="button" class="btn btn-default" id="saveMappings" title="Save Mappings"><span class="glyphicon glyphicon-floppy-disk" value="Save Mappings" ></span></button>
-        </div>
-        <div style="margin-top:20px;">
-          <label for="importMinSimilarity">Min Similarity: </label><input type="text" id="importMinSimilarity" value="" style="width:50px;margin-left:10px;" title="Min similarity">
-        </div>
-        <div>
-          <label for="showCellNumbers">Show Cell Numbers: </label><input type="checkbox" id="showCellNumbers" style="margin-left:10px;" title="Show Cell Numbers" checked>
+          <div class="dropdown">
+            <button class="btn btn-default dropdown-toggle" type="button" id="settingsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span class="glyphicon glyphicon-cog" value="Settings" ></span>
+              <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="settingsMenu">
+              <li><div style="padding:10px;"><label for="importMinSimilarity">Min Similarity: </label><input type="text" id="importMinSimilarity" value="" style="width:50px;margin-left:10px;" title="Min similarity"></div></li>
+              <li><div style="padding:10px;"><label for="showCellNumbers">Show Cell Numbers: </label><input type="checkbox" id="showCellNumbers" style="margin-left:10px;" title="Show Cell Numbers" checked></div></li>
+            </ul>
+          </div>
         </div>
     </div>
     <div class="col-sm-2">
