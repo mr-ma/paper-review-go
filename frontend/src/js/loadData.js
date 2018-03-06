@@ -1,12 +1,12 @@
   function showDimension ( dimension, useCY ) {
     console.log("showing dimension: " + dimension)
-    var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
-    var relationTypes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('RELATIONTYPES')];
-    var citationCounts = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONCOUNTS')];
+    var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
+    var relationTypes = DYNAMIC_ARRAY[STATIC_INDEX_RELATIONTYPES];
+    var citationCounts = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNTS];
     if (dimension == 'Interdimensional view') {
       var interDimensional = true;
-      var attributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('MAJORATTRIBUTES')];
-      var relations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('INTERDIMENSIONALRELATIONS')];
+      var attributes = DYNAMIC_ARRAY[STATIC_INDEX_MAJORATTRIBUTES];
+      var relations = DYNAMIC_ARRAY[STATIC_INDEX_INTERDIMENSIONALRELATIONS];
     } else {
       var interDimensional = false;
       var index = -1;
@@ -17,13 +17,13 @@
         }
       }
       if (index < 0) return;
-      var attributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESPERDIMENSION')][index];
-      var relations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTERELATIONS')][index];
+      var attributes = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION][index];
+      var relations = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS][index];
       dimensions = [{text: dimension}];
     }
     console.log("dimensions: ", dimensions)
     if (!!useCY) {
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CY')] = JSON.parse(STATIC_CY);
+      DYNAMIC_ARRAY[STATIC_INDEX_CY] = JSON.parse(STATIC_CY);
       createJSON(true, !!dimensions ? dimensions : [], interDimensional, !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
     } else createJSON(false, !!dimensions ? dimensions : [], interDimensional, !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
   }
@@ -186,17 +186,17 @@
         promises.push(getCitationCountsPromise);
         Promise.all(promises)
           .then ( function ( results ) {
-            DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')] = dimensions;
+            DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS] = dimensions;
             dimensions.forEach ( function ( dimension ) {
-              DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESPERDIMENSION')] = [];
-              DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTERELATIONS')] = [];
+              DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION] = [];
+              DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS] = [];
             });
             results.forEach ( function ( result ) {
               if (result.name == 'DIMENSIONDATA') {
                 console.log('dim data: ', result.value)
                 result.value.forEach ( function ( dimensionData ) {
-                  if (dimensionData.name == 'ATTRIBUTESPERDIMENSION') DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESPERDIMENSION')][dimensionData.value.index] = dimensionData.value.value;
-                  else DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTERELATIONS')][dimensionData.value.index] = dimensionData.value.value;
+                  if (dimensionData.name == 'ATTRIBUTESPERDIMENSION') DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION][dimensionData.value.index] = dimensionData.value.value;
+                  else DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS][dimensionData.value.index] = dimensionData.value.value;
                 });
               } else DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
             });
@@ -209,21 +209,21 @@
       } else {
         try {
           var dimensions = JSON.parse(STATIC_DIMENSIONS);
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')] = dimensions;
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('MAJORATTRIBUTES')] = JSON.parse(STATIC_MAJORATTRIBUTES);
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('INTERDIMENSIONALRELATIONS')] = JSON.parse(STATIC_INTERDIMENSIONALRELATIONS);
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('RELATIONTYPES')] = JSON.parse(STATIC_RELATIONTYPES);
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONCOUNTS')] = JSON.parse(STATIC_CITATIONCOUNTS);
+          DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS] = dimensions;
+          DYNAMIC_ARRAY[STATIC_INDEX_MAJORATTRIBUTES] = JSON.parse(STATIC_MAJORATTRIBUTES);
+          DYNAMIC_ARRAY[STATIC_INDEX_INTERDIMENSIONALRELATIONS] = JSON.parse(STATIC_INTERDIMENSIONALRELATIONS);
+          DYNAMIC_ARRAY[STATIC_INDEX_RELATIONTYPES] = JSON.parse(STATIC_RELATIONTYPES);
+          DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNTS] = JSON.parse(STATIC_CITATIONCOUNTS);
 
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESPERDIMENSION')] = [];
-          DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTERELATIONS')] = [];
+          DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION] = [];
+          DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS] = [];
 
           var attributesPerDimension = JSON.parse(STATIC_ATTRIBUTESPERDIMENSION);
           var attributeRelations = JSON.parse(STATIC_ATTRIBUTERELATIONS);
 
           for ( var i = 0; i < dimensions.length; i++ ) {
-            if (attributesPerDimension.length > i) DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESPERDIMENSION')][i] = attributesPerDimension[i];
-            if (attributeRelations.length > i) DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTERELATIONS')][i] = attributeRelations[i];
+            if (attributesPerDimension.length > i) DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION][i] = attributesPerDimension[i];
+            if (attributeRelations.length > i) DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS][i] = attributeRelations[i];
           }
           displayedDimension = 'Interdimensional view';
           showDimension(displayedDimension, useCY);

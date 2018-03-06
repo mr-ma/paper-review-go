@@ -2,29 +2,29 @@
 <html>
 <head>
     <title>Circle Packing</title>
-    <script src="jquery.min.js"></script>
-    <script src="d3.min.js"></script>
-    <script src="d3-hierarchy.v1.min.js"></script>
+    <script src="jquery.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="d3.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="d3-hierarchy.v1.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-hierarchy/1.1.5/d3-hierarchy.min.js"></script>
 
-    <link href="bootstrap.min.css" type="text/css" rel="stylesheet">
-    <script src="bootstrap.min.js"></script>
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="bootstrap.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet">
-    <script src="bootstrap-dialog.min.js"></script>
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
 
-    <script src="multiselect.min.js"></script>
+    <script src="multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
 
     <link href="loginForm.css" type="text/css" rel="stylesheet">
 
-    <link href="d3-context-menu.css" type="text/css" rel="stylesheet">
-    <script src="d3-context-menu.js"></script>
+    <link href="d3-context-menu.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
+    <script src="d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
 
-    <link href="d3-tip.css" type="text/css" rel="stylesheet">
-    <script src='d3-tip.js'></script>
+    <link href="d3-tip.css" type="text/css" rel="stylesheet" data-web="https://rawgit.com/Caged/d3-tip/master/examples/example-styles.css">
+    <script src="d3-tip.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.js"></script>
 
     <script src="bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
 
-    <script src="FileSaver.min.js"></script>
+    <script src="FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
 
     <script src="loadData.js"></script>
     <script src="exportHTML.js"></script>
@@ -92,6 +92,15 @@
   const IS_STATIC = false;
 
   const STATIC_ARRAY = ['DIMENSIONS', 'MAJORATTRIBUTES', 'ATTRIBUTESPERDIMENSION', 'ATTRIBUTERELATIONS', 'INTERDIMENSIONALRELATIONS', 'RELATIONTYPES', 'CITATIONCOUNTS', 'CY'];
+
+  const STATIC_INDEX_DIMENSIONS = 0;
+  const STATIC_INDEX_MAJORATTRIBUTES = 1;
+  const STATIC_INDEX_ATTRIBUTESPERDIMENSION = 2;
+  const STATIC_INDEX_ATTRIBUTERELATIONS = 3;
+  const STATIC_INDEX_INTERDIMENSIONALRELATIONS = 4;
+  const STATIC_INDEX_RELATIONTYPES = 5;
+  const STATIC_INDEX_CITATIONCOUNTS = 6;
+  const STATIC_INDEX_CY = 7;
 
   var STATIC_DIMENSIONS;
   var STATIC_MAJORATTRIBUTES;
@@ -543,7 +552,40 @@
       $('#dataType').unbind().on('change', function () {
         if (!!displayedDimension) showDimension(displayedDimension);
       });
-      loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+      if (!IS_STATIC) {
+        var hash = window.location.hash.split('#').pop();
+        if (!!hash && hash != '') {
+          $.ajax
+            ({
+              type: "POST",
+              url: 'getTaxonomyID',
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              data: JSON.stringify({text: unescape(hash)}),
+              success: function ( taxonomy ) {
+                if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
+                  console.log('Cannot get taxonomy ID From DB.');
+                  TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                  window.location.href = window.location.origin + '/circlePacking';
+                  return;
+                } else {
+                  var id = taxonomy.response[0].id - 0;
+                  console.log("taxonomy id: ", id)
+                  if (!isNaN(id)) TAXONOMY_ID = id;
+                  else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                }
+                loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+              }
+          });
+        } else {
+          TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+          loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+        }
+      } else {
+        TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+        loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+      }
     }
 
     $(document).ready( function () {

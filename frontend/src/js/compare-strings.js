@@ -1,3 +1,4 @@
+// Source: https://github.com/aceakash/string-similarity
 function compareTwoStrings(str1, str2) {
   var result = null;
   result = calculateResultIfIdentical(str1, str2);

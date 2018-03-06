@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- https://searchcode.com/file/72780018/mike/miserables/index.html -->
 <meta charset="utf-8">
 <title>Colored Concept Correlations</title>
 <header>
@@ -75,7 +74,11 @@ text.active {
 // bootstrap-waitingfor.min.js
 !function(e,a){"use strict";"function"==typeof define&&define.amd?define(["jquery"],function(d){return e.waitingDialog=a(d)}):e.waitingDialog=e.waitingDialog||a(e.jQuery)}(this,function(e){"use strict";function a(a){return a&&a.remove(),e('<div class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true" style="padding-top:15%; overflow-y:visible;"><div class="modal-dialog modal-m"><div class="modal-content"><div class="modal-header" style="display: none;"></div><div class="modal-body"><div class="progress progress-striped active" style="margin-bottom:0;"><div class="progress-bar" style="width: 100%"></div></div></div></div></div></div>')}var d,t,n={};return{show:function(n,i){"undefined"==typeof i&&(i={}),"undefined"==typeof n&&(n="Loading");var r,o,s=e.extend({headerText:"",headerSize:3,headerClass:"",dialogSize:"m",progressType:"",contentElement:"p",contentClass:"content",ltr:!0,timer:500,timeout:0,onHide:null},i);t=s,d=a(d),d.find(".modal-dialog").attr("class","modal-dialog").addClass("modal-"+s.dialogSize),d.find(".progress-bar").attr("class","progress-bar"),s.progressType&&d.find(".progress-bar").addClass("progress-bar-"+s.progressType),s.ltr&&d.find(".progress-bar").css("float","left").end().attr("dir","ltr"),r=e("<h"+s.headerSize+" />"),r.css({margin:0}),s.headerClass&&r.addClass(s.headerClass),o=e("<"+s.contentElement+" />"),s.contentClass&&o.addClass(s.contentClass),s.headerText===!1?(o.html(n),d.find(".modal-body").prepend(o)):s.headerText?(r.html(s.headerText),d.find(".modal-header").html(r).show(),o.html(n),d.find(".modal-body").prepend(o)):(r.html(n),d.find(".modal-header").html(r).show()),"function"==typeof s.onHide&&d.off("hidden.bs.modal").on("hidden.bs.modal",function(){s.onHide.call(d)}),d.modal()},hide:function(){"undefined"!=typeof d&&d.modal("hide")},message:function(e){return"undefined"!=typeof d?"undefined"!=typeof e?d.find(".modal-header>h"+t.headerSize).html(e):d.find(".modal-header>h"+t.headerSize).html():void 0},animate:function(e,a,i){if(a=a||t.timer,i=i||t.timeout,e=e||d.find(".modal-header>h"+t.headerSize).html(),n.animate=n.animate||[],"string"==typeof e&&(e=["..","....","......"].map(function(a){return e+a})),"object"==typeof e&&e instanceof Array){var r=e;e=function(e){var a=r.indexOf(e.html());if(0>a)e.html(r[0]);else{var d=a+1>=r.length?0:a+1;e.html(r[d])}}}if("function"==typeof e){a>i&&setTimeout(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},i);var o=setInterval(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},a);return n.animate.push(o),o}},stopAnimate:function(e){return e=e||n.animate[n.animate.length-1],clearInterval(e),delete n.animate[n.animate.indexOf(e)],d},progress:function(e,a){return arguments.length?(a&&(e=parseInt(e/a*100)),d.find(".progress-bar").css("width",e+"%"),d):parseInt(d.find(".progress-bar")[0].style.width)}}});
 </script>
+
 <script>
+  /*
+    Source: https://github.com/aceakash/string-similarity
+  */
   function compareTwoStrings(str1, str2) {
     var result = null;
     result = calculateResultIfIdentical(str1, str2);
@@ -201,6 +204,7 @@ text.active {
 
 <input id="upload-input" type="file" name="uploads[]" multiple="multiple" style="display:none;">
 <input id="upload-input-server" type="file" name="uploads[]" multiple="multiple" style="display:none;">
+<input id="upload-input-JSON" type="file" name="uploads[]" multiple="multiple" style="display:none;">
 
 <div class="modal fade" id="default-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
   <div class="modal-dialog">
@@ -247,17 +251,30 @@ text.active {
         <div class="btn btn-group" role="group" aria-label="...">
           <button type="button" class="btn btn-default" id="exportPNG" title="Export PNG"><span class="glyphicon glyphicon-picture" value="Export PNG" ></span></button>
           <button type="button" class="btn btn-default" id="exportHTML" title="Export HTML"><span class="glyphicon glyphicon-file" value="Export HTML" ></span></button>
-          <button type="button" class="btn btn-default" id="import" title="Import"><span class=" glyphicon glyphicon-folder-open" value="Import" ></span></button>
+          <button type="button" class="btn btn-default" id="exportJSON" title="Export JSON"><span class="glyphicon glyphicon-download-alt" value="Export JSON" ></span></button>
+          <button type="button" class="btn btn-default" id="compareJSONFiles" title="Compare JSON Correlation Files"><span class="glyphicon glyphicon-random" value="Compare JSON Correlation Files" ></span></button>
+          <button type="button" class="btn btn-default" id="testPerformance" title="Test Performance"><span class="glyphicon glyphicon-random" value="Test Performance" ></span></button>
+          <button type="button" class="btn btn-default" id="testPerformanceCorrelationProbability" title="Test Performance per Correlation Propability"><span class="glyphicon glyphicon-random" value="Test Performance per Correlation Propability" ></span></button>
           <button type="button" class="btn btn-default" id="saveMappings" title="Save Mappings"><span class="glyphicon glyphicon-floppy-disk" value="Save Mappings" ></span></button>
         </div>
-        <div class="dropdown" style="margin-left:13px;">
+        <div class="dropdown" style="margin-left:13px;" title="Paper Import">
             <button class="btn btn-default dropdown-toggle" type="button" id="settingsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-              <span class="glyphicon glyphicon-cog" value="Settings" ></span>
+              <span class="glyphicon glyphicon-book" value="Paper Import" title="Paper Import"></span>
               <span class="caret"></span>
             </button>
-            <ul class="dropdown-menu" aria-labelledby="settingsMenu">
-              <li><div style="padding:10px;"><label for="importMinSimilarity">Min Similarity: </label><input type="text" id="importMinSimilarity" value="" style="width:50px;margin-left:10px;" title="Min similarity"></div></li>
-              <li><div style="padding:10px;"><label for="showCellNumbers">Show Cell Numbers: </label><input type="checkbox" id="showCellNumbers" style="margin-left:10px;" title="Show Cell Numbers" checked></div></li>
+            <ul class="dropdown-menu" aria-labelledby="settingsMenu" style="text-align:center;">
+              <li style="display:inline-block;"><h4>Paper Import</h4></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><label for="selectStringComparisonTechnique">String Comparison Technique: </label></div><div><select id="selectStringComparisonTechnique" style="width:100px;" title="String Comparison Technique">
+                <option title="Exact matching using regular expressions">Regex</option>
+                <option title="Dice's Coefficient calculates string similarity based on the number of bigrams two words have in common">Dice's Coefficient</option>
+                <option title="The Levenshtein distance is the minimal number of insertions, deletions and replacements needed for transforming one string into another one">Levenshtein</option>
+                <option title="SublimeText-like fuzzy search (https://github.com/farzher/fuzzysort)">Fuzzysort</option>
+              </select></div></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><label for="importMinSimilarity">Min Similarity: </label></div><div><input type="text" id="importMinSimilarity" value="" style="width:50px;" title="Min similarity"></div></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><div><label for="importMinOccurrences">Min Occurrences: </label></div><div><input type="text" id="importMinOccurrences" value="1" style="width:50px;" title="Min occurrences"></div></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><div><label for="showCellNumbers">Show Cell Numbers: </label></div><div><input type="checkbox" id="showCellNumbers" title="Show Cell Numbers" checked></div></li>
+              <li style="display:inline-block;"><input type="button" class="btn btn-success" id="import" title="Import" value="Import Papers"></li>
+              <!--<li><button type="button" class="btn btn-default" id="import" title="Import"><span class=" glyphicon glyphicon-folder-open" value="Import" ></span></button></li>-->
             </ul>
           </div>
     </div>
@@ -302,6 +319,15 @@ text.active {
 
   const STATIC_ARRAY = ['CITATIONS', 'CITATIONCOUNT', 'DIMENSIONS', 'ALLATTRIBUTES', 'ATTRIBUTESY', 'ATTRIBUTESX', 'CORRELATIONS', 'COVERAGE'];
 
+  const STATIC_INDEX_CITATIONS = 0;
+  const STATIC_INDEX_CITATIONCOUNT = 1;
+  const STATIC_INDEX_DIMENSIONS = 2;
+  const STATIC_INDEX_ALLATTRIBUTES = 3;
+  const STATIC_INDEX_ATTRIBUTESY = 4;
+  const STATIC_INDEX_ATTRIBUTESX = 5;
+  const STATIC_INDEX_CORRELATIONS = 6;
+  const STATIC_INDEX_COVERAGE = 7;
+
   var STATIC_CITATIONS;
   var STATIC_CITATIONCOUNT;
   var STATIC_DIMENSIONS;
@@ -316,6 +342,7 @@ text.active {
   var TAXONOMY_ID;
 
   const KMEANS_CLUSTERS = 7;
+  const MIN_IMPORT_OCCURRENCES = 1;
   const FUZZY_SORT_MIN_SIMILARITY = -150; // TODO
 
   var totalNumberOfCitations, maxReferenceCount;
@@ -346,6 +373,36 @@ text.active {
   const SHORTEN_LEAF_VALUE = 18;
   const MIN_SHORTEN_VALUE = 3;
   const MIN_SHORTEN_FACTOR = 3;
+
+  function compareCorrelations ( correlations1, correlations2 ) {
+    var texts1 = [];
+    var texts2 = [];
+    var results = [];
+    for ( var i = 0; i < correlations1.length; i++ ) {
+      if (correlations1[i].hasOwnProperty('text1') && correlations1[i].hasOwnProperty('text2') && correlations1[i].hasOwnProperty('value')) {
+        var textI1 = correlations1[i]['text1'];
+        var textI2 = correlations1[i]['text2'];
+        for ( var j = 0; j < correlations2.length; j++ ) {
+          if (correlations2[j].hasOwnProperty('text1') && correlations2[j].hasOwnProperty('text2') && correlations2[j].hasOwnProperty('value')) {
+            var textJ1 = correlations2[j]['text1'];
+            var textJ2 = correlations2[j]['text2'];
+            if (textI1 == textJ1 && textI2 == textJ2) {
+              var value1 = correlations1[i].value > 0;
+              var value2 = correlations2[j].value > 0;
+              results.push({text1: textI1, text2: textI2, value: value1 == value2});
+              break;
+            }
+          }
+        }
+      }
+    }
+    var counter = 0;
+    for ( var i = 0; i < results.length; i++ ) {
+      if (!!results[i].value) counter++;
+    }
+    console.log('Correlation results: ', results);
+    console.log('Conformity: ' +  (counter / (results.length > 0 ? results.length : 1) * 100) + ' %');
+  }
 
   function getSVGString( svgNode ) {
     svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
@@ -535,7 +592,11 @@ text.active {
     return {colorScale: colorScale, colorInterpolate: colorInterpolate};
   }
 
-  // https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
+  /*
+    Based on a code example.
+
+    Source: https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
+  */
   function updateColorLegend ( gradientID, width, height, maxValue ) { //     var w = 300, h = 50;
     d3.select("#colorLegend").selectAll("svg").remove();
     var legend = d3.select("#colorLegend")
@@ -630,7 +691,92 @@ text.active {
     return {y: nodesY, x: nodesX};
   }
 
-  function buildMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalY, nodesOriginalX ) {
+  function testPerformance ( attributeNumberY, attributeNumberX, correlationPropability ) {
+    var attributesY = [];
+    var attributesX = [];
+    var correlations = [];
+    for ( var i = 1; i <= attributeNumberY; i++ ) {
+      attributesY.push({text: 'ElementY' + i});
+    }
+    for ( var i = 1; i <= attributeNumberX; i++ ) {
+      attributesX.push({text: 'ElementX' + i});
+    }
+    for ( var i = 0; i < attributesY.length; i++ ) {
+      for ( var j = 0; j < attributesX.length; j++ ) {
+        if (Math.random() <= correlationPropability) {
+          correlations.push({text1: attributesY[i].text, text2: attributesX[j].text, value: 1});
+        }
+      }
+    }
+    console.log('Performance Test with attributeNumberY: ' + attributeNumberY + ', attributeNumberX: ' + attributeNumberX + ', correlationPropability: ' + correlationPropability + ':');
+    console.time('BuildMatrix');
+    var startTime = window.performance.now();
+    buildingMatrix = false;
+    buildMatrix({response: attributesY}, {response: attributesX}, {response: correlations}, -1, '', false);
+    var endTime = window.performance.now();
+    console.timeEnd('BuildMatrix');
+    return endTime - startTime;
+  }
+
+  function testPerformancePerElementNumber ( start, end, stepSize, correlationPropability, numberOfRuns ) {
+    if (numberOfRuns <= 0) return 0;
+    var results = [];
+    for ( var i = start; i <= end; i += stepSize ) {
+      var sum = 0;
+      for ( var j = 0; j < numberOfRuns; j++ ) {
+        var timeDiff = testPerformance(i, i, correlationPropability);
+        sum += timeDiff;
+      }
+      results.push({nodes: i, correlationPropability: correlationPropability, time: sum / numberOfRuns});
+    }
+    return results;
+  }
+
+  function testPerformancePerCorrelationPropability ( stepSize, numberOfNodes, numberOfRuns ) {
+    if (numberOfRuns <= 0) return 0;
+    var results = [];
+    for ( var i = 0; i <= 1; i += stepSize ) {
+      var sum = 0;
+      for ( var j = 0; j < numberOfRuns; j++ ) {
+        var timeDiff = testPerformance(numberOfNodes, numberOfNodes, i);
+        sum += timeDiff;
+      }
+      results.push({nodes: numberOfNodes, correlationPropability: i, time: sum / numberOfRuns});
+    }
+    return results;
+  }
+
+  function testPerformanceDummy () {
+    var result = testPerformancePerElementNumber(190, 200, 10, 0.5, 10);
+    console.log('Performance results: ', result);
+    try {
+      var resultString = JSON.stringify(result);
+      var resultBlob = new Blob([resultString], {type: "application/json;charset=utf-8"});
+      saveAs(resultBlob, 'Performance.json');
+    } catch ( err ) {
+      console.log('JSON error: ', err);
+      handleError('Error creating JSON file from performance results.');
+    }
+  }
+
+  function testPerformanceCorrelationProbabilityDummy () {
+    var result = testPerformancePerCorrelationPropability(0.1, 50, 10);
+    console.log('Performance results: ', result);
+    try {
+      var resultString = JSON.stringify(result);
+      var resultBlob = new Blob([resultString], {type: "application/json;charset=utf-8"});
+      saveAs(resultBlob, 'Performance.json');
+    } catch ( err ) {
+      console.log('JSON error: ', err);
+      handleError('Error creating JSON file from performance results.');
+    }
+  }
+
+  /* Based on a code example from Mike Bostock.
+
+     Source: https://searchcode.com/file/72780018/mike/miserables/index.html
+  */
+  function buildMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalY, nodesOriginalX ) {0
     if (!!buildingMatrix) return;
     buildingMatrix = true;
     console.time('Build Matrix');
@@ -1179,8 +1325,8 @@ text.active {
         evt.preventDefault();
         var childName = $('#renameModalText').val();
         if (!!childName && childName != '') {
-          var allAttributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ALLATTRIBUTES')];
-          var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
+          var allAttributes = DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES];
+          var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
           for ( var i = 0; i < allAttributes.response.length; i++ ) {
             if (allAttributes.response[i].text == childName) {
               handleError('This name already exists (as a concept name). Concepts must be unique.');
@@ -1194,7 +1340,7 @@ text.active {
             }
           }
           if (type == 'row') {
-            var attributesY = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')];
+            var attributesY = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY];
             // TODO
             var parentNode = nodesY[d[0].y-1];
             var parentText = parentNode.parentText;
@@ -1204,7 +1350,7 @@ text.active {
             var attribute = {text: childName, dimension: parentNode.dimension, parentText: parentText, parents: parents};
 
           } else if (type == 'column') {
-            var attributesX = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')];
+            var attributesX = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX];
             // TODO
             var parentNode = nodesX[d[0].x-1];
           }
@@ -2608,7 +2754,106 @@ text.active {
     $('#exportHTML').unbind().click ( function () {
       exportHTML('CorrelationMatrix.html');
     });
-    $('#upload-input, #upload-input-image').unbind().on('change', function(){
+    $('#exportJSON').unbind().click ( function () {
+      var correlationArray = [];
+      for ( var i = 0; i < matrixY.length; i++ ) {
+        for ( var j = 0; j < matrixY[i].length; j++ ) {
+          correlationArray.push({text1: nodesY[i].text, text2: nodesX[j].text, value: matrixY[i][j].z});
+        }
+      }
+      try {
+        var correlationString = JSON.stringify(correlationArray);
+        var correlationBlob = new Blob([correlationString], {type: "application/json;charset=utf-8"});
+        saveAs(correlationBlob, 'Correlations.json');
+      } catch ( err ) {
+        console.log('JSON error: ', err);
+        handleError('Error creating JSON file from correlations.');
+      }
+    });
+    $('#compareJSONFiles').unbind().click ( function () {
+      $('#upload-input-JSON').click();
+    });
+    $('#testPerformance').unbind().click ( function () {
+      testPerformanceDummy();
+    });
+    $('#testPerformanceCorrelationProbability').unbind().click ( function () {
+      testPerformanceCorrelationProbabilityDummy();
+    });
+    $('#upload-input-JSON').unbind().on('change', function () {
+      var files = $(this).get(0).files;
+      if (files.length != 2) {
+        handleError('Can only compare 2 files. The current amount of imported files is: ' + files.length);
+        return;
+      }
+      var file1 = files[0];
+      var file2 = files[1];
+      if (file1.type != 'application/json' || file2.type != 'application/json') {
+        handleError('Both files have to be JSON files.');
+        return;
+      }
+      try {
+        var reader1 = new FileReader();
+        var reader2 = new FileReader();
+        var promises = [];
+        var readFilePromise1 = new Promise ( function ( resolve, reject ) {
+          reader1.onload = (function(theFile) {
+            return function(e) {
+              resolve(e.target.result);
+            };
+          })(file1);
+          reader1.readAsText(file1);
+        });
+        promises.push(readFilePromise1);
+        var readFilePromise2 = new Promise ( function ( resolve, reject ) {
+          reader2.onload = (function(theFile) {
+            return function(e) {
+              resolve(e.target.result);
+            };
+          })(file2);
+          reader2.readAsText(file2);
+        });
+        promises.push(readFilePromise2);
+      /*
+        var newObject  = {
+           'lastModified'     : file1.lastModified,
+           'name'             : file1.name,
+           'size'             : file1.size,
+           'type'             : file1.type
+        };  
+        var correlations1 = JSON.parse(JSON.stringify(newObject));
+        newObject  = {
+           'lastModified'     : file2.lastModified,
+           'name'             : file2.name,
+           'size'             : file2.size,
+           'type'             : file2.type
+        };  
+        var correlations2 = JSON.parse(JSON.stringify(newObject));
+      */
+        Promise.all(promises)
+          .then ( function ( results ) {
+            if (results.length < 2) {
+              handleError('Error imported files.');
+              return;
+            }
+            var correlations1 = JSON.parse(results[0]);
+            var correlations2 = JSON.parse(results[1]);
+            console.log('corr1: ', correlations1);
+            console.log('corr2: ', correlations2);
+            if (!correlations1 || !correlations2) {
+              handleError('Invalid correlations format.');
+              return;
+            }
+            compareCorrelations(correlations1, correlations2);
+          }).catch ( function ( err ) {
+            console.log('Error: ', err);
+            handleError(err);
+          });
+      } catch ( err ) {
+        console.log('JSON convert error: ', err);
+        handleError('Error converting imported files to JSON.');
+      }
+    });
+    $('#upload-input, #upload-input-image').unbind().on('change', function() {
       var minSimilarity = $('#importMinSimilarity').val() - 0;
       if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
       var files = $(this).get(0).files;
@@ -2630,6 +2875,11 @@ text.active {
           handleError('No concepts available to map files on.');
           return;
         }
+        var stringComparisonTechnique = $('#selectStringComparisonTechnique').val();
+        if (!stringComparisonTechnique || stringComparisonTechnique == '') stringComparisonTechnique = 'Regex';
+        var showOccurrences = $('#showCellNumbers').is(':checked');
+        var minImportOccurrences = $('#importMinOccurrences').val() - 0;
+        if (isNaN(minImportOccurrences)) minImportOccurrences = MIN_IMPORT_OCCURRENCES;
         var currentFileIndex = 0;
         $('.progress').show();
         waitingDialog.show('Importing');
@@ -2670,40 +2920,31 @@ text.active {
                   resolve({index: fileIndex-1, array: [], correlations: [], metaData: {}, fileName: fileName});
                   return;
                 }
-                if (!!result.msg.metaData.Title && result.msg.metaData.Title.split('.').length <= 1 && result.msg.metaData.Title != 'untitled' && result.msg.metaData.Title.toLowerCase() != 'title' && result.msg.metaData.Title != '') fileName = result.msg.metaData.Title.split(/(\-+)(\s*)/).pop();
+                // TODO changed
+                if (false && !!result.msg.metaData.Title && result.msg.metaData.Title.split('.').length <= 1 && result.msg.metaData.Title != 'untitled' && result.msg.metaData.Title.toLowerCase() != 'title' && result.msg.metaData.Title != '') fileName = result.msg.metaData.Title.split(/(\-+)(\s*)/).pop();
                 var correlations = [];
                 var tmpArray = dataArray.slice(0);
                 for ( var j = 0; j < dataArray.length; j++ ) {
-                  if (minSimilarity < 1 && minSimilarity >= 0) {
-                  
-                    console.time('Occurrences String Similarity');
-                    var similarity = occurrencesStringSimilarity(text, dataArray[j].texts, minSimilarity);
-                    console.timeEnd('Occurrences String Similarity');
-                  
-                  /*
-                    console.time('Occurrences LiquidMetal');
-                    var similarity = occurrencesLiquidMetal(text, dataArray[j].texts, minSimilarity);
-                    console.timeEnd('Occurrences LiquidMetal');
-                  */
-                  /*
-                    console.time('Occurrences Fuzzy Sort');
-                    var similarity = occurrencesFuzzysort(text, dataArray[j].texts);
-                    console.timeEnd('Occurrences Fuzzy Sort');
-                  */
-                  } else {
-                    console.time('Occurrences Levenshtein');
-                    var similarity = occurrencesLevenshtein(text, dataArray[j].texts, minSimilarity);
-                    console.timeEnd('Occurrences Levenshtein');
-                  /*
-                    console.time('Occurrences IndexOf');
-                    var similarity = occurrencesIndexOf(text, dataArray[j].texts, true);
-                    console.timeEnd('Occurrences IndexOf');
-                  */
-                  /*
-                    console.time('Occurrences Regex');
-                    var similarity = occurrencesRegex(text, dataArray[j].texts);
-                    console.timeEnd('Occurrences Regex');
-                  */
+                  switch(stringComparisonTechnique) {
+                    case "Dice's Coefficient":
+                      console.time("Occurrences Dice's Coefficient");
+                      var similarity = occurrencesStringSimilarity(text, dataArray[j].texts, minSimilarity);
+                      console.timeEnd("Occurrences Dice's Coefficient");
+                      break;
+                    case "Levenshtein":
+                      console.time('Occurrences Levenshtein');
+                      var similarity = occurrencesLevenshtein(text, dataArray[j].texts, minSimilarity);
+                      console.timeEnd('Occurrences Levenshtein');
+                      break;
+                    case "Fuzzysort":
+                      console.time('Occurrences Fuzzysort');
+                      var similarity = occurrencesFuzzysort(text, dataArray[j].texts);
+                      console.timeEnd('Occurrences Fuzzysort');
+                      break;
+                    default:
+                      console.time('Occurrences Regex');
+                      var similarity = occurrencesRegex(text, dataArray[j].texts);
+                      console.timeEnd('Occurrences Regex');
                   }
                   var value = similarity.value;
                   if (value > 0) {
@@ -2713,8 +2954,8 @@ text.active {
                         return a.value > b.value ? -1 : (a.value == b.value ? 0 : 1);
                       });
                     }
-                    correlations.push({text1: dataArray[j].texts[0], text2: fileName, value: value, occurrences: {data: similarity.occurrences, total: similarity.value}});
                   }
+                  correlations.push({text1: dataArray[j].texts[0], text2: fileName, value: (showOccurrences ? value : (value >= minImportOccurrences ? 1 : 0)), occurrences: {data: similarity.occurrences, total: similarity.value}});
                 }
                 if (fileIndex > currentFileIndex) {
                   currentFileIndex = fileIndex;
@@ -3062,7 +3303,7 @@ text.active {
                 return;
               }
               if (!attributesResultY.response) attributesResultY.response = [];
-              DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = attributesResultY;
+              DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY] = attributesResultY;
               $.ajax
                 ({
                     type: options.ajaxTypeX,
@@ -3077,15 +3318,15 @@ text.active {
                         return;
                       }
                       if (!attributesResultX.response) attributesResultX.response = [];
-                      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')] = attributesResultX;
+                      DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX] = attributesResultX;
                       callback(attributesResultY, attributesResultX, correlations, maxValue, onClickURL);
                     }
                   });
                 }
         });
       } else {
-        var attributesY = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')];
-        var attributesX = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESX')];
+        var attributesY = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY];
+        var attributesX = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX];
         callback(attributesY, attributesX, correlations, maxValue, onClickURL);
       }
     }
@@ -3118,8 +3359,8 @@ function renderMatrixHelper () {
       default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent2; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent2; }
     }
     var options = {ajaxTypeY: ajaxTypeY, ajaxTypeX: ajaxTypeX, attributeUrlY: attributeUrlY, attributeUrlX: attributeUrlX, requestY: requestY, requestX: requestX};
-    if (onClickURL == 'citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('COVERAGE')], options, -1, onClickURL, showMatrix);
-    else loadAttributes(false, DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')], options, -1, onClickURL, showMatrix);
+    if (onClickURL == 'citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE], options, -1, onClickURL, showMatrix);
+    else loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS], options, -1, onClickURL, showMatrix);
 }
 
 function renderMatrix () { // TODO
@@ -3329,11 +3570,11 @@ function loadData ( correlationURL, coverageURL, maxValue ) {
         }
         DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
       });
-      var citations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONS')];
-      var citationCount = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONCOUNT')];
-      var dimensions = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')];
-      var allAttributes = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ALLATTRIBUTES')];
-      var correlations = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')];
+      var citations = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONS];
+      var citationCount = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNT];
+      var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
+      var allAttributes = DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES];
+      var correlations = DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS];
       console.timeEnd('Load Data');
       initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
     }).catch ( function ( err ) {
@@ -3354,19 +3595,19 @@ function initPage () {
     TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
     try {
       var citations = JSON.parse(STATIC_CITATIONS);
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONS')] = citations;
+      DYNAMIC_ARRAY[STATIC_INDEX_CITATIONS] = citations;
       var citationCount = JSON.parse(STATIC_CITATIONCOUNT);
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CITATIONCOUNT')] = citationCount;
+      DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNT] = citationCount;
       var dimensions = JSON.parse(STATIC_DIMENSIONS);
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('DIMENSIONS')] = dimensions;
+      DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS] = dimensions;
       var allAttributes = JSON.parse(STATIC_ALLATTRIBUTES);
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ALLATTRIBUTES')] = allAttributes;
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = JSON.parse(STATIC_ATTRIBUTESY);
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('ATTRIBUTESY')] = JSON.parse(STATIC_ATTRIBUTESY);
+      DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES] = allAttributes;
+      DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY] = JSON.parse(STATIC_ATTRIBUTESY);
+      DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX] = JSON.parse(STATIC_ATTRIBUTESX);
       var correlations = JSON.parse(STATIC_CORRELATIONS);
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CORRELATIONS')] = correlations;
+      DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS] = correlations;
       var coverage = JSON.parse(STATIC_COVERAGE);
-      DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('COVERAGE')] = coverage;
+      DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE] = coverage;
       initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
     } catch ( err ) {
       console.log('Error parsing STATIC data: ', err);
@@ -3381,9 +3622,11 @@ $(document).ready( function () {
     console.log("hash changed to: " + hash);
     window.location.reload(false);
   };
-
   $(this).on('contextmenu', function ( e ) {
     e.preventDefault();
+  });
+  $('.dropdown select').on('click', function( e ) {
+      e.stopPropagation();
   });
   $('#importMinSimilarity').val(DEFAULT_MIN_SIMILARITY);
   if (!!IS_STATIC) {

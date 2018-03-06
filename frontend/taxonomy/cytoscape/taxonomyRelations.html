@@ -133,6 +133,15 @@
 
   const STATIC_ARRAY = ['DIMENSIONS', 'MAJORATTRIBUTES', 'ATTRIBUTESPERDIMENSION', 'ATTRIBUTERELATIONS', 'INTERDIMENSIONALRELATIONS', 'RELATIONTYPES', 'CITATIONCOUNTS', 'CY'];
 
+  const STATIC_INDEX_DIMENSIONS = 0;
+  const STATIC_INDEX_MAJORATTRIBUTES = 1;
+  const STATIC_INDEX_ATTRIBUTESPERDIMENSION = 2;
+  const STATIC_INDEX_ATTRIBUTERELATIONS = 3;
+  const STATIC_INDEX_INTERDIMENSIONALRELATIONS = 4;
+  const STATIC_INDEX_RELATIONTYPES = 5;
+  const STATIC_INDEX_CITATIONCOUNTS = 6;
+  const STATIC_INDEX_CY = 7;
+
   var STATIC_DIMENSIONS;
   var STATIC_MAJORATTRIBUTES;
   var STATIC_ATTRIBUTESPERDIMENSION;
@@ -431,6 +440,7 @@
   }
 
   function addNode ( cy, ele, e, major ) {
+    console.time('AddNode');
     cy.elements().trigger('qtiphide');
     $('#defaultModalTitle').html('Enter attribute name');
     $('#defaultModalLabel').html('Name:');
@@ -475,6 +485,7 @@
               async: true,
               data: JSON.stringify(request),
               success: function ( result ) {
+                console.timeEnd('AddNode');
                 if (!result || !result.success) {
                   handleErrorHelper('This name already exists in the taxonomy. Please choose a different one or delete the other node.');
                   $('#defaultModalButton').prop('disabled', false);
@@ -534,6 +545,7 @@
   }
 
   function removeNodes ( cy, selecteds ) {
+    console.time('RemoveNodes');
     var promises = [];
     selecteds.forEach ( function ( selected ) {
       var removePromise = new Promise ( function ( resolve, reject ) {
@@ -551,6 +563,7 @@
               async: true,
               data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text: selectedID}),
               success: function ( result ) {
+                console.timeEnd('RemoveNodes');
                 if (!result || !result.success) {
                   if (selectedTable == 'dimension') handleErrorHelper('Error occurred while deleting dimension: "' + selectedID + '". Dimensions must be empty before they can be deleted.');
                   else handleErrorHelper('Error occurred while deleting attribute: "' + selectedID + '".');
@@ -922,6 +935,7 @@
   }
 
   function removeEdges ( cy, selecteds ) {
+    console.time('RemoveEdges');
     var promises = [];
     selecteds.forEach ( function ( selected ) {
       var removePromise = new Promise ( function ( resolve, reject ) {
@@ -936,6 +950,7 @@
               async: true,
               data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: selected.data('source'), attributeDest: selected.data('target'), dimension: selected.data('dimension'), text: selected.data('relation')}),
               success: function () {
+                console.timeEnd('RemoveEdges');
                 resolve();
               }
             });
@@ -1197,7 +1212,7 @@
       fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
       content: 'Remove', // html/text content to be displayed in the menu
       select: function(ele){ // a function to execute when the command is selected
-        removeItem(cy, [ele], removeEdges);
+        removeEdges(cy, [ele]);
       },
       enabled: true // whether the command is selectable
     });
@@ -1356,7 +1371,7 @@
           }
           selecteds = cy.$("edge:selected");
           if (selecteds.length > 0) {
-            removeItem(cy, selecteds, removeEdges);
+            removeEdges(cy, selecteds);
           }
         }
         else if (e.ctrlKey && e.target.nodeName === 'BODY')
@@ -1408,11 +1423,16 @@
     cy.on('ehcomplete', function (event, sourceNode, targetNode, addedEles) {
       var sourceID = sourceNode.id();
       var targetID = targetNode.id();
+      addedEles.forEach ( function ( entry ) {
+        entry.data('id', sourceID + '_' + targetID);
+        console.log("id:", entry.data('id'))
+      });
       function callback () {
         console.log('Added taxonomy relation successfully, source: ' + sourceID + ', target: ' + targetID + '.');
       }
       if (!admin) callback();
       else {
+        console.time('AddEdge');
         $.ajax
           ({
               type: "POST",
@@ -1422,6 +1442,7 @@
               async: true,
               data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceNode.id(), attributeDest: targetNode.id(), dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: 'Depends'}),
               success: function ( result ) {
+                console.timeEnd('AddEdge');
                 if (!result || !result.success) {
                   handleErrorHelper('Cannot add taxonomy relation.');
                   return;
