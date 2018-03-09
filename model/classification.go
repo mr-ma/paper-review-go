@@ -60,6 +60,8 @@ type Position struct {
 type CitationMapping struct {
   Citation string `json:"citation"`
   Attribute string `json:"attribute"`
+  PaperID int `json:"paper_id"`
+  Bib string `json:"bib"`
   OccurrenceCount int `json:"occurrenceCount"`
   ReferenceCount int `json:"referenceCount"`
   Author string `json:"author"`

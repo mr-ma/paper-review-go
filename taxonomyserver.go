@@ -50,7 +50,7 @@ var (
 	cert          = flag.String("cert", "", "certificate pathname")
 	key           = flag.String("key", "", "private key pathname")
 	config        = flag.String("config", "", "pathname of JSON configuration file")
-	listen        = flag.String("listen", "127.0.0.1:8002", "listen address")
+	listen        = flag.String("listen", "127.0.0.1:8001", "listen address")
 )
 
 //var store = sessions.NewCookieStore([]byte("test-secret-4353522"))
@@ -711,6 +711,10 @@ func main() {
 	})
 	mux.HandleFunc("GET", "/cytoscape-snap-to-grid.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-snap-to-grid.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/parse-bibtex.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/parse-bibtex.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	// mux.Handle("GET","/",cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIndexHandler), "getIndexHandler", nil)))

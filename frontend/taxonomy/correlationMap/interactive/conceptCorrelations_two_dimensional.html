@@ -63,6 +63,8 @@ text.active {
     <script src="FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
     <script src="bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
 
+    <script src="parse-bibtex.js" data-web="https://cdn.rawgit.com/mikolalysenko/bibtex-parser/7feff8a3/parse-bibtex.js"></script>
+
     <script src="fileUploader.js"></script>
     <script src="scopus.js"></script>
 
@@ -239,6 +241,24 @@ text.active {
         <input type="text" id="renameModalText" value="">
         <div style="margin-top:20px;">
           <input type="submit" id="renameModalButton" class="btn btn-success" value="Save">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="bib-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="bibModalTitle"></h1><br>
+      <form id="bibModalForm">
+        <label for="bibModalText" id="bibModalLabel"></label>
+        <div>
+          <textarea id="bibModalText" value="" style="width:300px;height:300px;max-width:1000px;max-height:1000px;overflow:auto;"></textarea>
+        </div>
+        <div style="margin-top:20px;">
+          <input type="submit" id="bibModalButton" class="btn btn-success" value="Save">
         </div>
       </form>
     </div>
@@ -772,9 +792,8 @@ text.active {
     }
   }
 
-  /* Based on a code example from Mike Bostock.
-
-     Source: https://searchcode.com/file/72780018/mike/miserables/index.html
+  /*
+    The code that calculates and renders the basic structure of the matrix is based on a matrix example\footnote{\url{https://github.com/lonelydatum/bost.ocks.org/blob/99f535dc6e42865f4a73b1868668ef4ee3ae6184/mike/miserables/index.html}} code from Mike Bostock, the creator of \textit{d3js}.
   */
   function buildMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalY, nodesOriginalX ) {0
     if (!!buildingMatrix) return;
@@ -1254,6 +1273,49 @@ text.active {
       $('#rename-modal').modal('show');
     }
 
+    function changeBib ( elm, d ) {
+      var that = d3.select(elm);
+      var previousText = that.text();
+      if (!previousText || previousText == '') return;
+      var fullText = that.attr('data-fulltext');
+      if (previousText.split('...').length > 1) {
+        if (!fullText) return;
+        previousText = fullText;
+      }
+      var previousCitation = that.attr('data-citation');
+      var previousBib = that.attr('data-bib');
+      if (!previousBib) previousBib = '';
+      if (!previousCitation) previousCitation = '';
+      $('#bibModalTitle').html('Enter BibTex for "' + previousText + '" (citation: ' + previousCitation + ')');
+      $('#bibModalLabel').html('BibTex:');
+      $('#bibModalText').val(previousBib);
+      $('#bibModalButton').prop('disabled', false);
+      $('#bibModalForm').unbind().on('submit', function ( evt ) {
+        evt.preventDefault();
+        var newText = $('#bibModalText').val();
+        if (!!newText) {
+          var bibTex = doParse(newText);
+          if (!bibTex) return;
+          for ( var key in bibTex ) {
+            if (!!bibTex[key] && !$.isArray(bibTex[key])) {
+              that.attr('data-citation', key);
+              try {
+                that.attr('data-bib', JSON.stringify(bibTex[key]));
+              } catch ( err ) {
+                console.log('Error parsing BibTex object into string: ', err);
+              }
+              break;
+            }
+          }
+          console.log('saved citation: ', that.attr('data-citation'));
+          console.log('Saved bib: ', that.attr('data-bib'));
+        }
+        //$('#bibModalButton').prop('disabled', true);
+        $('#bib-modal').modal('hide');
+      });
+      $('#bib-modal').modal('show');
+    }
+
     function updateSynonyms ( elm, d ) {
       console.log(d)
       var that = d3.select(elm);
@@ -1513,6 +1575,15 @@ text.active {
         disabled: false
       };
 
+    var bibOption =
+      {
+        title: 'BibTex',
+        action: function(elm, d, i) {
+          changeBib(elm, d);
+        },
+        disabled: false
+      };
+
     var deleteOption =
       {
         title: 'Delete',
@@ -1567,7 +1638,7 @@ text.active {
       }
     ]);
 
-    var citationMenu = [hideOption, renameOption, deleteOption];
+    var citationMenu = [hideOption, renameOption, bibOption, deleteOption];
 
     var selectableCellMenu = [
       {
@@ -3088,16 +3159,24 @@ text.active {
         var attributeText = nodesY[cell.y-1].text;
         var that = d3.select('.columnText[data-originalText="' + nodesX[cell.x].text + '"]');
         if (!!that && that.length > 0) {
-          var citationText = that.text();
-          if (!!citationText && citationText != '') {
-            var fullText = that.attr('data-fulltext');
-            if (citationText.split('...').length > 1 && !!fullText) citationText = fullText;
-          } else citationText = nodesX[cell.x].text;
+          var citationText = that.attr('data-citation');
+          if (!citationText) {
+            var citationText = that.text();
+            if (!!citationText && citationText != '') {
+              var fullText = that.attr('data-fulltext');
+              if (citationText.split('...').length > 1 && !!fullText) citationText = fullText;
+            } else citationText = nodesX[cell.x].text;
+          }
+          var bibTex = that.attr('data-bib');
         } else var citationText = nodesX[cell.x].text;
         var referenceCount = !!nodesX[cell.x].referenceCount ? nodesX[cell.x].referenceCount : 0;
         var author = !!nodesX[cell.x].author ? nodesX[cell.x].author : '';
         var keywords = !!nodesX[cell.x].keywords ? nodesX[cell.x].keywords : '';
-        mappings.push({attribute: attributeText, citation: citationText, occurrenceCount: cell.z, referenceCount: referenceCount, author: author, keywords: keywords});
+        var paperID = !!nodesX[cell.x].id ? nodesX[cell.x].id : -1;
+        var mapping = {attribute: attributeText, citation: citationText, occurrenceCount: cell.z, referenceCount: referenceCount, author: author, keywords: keywords, 'paper_id': paperID};
+        if (!!bibTex) mapping.bib = bibTex;
+        else mapping.bib = 'empty';
+        mappings.push(mapping);
       });
       $.ajax
         ({

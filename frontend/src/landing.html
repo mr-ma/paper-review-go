@@ -146,7 +146,7 @@ $links.onclick=function(e){
     var name =element.getAttribute("name");
    var id = element.getAttribute("id");
    var researchId= getSelectedResearch();
-   var url = "./review/" + researchId + "/" + id;
+   var url = "./review.html?name="+name+"&id="+id+"&researchID="+researchId;
    console.log(url);
 	window.location.replace(url);
   }
