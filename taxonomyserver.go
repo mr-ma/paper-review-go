@@ -53,22 +53,15 @@ var (
 	listen        = flag.String("listen", "127.0.0.1:8001", "listen address")
 )
 
-//var store = sessions.NewCookieStore([]byte("test-secret-4353522"))
 var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
 
 func main() {
-/*
-	store.Options = &sessions.Options{
-	    Path:     "/",
-	    MaxAge:   3600 * 8, // 8 hours
-	}
-*/
 	sessionManager.Lifetime(time.Hour*24)
-	sessionManager.Persist(true) // Persist the session after a user has closed their browser.
-	//sessionManager.Secure(true) // Set the Secure flag on the session cookie.
+	sessionManager.Persist(true)
+	//sessionManager.Secure(true)
 	flag.Parse()
 
-	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen) //.AddAllowedHeaders("Origin, X-Requested-With, Content-Type, Accept")
+	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)
 
 	mux := tigertonic.NewTrieServeMux()
 
@@ -152,25 +145,6 @@ func main() {
             return
         }
         if loginRequest.Password == "" {
-        	/*
-        	session, err := store.Get(r, loginRequest.Email)
-		    if err != nil {
-		        http.Error(w, err.Error(), http.StatusInternalServerError)
-		        return
-		    }
-		    email := session.Values["email"]
-		    admin := session.Values["admin"]
-		    emailStr, ok := email.(string)
-		    if !ok {
-		        http.Error(w, err.Error(), http.StatusInternalServerError)
-		        return
-		    }
-		    adminInt, ok := admin.(int)
-		    if !ok {
-		        http.Error(w, err.Error(), http.StatusInternalServerError)
-		        return
-		    }
-		    */
 		    session := sessionManager.Load(r)
 		    var email string
 		    email, err := session.GetString("email")
@@ -206,17 +180,6 @@ func main() {
 		loginResult, err := driver.Login(loginRequest.Email, loginRequest.Password)
 		checkErr(err)
 		if loginResult.Success {
-			/*
-			session, _ := store.Get(r, "session")
-		    session.Values["email"] = loginResult.User.Email
-		    session.Values["admin"] = loginResult.User.Admin
-		    err := session.Save(r, w)
-		    if err != nil {
-		    	fmt.Println("Error saving session.")
-		    	http.Error(w, err.Error(), 500)
-				return
-		    }
-		    */
 		    session := sessionManager.Load(r)
 		    err := session.PutString(w, "email", loginResult.User.Email)
 		    if err != nil {
@@ -403,6 +366,10 @@ func main() {
 		p := loadPage("frontend/src/js/error.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/stringComparison.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/stringComparison.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/tables.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/tables.js")
 		fmt.Fprintf(w, "%s", p)
@@ -423,40 +390,54 @@ func main() {
 		p := loadPage("frontend/src/js/loadData.js")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/pdf.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/pdf.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/pdf.worker.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/pdf.worker.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/lodash.core.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/lodash.core.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/compare-strings.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/compare-strings.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/levenshtein.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/levenshtein.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/liquidmetal.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/liquidmetal.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/fuzzysort.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/fuzzysort.js")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/fileUploader.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/fileUploader.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/scopus.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/js/scopus.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/scripts.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/scripts.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/style.css", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/css/style.css")
+		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/main.css", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/css/main.css")
+		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/editableTable.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/editableTable.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/pdf.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/libs/pdf.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/pdf.worker.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/libs/pdf.worker.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/lodash.core.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/libs/lodash.core.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/compare-strings.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/libs/compare-strings.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/levenshtein.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/libs/levenshtein.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/fuzzysort.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/libs/fuzzysort.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/zoomInIcon.png", func(w http.ResponseWriter, r *http.Request) {
@@ -468,101 +449,75 @@ func main() {
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bluebird.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/bluebird.min.js")
+		p := loadPage("frontend/src/js/libs/bluebird.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/FileSaver.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/FileSaver.min.js")
+		p := loadPage("frontend/src/js/libs/FileSaver.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/multiselect.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/multiselect.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/cytoscape.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/cytoscape.min.js")
+		p := loadPage("frontend/src/js/libs/multiselect.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/jquery.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/jquery.min.js")
+		p := loadPage("frontend/src/js/libs/jquery.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/d3.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/d3.min.js")
+		p := loadPage("frontend/src/js/libs/d3.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/d3.layout.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/d3.layout.js")
+		p := loadPage("frontend/src/js/libs/d3.layout.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/d3-hierarchy.v1.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/d3-hierarchy.v1.min.js")
+		p := loadPage("frontend/src/js/libs/d3-hierarchy.v1.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/d3-context-menu.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/d3-context-menu.js")
+		p := loadPage("frontend/src/js/libs/d3-context-menu.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/d3-context-menu.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/d3-context-menu.css")
+		p := loadPage("frontend/src/css/libs/d3-context-menu.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/runner.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/runner.js")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/bootstrap.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/bootstrap.min.js")
+		p := loadPage("frontend/src/js/libs/bootstrap.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bootstrap.min.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/bootstrap.min.css")
+		p := loadPage("frontend/src/css/libs/bootstrap.min.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bootstrap-waitingfor.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/bootstrap-waitingfor.min.js")
+		p := loadPage("frontend/src/js/libs/bootstrap-waitingfor.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bootstrap-table.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/bootstrap-table.css")
+		p := loadPage("frontend/src/css/libs/bootstrap-table.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bootstrap-table.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/bootstrap-table.js")
+		p := loadPage("frontend/src/js/libs/bootstrap-table.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/selectize.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/selectize.min.js")
+		p := loadPage("frontend/src/js/libs/selectize.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/selectize.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/selectize.css")
+		p := loadPage("frontend/src/css/libs/selectize.css")
 		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/loginForm.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/loginForm.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/editableTable.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/editableTable.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/selectize.bootstrap3.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/selectize.bootstrap3.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/scripts.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/scripts.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/style.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/style.css")
+		p := loadPage("frontend/src/css/libs/selectize.bootstrap3.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
@@ -579,33 +534,29 @@ func main() {
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bootstrap-dialog.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/bootstrap-dialog.min.js")
+		p := loadPage("frontend/src/js/libs/bootstrap-dialog.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/bootstrap-dialog.min.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/bootstrap-dialog.min.css")
+		p := loadPage("frontend/src/css/libs/bootstrap-dialog.min.css")
 		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/d3.v2.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/d3.v2.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/d3.v4.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/d3.v4.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/viz.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/viz.v1.1.2.min.js")
+		p := loadPage("frontend/src/js/libs/d3.v4.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/vis.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/vis.min.js")
+		p := loadPage("frontend/src/js/libs/vis.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/vis.min.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/vis.min.css")
+		p := loadPage("frontend/src/css/libs/vis.min.css")
 		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/cytoscape.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/cytoscape/cytoscape.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/cytoscape-undo-redo.js", func(w http.ResponseWriter, r *http.Request) {
@@ -700,21 +651,21 @@ func main() {
 		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-qtip.js")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/d3-tip.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/d3-tip.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/d3-tip.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/css/d3-tip.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/cytoscape-snap-to-grid.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-snap-to-grid.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/d3-tip.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/js/libs/d3-tip.js")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/d3-tip.css", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/css/libs/d3-tip.css")
+		w.Header().Add("Content-Type", "text/css")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/parse-bibtex.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/parse-bibtex.js")
+		p := loadPage("frontend/src/js/libs/parse-bibtex.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	// mux.Handle("GET","/",cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIndexHandler), "getIndexHandler", nil)))
@@ -804,57 +755,9 @@ func main() {
 		}
 		w.Write([]byte("PNG Generated"))
 	})
-	/*
-	// https://astaxie.gitbooks.io/build-web-application-with-golang/en/04.5.html
 	mux.HandleFunc("POST", "/upload", func(w http.ResponseWriter, r *http.Request) {
-		r.ParseMultipartForm(32 << 20)
-		file, handler, err := r.FormFile("file")
-		if err != nil {
-		    fmt.Println(err)
-		}
-		defer file.Close()
-		fmt.Fprintf(w, "%v", handler.Header)
-		f, err := os.OpenFile("./files/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-		    fmt.Println(err)
-		}
-		defer f.Close()
-		io.Copy(f, file)
-	})
-	*/
-	mux.HandleFunc("POST", "/upload", func(w http.ResponseWriter, r *http.Request) {
-/*
-		file, header, err := r.FormFile("file")
-
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "{'error': %s}", err)
-			return
-		}
-		defer file.Close()
-
-		out, err := os.Create("files/uploaded-" + header.Filename)
-		checkErr(err)
-		if err != nil {
-			fmt.Fprintf(w, "[-] Unable to create the file for writing. Check your write access privilege.", err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		defer out.Close()
-
-		// write the content from POST to the file
-		_, err = io.Copy(out, file)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-*/
 		UploadFile(w, r)
 	})
-
-	// c := &Config{}
-	// if err := tigertonic.Configure(*config, c); nil != err {
-	// 	checkErr(err)
-	// }
 
 	server := tigertonic.NewServer(*listen, tigertonic.Logged(sessionManager.Use(mux), nil)) // context.ClearHandler(mux), to avoid memory leaks
 	go func() {
@@ -890,19 +793,7 @@ func parsePDF(path string) (string, error) {
 	return buf.String(), nil
 }
 
-/*
-func parsePDF(path string) (string, error) {
-	res, err := docconv.ConvertPath(path)
-	checkErr(err)
-	if err != nil {
-		return "", err
-	}
-	return res.Body, nil
-}
-*/
-
 func deleteFile(path string) (error) {
-	// delete file
 	var err = os.Remove(path)
 	return err
 }
@@ -958,92 +849,11 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("deleting file failed.")
 			}
         }
-        /*
-        for _, fheaders := range r.MultipartForm.File {
-            for _, hdr := range fheaders {
-				path := "./files/" + hdr.Filename
-				err = deleteFile(path)
-				if err != nil {
-					fmt.Println("deleting file failed.")
-				}
-			}
-		}
-		*/
  } 
 
 func UploadFile(w http.ResponseWriter, r *http.Request) {
-/*
-    if r.Method != http.MethodPost {
-        http.Redirect(w, r, "/", http.StatusSeeOther)
-        return
-    }
-
-    file, handle, err := r.FormFile("file")
-    if err != nil {
-        fmt.Fprintf(w, "%v", err)
-        return
-    }
-    defer file.Close()
-
-    mimeType := handle.Header.Get("Content-Type")
-    switch mimeType {
-    case "application/pdf":
-        saveFile(w, file, handle)
-    default:
-        jsonResponse(w, http.StatusBadRequest, "The format file is not valid.")
-    }
-*/
-/*
- 		err := r.ParseMultipartForm(100000)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		//get a ref to the parsed multipart form
-		m := r.MultipartForm
-
-		//get the *fileheaders
-		files := m.File["file"]
-		for i, _ := range files {
-			//for each fileheader, get a handle to the actual file
-			file, err := files[i].Open()
-			defer file.Close()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			path := "./files/" + files[i].Filename
-			//create destination file making sure the path is writeable.
-			dst, err := os.Create(path)
-			defer dst.Close()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			//copy the uploaded file to the destination file
-			if _, err := io.Copy(dst, file); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			text, err := parsePDF(path)
-			if err == nil {
-				fmt.Println("parsed file: " + strconv.Itoa(len(text)))
-			}
-		}
-*/
 		UploadHandler(w, r)
 		jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
-/*
-		result := model.Result{Success: true}
-		output, err := json.Marshal(result)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		w.Header().Set("content-type", "application/json")
-		w.Write(output)
-*/
 }
 
 func saveFile(w http.ResponseWriter, file multipart.File, handle *multipart.FileHeader) {

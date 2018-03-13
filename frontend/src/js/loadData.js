@@ -1,3 +1,5 @@
+// functions used to load data from the database
+
   function showDimension ( dimension, useCY ) {
     console.log("showing dimension: " + dimension)
     var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];

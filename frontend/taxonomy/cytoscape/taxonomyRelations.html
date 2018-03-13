@@ -43,7 +43,7 @@
 
     <script src="multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
 
-    <link href="loginForm.css" type="text/css" rel="stylesheet">
+    <link href="main.css" type="text/css" rel="stylesheet">
 
     <script src="bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
 
@@ -55,8 +55,8 @@
     <script src="error.js"></script>
 <style>
     #cy {
-        width: 100%; /* 100% */
-        height: 100%; /* 100% */
+        width: 100%;
+        height: 100%;
         position: absolute;
         top: 110px;
         left: 0px;
@@ -159,6 +159,8 @@
   const CITATION_COUNTS_URL = 'citationCountsIncludingChildren';
 
   const COLOR_BLUE = '#00008B';
+
+  // cytoscape graph style options
   const STYLES = [
       {
         selector: '.child',
@@ -237,13 +239,10 @@
       {
         selector: 'edge',
         style: {
-         'curve-style': 'segments', // bezier, unbundled-bezier, haystack, segments with: 'segment-distances': '10px 30px', 'segment-weights': '0.2 1.2',
-         'segment-distances': '0px', //'segment-weights': '0.2 1.2'
-         //'edge-distances': '5px',
-         //'source-distance-from-node': '10px',
-         //'target-distance-from-node': '10px',
+         'curve-style': 'segments',
+         'segment-distances': '0px',
          'width': 1,
-         'target-arrow-color': 'black', // #ccc
+         'target-arrow-color': 'black',
          'line-color': 'black',
           label: 'data(annotation)',
           'text-margin-y': '-12px',
@@ -304,13 +303,12 @@
     handleError(error);
   }
 
+  // save node positions to the database
   function savePositions ( cy, dimensions ) {
     if (!admin) {
       handleErrorHelper('Cannot save node positions.');
       return;
     }
-    //if (dimensions.length > 1) var saveURL = 'saveMajorPositions';
-    //else var saveURL = 'savePositions';
     if (!displayedDimension) {
       handleErrorHelper('No dimension selected.');
       return;
@@ -356,6 +354,7 @@
     });
   }
 
+  // rename concept node
   function renameNode ( cy, ele ) {
     cy.elements().trigger('qtiphide');
     $('#defaultModalTitle').html('Enter new attribute name');
@@ -403,6 +402,7 @@
     $('#default-modal').modal('show');
   }
 
+  // change the "major" attribute of a node
   function switchMajor ( ele, dimension ) {
     var text = ele.id();
     var isMajor = ele.data('major') - 0;
@@ -439,6 +439,7 @@
     }
   }
 
+  // add concept node
   function addNode ( cy, ele, e, major ) {
     console.time('AddNode');
     cy.elements().trigger('qtiphide');
@@ -499,6 +500,7 @@
     $('#default-modal').modal('show');
   }
 
+  // add dimension compound node
   function addDimension ( cy, ele, e, major ) {
     cy.elements().trigger('qtiphide');
     $('#defaultModalTitle').html('Enter dimension name');
@@ -544,6 +546,7 @@
     $('#default-modal').modal('show');
   }
 
+  // remove concept nodes
   function removeNodes ( cy, selecteds ) {
     console.time('RemoveNodes');
     var promises = [];
@@ -590,6 +593,7 @@
       });
   }
 
+  // merge 2 nodes into 1 node
   function mergeNodes ( nodes ) {
     if (!admin) {
       handleErrorHelper('Cannot merge nodes.');
@@ -621,6 +625,7 @@
       });
   }
 
+  // load multiselect modal
   function loadMultiselect ( data, title, callback ) {
     $('#multiselectTitle').html(title);
     $('label[for="multiselect"]').html('Source node');
@@ -645,6 +650,7 @@
     });
   }
 
+  // load modal used for the update of mappings between papers and concepts
   function loadCitationMappingMultiselect ( currentCitations, allCitations, title, callback ) {
     $('#multiselectTitle').html(title);
     $('label[for="multiselect"]').html('All citations');
@@ -681,6 +687,7 @@
     $('#multiselect-modal').modal('show');
   }
 
+  // helper function for forking of nodes
   function chooseParentRelations ( data, callback ) {
     if (!!data && data.length > 0) {
       loadMultiselect(data, 'Parents of<br>first node', function ( resultTmp ) {
@@ -699,6 +706,7 @@
     } else callback([[],[]]);
   }
 
+  // helper function for forking of nodes
   function chooseChildRelations ( data, callback ) {
     if (!!data && data.length > 0) {
       loadMultiselect(data, 'Children of<br>first node', function ( resultTmp ) {
@@ -717,6 +725,7 @@
     } else callback([[],[]]);
   }
 
+  // helper function for forking of nodes
   function chooseCitationMappings ( data, callback ) {
     if (!!data && data.length > 0) {
       loadMultiselect(data, 'Citations of<br>first node', function ( resultTmp ) {
@@ -737,6 +746,7 @@
     } else callback([[],[]]);
   }
 
+  // update mappings between papers and a node
   function updateCitationMapping ( ele ) {
     if (!admin) {
       handleErrorHelper('Cannot update citation mapping.');
@@ -785,6 +795,7 @@
     });
   }
 
+  // fork 1 node into 2
   function forkNode ( node ) {
     if (!admin) {
       handleErrorHelper('Cannot fork node.');
@@ -809,12 +820,10 @@
             $.ajax
               ({
                   type: "POST",
-                  //the url where you want to sent the userName and password to
                   url: 'parentRelationsPerAttribute',
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
-                  //json object to sent to the authentication url
                   data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text: text, dimension: dimension}),
                   success: function ( parentRelations ) {
                     if (!parentRelations) {
@@ -824,12 +833,10 @@
                     $.ajax
                       ({
                           type: "POST",
-                          //the url where you want to sent the userName and password to
                           url: 'citationsPerAttribute',
                           dataType: 'json',
                           contentType:'application/json',
                           async: true,
-                          //json object to sent to the authentication url
                           data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text}),
                           success: function ( attributeCoverage ) {
                             if (!attributeCoverage) {
@@ -846,12 +853,10 @@
                                   $.ajax
                                     ({
                                         type: "POST",
-                                        //the url where you want to sent the userName and password to
                                         url: 'forkAttribute',
                                         dataType: 'json',
                                         contentType:'application/json',
                                         async: true,
-                                        //json object to sent to the authentication url
                                         data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text: text, dimension: dimension, parents1: parentResults[0], parents2: parentResults[1], children1: childResults[0], children2: childResults[1], citations1: citationResults[0], citations2: citationResults[1]}),
                                         success: function ( result ) {
                                           if (!result || !result.success) {
@@ -895,6 +900,7 @@
     $('#default-modal').modal('show');
   }
 
+  // update the annotation text of an edge
   function updateEdgeAnnotation ( cy, ele, sourceID, targetID, dimensions, isInterDimensional ) {
     cy.elements().trigger('qtiphide');
     $('#defaultModalTitle').html('Enter edge annotation');
@@ -934,6 +940,7 @@
     $('#default-modal').modal('show');
   }
 
+  // remove edges
   function removeEdges ( cy, selecteds ) {
     console.time('RemoveEdges');
     var promises = [];
@@ -983,8 +990,7 @@
       },
       position: {
           my: 'top center',
-          // Position my top left...
-          at: 'bottom center', // at the bottom right of...
+          at: 'bottom center',
           adjust: {
             cyViewport: true
           }
@@ -1051,8 +1057,8 @@
     return qtipOptions;
   }
 
+  // build JSON array, that is used to build the cytoscape graph
   function createJSON ( useCY, dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
-    //var items = [{data: { id: INTER_DIMENSIONAL_VIEW, table: 'dimension'}, classes: 'interdimensional'}];
     var items = [];
     var menuItems = [];
     isInterDimensional = interDimensional;
@@ -1071,8 +1077,6 @@
           else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText }); // , style: { events: 'no' }
         }
       });
-
-      console.log("dim: ", items)
       attributes.forEach ( function ( attribute ) {
         var x = attribute.x - 0;
         var y = attribute.y - 0;
@@ -1103,34 +1107,20 @@
             console.log('JSON parse error of edge bend points: ', relation.edgeBendPoints);
           }
         }
-        /*
-        var x, y;
-        var points = [];
-        for ( var i = 0; i < edgePoints.length; i++ ) {
-          if (i % 2 == 0) x = edgePoints[i];
-          else points.push({x: x, y: edgePoints[i]});
-        }
-        */
         relationObj.data.bendPointPositions = points;
         items.push(relationObj);
       });
     }
 
+    // build cytoscape graph
 
     var options = {
-        // List of initial menu items
         menuItems: menuItems,
-        // css classes that menu items will have
         menuItemClasses: [
-          // add class names to this list
         ],
-        // css classes that context menu will have
         contextMenuClasses: [
-          // add class names to this list
         ]
     };
-    //registerContextMenus();
-    //cxtmenu( cytoscape );
     var cxtmenus = [];
     $('#cyContainer').html('<div id="cy" style="margin-top:50px;"></div>');
     cy = cytoscape({  
@@ -1140,99 +1130,100 @@
         name: 'preset',
         zoom: 1,
         pan: {x: !!isInterDimensional ? ($(window).width() - 300) : 0, y: !!isInterDimensional ? $(window).height() + 200 : 0}
-        //rows: 3
       },
       style: STYLES
     });
     if (!!useCY) cy.json(DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CY')]);
     var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
+
+    // node commands
     var nodeCommands = [];
     nodeCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Remove', // html/text content to be displayed in the menu
-      select: function(ele){ // a function to execute when the command is selected
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Remove',
+      select: function(ele){
         removeItem(cy, [ele], removeNodes);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     nodeCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Rename', // html/text content to be displayed in the menu
-      select: function(ele){ // a function to execute when the command is selected
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Rename',
+      select: function(ele){
         renameNode(cy, ele);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     if (!isInterDimensional) {
       nodeCommands.push({
-        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-        content: 'Switch major', // html/text content to be displayed in the menu
-        select: function(ele){ // a function to execute when the command is selected
+        fillColor: 'rgba(200, 200, 200, 0.75)',
+        content: 'Switch major',
+        select: function(ele){
           switchMajor(ele);
         },
-        enabled: true // whether the command is selectable
+        enabled: true
       });
     }
     nodeCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Fork', // html/text content to be displayed in the menu
-      select: function(ele){ // a function to execute when the command is selected
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Fork',
+      select: function(ele){
         forkNode(ele);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     nodeCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Mapped papers', // html/text content to be displayed in the menu
-      select: function(ele){ // a function to execute when the command is selected
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Mapped papers',
+      select: function(ele){
         updateCitationMapping(ele);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     cxtmenus.push(cy.cxtmenu({
-      menuRadius: 100, // the radius of the circular menu in pixels
-      selector: '.parent,.child', // elements matching this Cytoscape.js selector will trigger cxtmenus
-      commands: nodeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
-      fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
-      activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
-      activePadding: 20, // additional size in pixels for the active command
-      indicatorSize: 24, // the size in pixels of the pointer to the active command
-      separatorWidth: 3, // the empty spacing in pixels between successive commands
-      spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
-      minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
-      maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
-      openMenuEvents: 'cxttapstart', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
-      itemColor: 'white', // the colour of text in the command's content
-      itemTextShadowColor: 'black', // the text shadow colour of the command's content
-      zIndex: 9999, // the z-index of the ui div
-      atMouse: false // draw menu at mouse position
+      menuRadius: 100,
+      selector: '.parent,.child',
+      commands: nodeCommands,
+      fillColor: 'rgba(0, 0, 0, 0.75)',
+      activeFillColor: 'rgba(92, 194, 237, 0.75)',
+      activePadding: 20,
+      indicatorSize: 24,
+      separatorWidth: 3,
+      spotlightPadding: 4,
+      minSpotlightRadius: 24,
+      maxSpotlightRadius: 38,
+      openMenuEvents: 'cxttapstart',
+      itemColor: 'white',
+      itemTextShadowColor: 'black',
+      zIndex: 9999,
+      atMouse: false
     }));
     var edgeCommands = [];
     edgeCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Remove', // html/text content to be displayed in the menu
-      select: function(ele){ // a function to execute when the command is selected
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Remove',
+      select: function(ele){
         removeEdges(cy, [ele]);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     edgeCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Annotation', // html/text content to be displayed in the menu
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Annotation',
       title: 'Annotation',
-      select: function(ele){ // a function to execute when the command is selected
+      select: function(ele){
         var sourceID = ele.data('source');
         var targetID = ele.data('target');
         updateEdgeAnnotation(cy, ele, sourceID, targetID, dimensions, isInterDimensional);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     relationTypes.forEach ( function ( relationType ) {
       edgeCommands.push({
-        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-        content: relationType.text, // html/text content to be displayed in the menu
+        fillColor: 'rgba(200, 200, 200, 0.75)',
+        content: relationType.text,
         title: relationType.comment,
-        select: function(ele){ // a function to execute when the command is selected
+        select: function(ele){
           var relation = ele.data('relation');
           if (!!relation && relation.split(relationType.text).length > 1) return;
           var sourceID = ele.data('source');
@@ -1248,12 +1239,10 @@
             $.ajax
               ({
                   type: "POST",
-                  //the url where you want to sent the userName and password to
                   url: 'updateTaxonomyRelationType',
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
-                  //json object to sent to the authentication url
                   data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: relationType.text}),
                   success: function ( result ) {
                     if (!result || !result.success) {
@@ -1265,95 +1254,95 @@
               });
             }
         },
-        enabled: true // whether the command is selectable
+        enabled: true
       });
     });
     cxtmenus.push(cy.cxtmenu({
-      menuRadius: 100, // the radius of the circular menu in pixels
-      selector: 'edge', // elements matching this Cytoscape.js selector will trigger cxtmenus
-      commands: edgeCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
-      fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
-      activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
-      activePadding: 20, // additional size in pixels for the active command
-      indicatorSize: 24, // the size in pixels of the pointer to the active command
-      separatorWidth: 3, // the empty spacing in pixels between successive commands
-      spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
-      minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
-      maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
-      openMenuEvents: 'cxttapstart', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
-      itemColor: 'white', // the colour of text in the command's content
-      itemTextShadowColor: 'black', // the text shadow colour of the command's content
-      zIndex: 9999, // the z-index of the ui div
-      atMouse: false // draw menu at mouse position
+      menuRadius: 100,
+      selector: 'edge',
+      commands: edgeCommands,
+      fillColor: 'rgba(0, 0, 0, 0.75)',
+      activeFillColor: 'rgba(92, 194, 237, 0.75)',
+      activePadding: 20,
+      indicatorSize: 24,
+      separatorWidth: 3,
+      spotlightPadding: 4,
+      minSpotlightRadius: 24,
+      maxSpotlightRadius: 38,
+      openMenuEvents: 'cxttapstart',
+      itemColor: 'white',
+      itemTextShadowColor: 'black',
+      zIndex: 9999,
+      atMouse: false
     }));
     var dimensionCommands = [];
     dimensionCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Remove', // html/text content to be displayed in the menu
-      select: function(ele){ // a function to execute when the command is selected
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Remove',
+      select: function(ele){
         removeItem(cy, [ele], removeNodes);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     dimensionCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Rename', // html/text content to be displayed in the menu
-      select: function(ele){ // a function to execute when the command is selected
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Rename',
+      select: function(ele){
         renameNode(cy, ele);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     if (!isInterDimensional) {
       dimensionCommands.push({
-        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-        content: 'Add node', // html/text content to be displayed in the menu
+        fillColor: 'rgba(200, 200, 200, 0.75)',
+        content: 'Add node',
         title: 'Add node',
-        select: function(ele, e){ // a function to execute when the command is selected
+        select: function(ele, e){
           e.preventDefault();
           addNode(cy, ele, e, false);
         },
-        enabled: true // whether the command is selectable
+        enabled: true
       });
     }
     dimensionCommands.push({
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'Add major node', // html/text content to be displayed in the menu
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Add major node',
       title: 'Add major node',
-      select: function(ele, e){ // a function to execute when the command is selected
+      select: function(ele, e){
         e.preventDefault();
         addNode(cy, ele, e, true);
       },
-      enabled: true // whether the command is selectable
+      enabled: true
     });
     if (isInterDimensional) {
       dimensionCommands.push({
-        fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-        content: 'Add dimension', // html/text content to be displayed in the menu
+        fillColor: 'rgba(200, 200, 200, 0.75)',
+        content: 'Add dimension',
         title: 'Add dimension',
-        select: function(ele, e){ // a function to execute when the command is selected
+        select: function(ele, e){
           e.preventDefault();
           addDimension(cy, ele, e, true);
         },
-        enabled: true // whether the command is selectable
+        enabled: true
       });
     }
     cxtmenus.push(cy.cxtmenu({
-      menuRadius: 100, // the radius of the circular menu in pixels
-      selector: '.dimension', // elements matching this Cytoscape.js selector will trigger cxtmenus
-      commands: dimensionCommands, // function( ele ){ return [ /*...*/ ] }, // example function for commands
-      fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
-      activeFillColor: 'rgba(92, 194, 237, 0.75)', // the colour used to indicate the selected command
-      activePadding: 20, // additional size in pixels for the active command
-      indicatorSize: 24, // the size in pixels of the pointer to the active command
-      separatorWidth: 3, // the empty spacing in pixels between successive commands
-      spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
-      minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight
-      maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight
-      openMenuEvents: 'cxttapstart', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
-      itemColor: 'white', // the colour of text in the command's content
-      itemTextShadowColor: 'black', // the text shadow colour of the command's content
-      zIndex: 9999, // the z-index of the ui div
-      atMouse: true // draw menu at mouse position
+      menuRadius: 100,
+      selector: '.dimension',
+      commands: dimensionCommands,
+      fillColor: 'rgba(0, 0, 0, 0.75)',
+      activeFillColor: 'rgba(92, 194, 237, 0.75)',
+      activePadding: 20,
+      indicatorSize: 24,
+      separatorWidth: 3,
+      spotlightPadding: 4,
+      minSpotlightRadius: 24,
+      maxSpotlightRadius: 38,
+      openMenuEvents: 'cxttapstart',
+      itemColor: 'white',
+      itemTextShadowColor: 'black',
+      zIndex: 9999,
+      atMouse: true
     }));
     var ur = cy.undoRedo();
     $(document).off("keydown").on("keydown", function (e) {
@@ -1383,8 +1372,9 @@
     cy.$('.parent,.child').each ( function ( entry, index ) {
       entry.qtip(getQtipOptions(entry.data('id')));
     });
-    //cy.panzoom();
-    //cy.navigator();
+
+    // initialize cytoscape extensions
+
     cy.edgehandles({handleNodes: '.child, .parent'});
     var viewUtilities = cy.viewUtilities({
       node: {
@@ -1460,11 +1450,12 @@
       fisheye: false,
       animate: false,
       undoable: false,
-      expandCollapseCuePosition: function ( e ) { var position = e.position(); return {x: position.x + e.width()/2 - 21, y: position.y - e.height()/2 - 5}; }, // 'top-left'
+      expandCollapseCuePosition: function ( e ) { var position = e.position(); return {x: position.x + e.width()/2 - 21, y: position.y - e.height()/2 - 5}; },
       expandCollapseCueSensitivity: 1.5,
-      expandCollapseCueSize: 20, // 12
+      expandCollapseCueSize: 20,
+      // base64 zoom icons (put straight into the file to be able to make the HTML file "static")
       expandCueImage: `data:image/png;base64,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`, //'zoomInIcon.png',
-      collapseCueImage: `data:image/png;base64,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`// 'zoomOutIcon.png'
+      collapseCueImage: `data:image/png;base64,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`
     });
     cy.$('.interdimensional').on('expandcollapse.beforecollapse', function ( e ) {
       e.preventDefault();
@@ -1496,10 +1487,10 @@
     cy.$('.dimension').on('expandcollapse.beforeexpand', function ( e ) {
       displayedDimension = 'Interdimensional view';
     });
-    //var instance = cy.contextMenus( options );
     $('#clickMe').unbind().click ( function () {
       savePositions(cy, dimensions);
     });
+    // save edge bend points to the database
     $('#getEdges').unbind().click ( function () {
       if (!admin) {
         handleErrorHelper('Cannot save node/edge positions.');
@@ -1613,22 +1604,6 @@
     $('#exportJSON').unbind().click ( function () {
       console.log("json: ", cy.json());
     });
-    /*
-    cy.$('.parent,.child').on('click', function ( e ) {
-      var nodeID = this.id();
-      traverseChildren(cy, relations, nodeID);
-      cy.forceRender();
-    });
-    */
-    /*
-    cy.$('.dimension').on('click', function ( e ) {
-      var dimension = this.id();
-      var url = window.location.href;
-      if (url.split(dimension).length > 1) return; // TODO
-      window.location.href = url.split('#').shift() + '#' + dimension;
-      window.location.reload(false);
-    });
-    */
   }
 
     function initPage () {

@@ -52,10 +52,9 @@ text.active {
     <script src="lodash.core.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
     <!-- <script src="compare-strings.js" data-web="https://cdn.rawgit.com/aceakash/string-similarity/0bc73e79/compare-strings.js"></script> -->
     <script src="levenshtein.min.js" data-web="https://cdn.rawgit.com/hiddentao/fast-levenshtein/master/levenshtein.min.js"></script>
-    <script src="liquidmetal.js" data-web="https://cdn.rawgit.com/rmm5t/liquidmetal/master/liquidmetal.js"></script>
     <script src="fuzzysort.js" data-web="https://cdn.rawgit.com/farzher/fuzzysort/19e81c13/fuzzysort.js"></script>
 
-    <link href="loginForm.css" type="text/css" rel="stylesheet">
+    <link href="main.css" type="text/css" rel="stylesheet">
 
     <script src="editableTable.js"></script>
 
@@ -67,6 +66,7 @@ text.active {
 
     <script src="fileUploader.js"></script>
     <script src="scopus.js"></script>
+    <script src="stringComparison.js"></script>
 
     <script src="exportHTML.js"></script>
     <script src="userManagement.js"></script>
@@ -74,6 +74,8 @@ text.active {
 
 <script>
 // bootstrap-waitingfor.min.js
+// source: https://github.com/ehpc/bootstrap-waitingfor
+// https://cdnjs.com/libraries/bootstrap-waitingfor
 !function(e,a){"use strict";"function"==typeof define&&define.amd?define(["jquery"],function(d){return e.waitingDialog=a(d)}):e.waitingDialog=e.waitingDialog||a(e.jQuery)}(this,function(e){"use strict";function a(a){return a&&a.remove(),e('<div class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true" style="padding-top:15%; overflow-y:visible;"><div class="modal-dialog modal-m"><div class="modal-content"><div class="modal-header" style="display: none;"></div><div class="modal-body"><div class="progress progress-striped active" style="margin-bottom:0;"><div class="progress-bar" style="width: 100%"></div></div></div></div></div></div>')}var d,t,n={};return{show:function(n,i){"undefined"==typeof i&&(i={}),"undefined"==typeof n&&(n="Loading");var r,o,s=e.extend({headerText:"",headerSize:3,headerClass:"",dialogSize:"m",progressType:"",contentElement:"p",contentClass:"content",ltr:!0,timer:500,timeout:0,onHide:null},i);t=s,d=a(d),d.find(".modal-dialog").attr("class","modal-dialog").addClass("modal-"+s.dialogSize),d.find(".progress-bar").attr("class","progress-bar"),s.progressType&&d.find(".progress-bar").addClass("progress-bar-"+s.progressType),s.ltr&&d.find(".progress-bar").css("float","left").end().attr("dir","ltr"),r=e("<h"+s.headerSize+" />"),r.css({margin:0}),s.headerClass&&r.addClass(s.headerClass),o=e("<"+s.contentElement+" />"),s.contentClass&&o.addClass(s.contentClass),s.headerText===!1?(o.html(n),d.find(".modal-body").prepend(o)):s.headerText?(r.html(s.headerText),d.find(".modal-header").html(r).show(),o.html(n),d.find(".modal-body").prepend(o)):(r.html(n),d.find(".modal-header").html(r).show()),"function"==typeof s.onHide&&d.off("hidden.bs.modal").on("hidden.bs.modal",function(){s.onHide.call(d)}),d.modal()},hide:function(){"undefined"!=typeof d&&d.modal("hide")},message:function(e){return"undefined"!=typeof d?"undefined"!=typeof e?d.find(".modal-header>h"+t.headerSize).html(e):d.find(".modal-header>h"+t.headerSize).html():void 0},animate:function(e,a,i){if(a=a||t.timer,i=i||t.timeout,e=e||d.find(".modal-header>h"+t.headerSize).html(),n.animate=n.animate||[],"string"==typeof e&&(e=["..","....","......"].map(function(a){return e+a})),"object"==typeof e&&e instanceof Array){var r=e;e=function(e){var a=r.indexOf(e.html());if(0>a)e.html(r[0]);else{var d=a+1>=r.length?0:a+1;e.html(r[d])}}}if("function"==typeof e){a>i&&setTimeout(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},i);var o=setInterval(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},a);return n.animate.push(o),o}},stopAnimate:function(e){return e=e||n.animate[n.animate.length-1],clearInterval(e),delete n.animate[n.animate.indexOf(e)],d},progress:function(e,a){return arguments.length?(a&&(e=parseInt(e/a*100)),d.find(".progress-bar").css("width",e+"%"),d):parseInt(d.find(".progress-bar")[0].style.width)}}});
 </script>
 
@@ -258,7 +260,7 @@ text.active {
           <textarea id="bibModalText" value="" style="width:300px;height:300px;max-width:1000px;max-height:1000px;overflow:auto;"></textarea>
         </div>
         <div style="margin-top:20px;">
-          <input type="submit" id="bibModalButton" class="btn btn-success" value="Save">
+          <input type="submit" id="bibModalButton" class="btn btn-success" value="Confirm">
         </div>
       </form>
     </div>
@@ -275,7 +277,7 @@ text.active {
           <button type="button" class="btn btn-default" id="compareJSONFiles" title="Compare JSON Correlation Files"><span class="glyphicon glyphicon-random" value="Compare JSON Correlation Files" ></span></button>
           <button type="button" class="btn btn-default" id="testPerformance" title="Test Performance"><span class="glyphicon glyphicon-random" value="Test Performance" ></span></button>
           <button type="button" class="btn btn-default" id="testPerformanceCorrelationProbability" title="Test Performance per Correlation Propability"><span class="glyphicon glyphicon-random" value="Test Performance per Correlation Propability" ></span></button>
-          <button type="button" class="btn btn-default" id="saveMappings" title="Save Mappings"><span class="glyphicon glyphicon-floppy-disk" value="Save Mappings" ></span></button>
+          <button type="button" class="btn btn-default" id="saveMappings" title="Save To Database"><span class="glyphicon glyphicon-floppy-disk" value="Save Mappings" ></span></button>
         </div>
         <div class="dropdown" style="margin-left:13px;" title="Paper Import">
             <button class="btn btn-default dropdown-toggle" type="button" id="settingsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -292,7 +294,7 @@ text.active {
               </select></div></li>
               <li style="display:inline-block;"><div style="padding:10px;"><label for="importMinSimilarity">Min Similarity: </label></div><div><input type="text" id="importMinSimilarity" value="" style="width:50px;" title="Min similarity"></div></li>
               <li style="display:inline-block;"><div style="padding:10px;"><div><label for="importMinOccurrences">Min Occurrences: </label></div><div><input type="text" id="importMinOccurrences" value="1" style="width:50px;" title="Min occurrences"></div></li>
-              <li style="display:inline-block;"><div style="padding:10px;"><div><label for="showCellNumbers">Show Cell Numbers: </label></div><div><input type="checkbox" id="showCellNumbers" title="Show Cell Numbers" checked></div></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><div><label for="showCellNumbers">Show Occurrence Numbers: </label></div><div><input type="checkbox" id="showCellNumbers" title="Show Occurrence Numbers" checked></div></li>
               <li style="display:inline-block;"><input type="button" class="btn btn-success" id="import" title="Import" value="Import Papers"></li>
               <!--<li><button type="button" class="btn btn-default" id="import" title="Import"><span class=" glyphicon glyphicon-folder-open" value="Import" ></span></button></li>-->
             </ul>
@@ -335,6 +337,8 @@ text.active {
 <div id="colorLegend"></div>
 
 <script id="mainScript">
+
+  // variables, used for the conversion to static HTML
   const IS_STATIC = false;
 
   const STATIC_ARRAY = ['CITATIONS', 'CITATIONCOUNT', 'DIMENSIONS', 'ALLATTRIBUTES', 'ATTRIBUTESY', 'ATTRIBUTESX', 'CORRELATIONS', 'COVERAGE'];
@@ -363,13 +367,23 @@ text.active {
 
   const KMEANS_CLUSTERS = 7;
   const MIN_IMPORT_OCCURRENCES = 1;
-  const FUZZY_SORT_MIN_SIMILARITY = -150; // TODO
+  const FUZZY_SORT_MIN_SIMILARITY = -150;
 
   var totalNumberOfCitations, maxReferenceCount;
   var selectize1, selectize2;
   var parents = [];
   var buildingMatrix = false;
 
+  // string comparison techniques
+  // functions are in "stringComparison.js"
+  const STRING_COMPARISON_TECHNIQUES = [{title: "Regex", method: occurrencesRegex}, {title: "Dice's Coefficient", method: occurrencesDice}, {title: "Levenshtein", method: occurrencesLevenshtein}, {title: "Fuzzysort", method: occurrencesFuzzysort}];
+
+  const DEFAULT_STRING_COMPARISON_TECHNIQUE = 'Regex';
+  const DEFAULT_STRING_COMPARISON_METHOD = occurrencesRegex;
+
+  var minSimilarity = 1;
+
+  // color gradients
   const colorsBlue = ["#1CB5E0", "#189ECC", "#1587B9", "#1171A6", "#0E5A93", "#0A437F", "#072D6C", "#031659", "#000046"];
   const colorsYGB = ["#F0F8FF","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"]; // #FFFFDD
   const colorsRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
@@ -394,6 +408,7 @@ text.active {
   const MIN_SHORTEN_VALUE = 3;
   const MIN_SHORTEN_FACTOR = 3;
 
+  // calculate conformity between 2 correlation arrays
   function compareCorrelations ( correlations1, correlations2 ) {
     var texts1 = [];
     var texts2 = [];
@@ -424,6 +439,7 @@ text.active {
     console.log('Conformity: ' +  (counter / (results.length > 0 ? results.length : 1) * 100) + ' %');
   }
 
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
   function getSVGString( svgNode ) {
     svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
     var cssStyleText = getCSSStyles( svgNode );
@@ -495,6 +511,7 @@ text.active {
     }
   }
 
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
   function svgString2Image( svgString, width, height, format, callback ) {
     var format = format ? format : 'png';
 
@@ -549,6 +566,7 @@ text.active {
     return buildParentTreeHelper(results);
   }
 
+  // calculate number of hierarchy levels
   function getTreeDepth ( nodes ) {
     var max = 0;
     nodes.forEach ( function ( node ) {
@@ -558,6 +576,7 @@ text.active {
     return max;
   }
 
+  // check if there are any taxonomy dimensions
   function hasDimensions ( nodes ) {
     for ( var i = 0; i < nodes.length; i++ ) {
       if (!!nodes[i].dimension && nodes[i].dimension != '') return true;
@@ -574,6 +593,7 @@ text.active {
     return -1;
   }
 
+  // calculate maximal length of a name text
   function getMaxNameLength ( nodes ) {
     var max = 0;
     nodes.forEach ( function ( node ) {
@@ -583,6 +603,11 @@ text.active {
     return max;
   }
 
+  /*
+    Based on a d3 code example.
+
+    Source: http://bl.ocks.org/nbremer/5cd07f2cb4ad202a9facfbd5d2bc842e
+  */
   function applyColorGradient ( defs, gradient, minValue, maxValue ) {
     if (!gradient.name || !gradient.colors) return {};
     var colors = gradient.colors;
@@ -613,7 +638,7 @@ text.active {
   }
 
   /*
-    Based on a code example.
+    Based on a d3 code example.
 
     Source: https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
   */
@@ -652,6 +677,8 @@ text.active {
     updateColorLegend(gradientID, 300, 50, maxValue);
   }
 
+  // default sorting functions, which group concepts that have the same dimension/parents together
+  // to ensure a pleasant visual appearance
   function sortDefaultY ( a, b ) {
     if (a.dimension != '' && b.dimension == '') return -1;
     if (a.dimension == '' && b.dimension != '') return 1;
@@ -694,6 +721,7 @@ text.active {
     return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
   }
 
+  // sort nodes based on the selected value
   function sortNodes ( value, nodesY, nodesX ) {
     var sortY, sortX;
     if (value == 'name') {
@@ -711,6 +739,7 @@ text.active {
     return {y: nodesY, x: nodesX};
   }
 
+  // calculate matrix creation time with dummy elements
   function testPerformance ( attributeNumberY, attributeNumberX, correlationPropability ) {
     var attributesY = [];
     var attributesX = [];
@@ -738,6 +767,7 @@ text.active {
     return endTime - startTime;
   }
 
+  // calculate average matrix creation time with dummy elements (for different numbers of elements)
   function testPerformancePerElementNumber ( start, end, stepSize, correlationPropability, numberOfRuns ) {
     if (numberOfRuns <= 0) return 0;
     var results = [];
@@ -752,6 +782,7 @@ text.active {
     return results;
   }
 
+  // calculate average matrix creation time with dummy elements (for different correlation probabilities between elements)
   function testPerformancePerCorrelationPropability ( stepSize, numberOfNodes, numberOfRuns ) {
     if (numberOfRuns <= 0) return 0;
     var results = [];
@@ -767,7 +798,7 @@ text.active {
   }
 
   function testPerformanceDummy () {
-    var result = testPerformancePerElementNumber(190, 200, 10, 0.5, 10);
+    var result = testPerformancePerElementNumber(10, 100, 10, 0.5, 10);
     console.log('Performance results: ', result);
     try {
       var resultString = JSON.stringify(result);
@@ -793,7 +824,11 @@ text.active {
   }
 
   /*
-    The code that calculates and renders the basic structure of the matrix is based on a matrix example\footnote{\url{https://github.com/lonelydatum/bost.ocks.org/blob/99f535dc6e42865f4a73b1868668ef4ee3ae6184/mike/miserables/index.html}} code from Mike Bostock, the creator of \textit{d3js}.
+    The elementary matrix creation code is based on a d3 code example:
+
+    source: https://github.com/lonelydatum/bost.ocks.org/blob/99f535dc6e42865f4a73b1868668ef4ee3ae6184/mike/miserables/index.html
+
+    However, not much of the original code is left. It was mainly used for learning how to build the basic matrix construct.
   */
   function buildMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalY, nodesOriginalX ) {0
     if (!!buildingMatrix) return;
@@ -801,8 +836,6 @@ text.active {
     console.time('Build Matrix');
     d3.selectAll(".d3-tip").remove();
 
-    //var rootsY = buildParentTree(attributesY.response);
-    //var rootsX = buildParentTree(attributesX.response);
     var matrixY = [],
         matrixX = [],
         nodesY = attributesY.response,
@@ -812,21 +845,7 @@ text.active {
 
     if (n == 0 || m == 0) return;
 
-/*
-    // making the matrix quadratic
-    if (n > m) {
-      for ( var i = 0; i < (n - m); i++ ) {
-        nodesX.push({id: -1, text: '', parentText: '', dimension: ''});
-      }
-      m = n;
-    } else if (n < m) {
-      for ( var i = 0; i < (m - n); i++ ) {
-        nodesY.push({id: -1, text: '', parentText: '', dimension: ''});
-      }
-      n = m;
-    }
-*/
-
+    // build basic matrix structure
     nodesY.forEach ( function (node, i) {
       node.index = i;
       if (node.id < 0) node.count = -1;
@@ -835,8 +854,6 @@ text.active {
       maxHeight += node.text.length;
       node.parents = (!!node.parentText && node.parentText != '') ? node.parentText.split(',') : [];
     });
-
-    // Compute index per node.
     nodesX.forEach(function(node, i) {
       node.index = i;
       if (node.id < 0) node.count = -1;
@@ -852,32 +869,23 @@ text.active {
     var maxWidth = 0;
     var maxHeight = 0;
 
-    console.log('nodesX: ', nodesX, 'nodesY: ', nodesY);
-/*
-    nodesY.sort ( function ( a, b ) {
-      return a.parents.length < b.parents.length ? 1 : (a.parents.length > b.parents.length ? -1 : (a.text < b.text ? -1 : (a.text == b.text ? 0 : 1)));
-    });
-
-    nodesX.sort ( function ( a, b ) {
-      return a.parents.length < b.parents.length ? 1 : (a.parents.length > b.parents.length ? -1 : (a.text < b.text ? -1 : (a.text == b.text ? 0 : 1)));
-    });
-*/
-
-    if (onClickURL == 'citationDetails') selectableCells = true; // TODO
+    if (onClickURL == 'citationDetails') selectableCells = true;
 
     var hasDimensionsY = hasDimensions(nodesY);
     var hasDimensionsX = hasDimensions(nodesX);
 
+    // calculate number of hierarchy levels
     var treeDepthY = getTreeDepth(nodesY);
     var treeDepthX = getTreeDepth(nodesX);
 
+    // check if there are any parent hierarchy levels / dimensions
     var hasParentsY = treeDepthY > 0;
     var hasParentsX = treeDepthX > 0;
     if (hasDimensionsY) treeDepthY++;
     if (hasDimensionsX) treeDepthX++;
 
-    //var marginLeft = getMaxNameLength(nodesY) * 3;
-    //var marginTop = getMaxNameLength(nodesX) * 3 + 5;
+    // calculate matrix margins
+
     var marginLeft = 100;
     var marginTop = 105;
 
@@ -893,7 +901,6 @@ text.active {
       textTransformFactorX = 125;
     }
 
-    // TODO
     var left = marginLeft + Math.max(1, treeDepthY) * 35;
     var sortedLeft = marginLeft + Math.max(1, treeDepthY) * 60;
     var top = marginTop + Math.max(1, treeDepthX) * 35;
@@ -907,13 +914,13 @@ text.active {
     if (!selectedOrder || selectedOrder == 'default') {
       nodesY.sort(sortDefaultY);
       nodesX.sort(sortDefaultX);
-    } // else ?
+    }
     left = sortedLeft;
     top = sortedTop;
     svgMarginLeft = 0;
     svgMarginTop = 0;
-    // TODO
 
+    // fill matrix values
     correlations.response.forEach(function(link) {
       var foundLinks = 0;
       if (link.text1 == link.text2) {
@@ -999,27 +1006,17 @@ text.active {
           if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
         }
       }
-/*
-      for ( var i = 0; i < matrixX.length; i++ ) {
-        for ( var j = 0; j < matrixX[i].length; j++ ) {
-          if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
-        }
-      }
-*/
     }
     if (!!sortValues && !!selectedOrder && selectedOrder != 'default') {
       var sortedNodes = sortNodes(selectedOrder, nodesY, nodesX);
       buildingMatrix = false;
       return buildMatrix({response: sortedNodes.y}, {response: sortedNodes.x}, correlations, maxValue, onClickURL, false, selectableCells, nodesOriginalY, nodesOriginalX);
     }
-    console.log('max value: ' + maxValue);
 
     var minValue = 0;
-    var margin = {top: top, right: 0, bottom: 30, left: left}, // left/top: 240
-        width =  nodesX.length * 20, // 1440 or 4500
-        height = nodesY.length * 20; // 1440 or 4500
-
-    console.log("width: " + width + ', height: ' + height)
+    var margin = {top: top, right: 0, bottom: 30, left: left},
+        width =  nodesX.length * 20,
+        height = nodesY.length * 20;
 
     function getYPosition ( d ) {
       var sum = 0;
@@ -1044,6 +1041,7 @@ text.active {
       nodesX[i].xPosition = getYPosition({x: i});
     }
 
+    // create SVG with calculated margins
     d3.selectAll("svg").remove();
     var svg = d3.select("body").append("svg")
         .attr("id", "matrixSVG")
@@ -1054,10 +1052,9 @@ text.active {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    console.log('margin.left: ' + margin.left + ', margin.top: ' + margin.top)
-
     var defs = svg.append("defs");
 
+    // recalculate all color gradients based on the current min and max values
     function refreshColorGradients ( minValue, maxValue ) {
       if (!minValue) minValue = 0;
       if (!maxValue) {
@@ -1067,13 +1064,6 @@ text.active {
             if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
           }
         }
-  /*
-        for ( var i = 0; i < matrixX.length; i++ ) {
-          for ( var j = 0; j < matrixX[i].length; j++ ) {
-            if (matrixX[i][j].z > maxValue) maxValue = matrixX[i][j].z;
-          }
-        }
-  */
       }
       COLOR_GRADIENTS.forEach ( function ( gradient ) {
         var result = applyColorGradient(defs, gradient, minValue, maxValue);
@@ -1113,27 +1103,14 @@ text.active {
 
     var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { if (!!d.fullText) { if (d.fullText == -1) return ''; return d.fullText; } return '' + d.z + (d.z != 1 ? labelText + 's' : labelText); });
     svg.call(d3Tip);
-/*
-    for ( var i = 0; i < 1; i++ ) {
-      var marginLeft = margin.left / (i+1) - 10;
-      var marginTop = margin.top / (i+1) - 10;
-      svg.append("rect")
-          .attr("class", "background")
-          .style("background-color", DEFAULT_TEXT_FILL)
-          .style("fill", "none")
-          .style("stroke", "black")
-          //.style("stroke-dasharray", "" + (width - margin.left) + ",0")
-          .attr("width", width + marginLeft)
-          .attr("height", height + marginTop)
-          .attr("transform", "translate(-" + marginLeft + ",-" + marginTop + ")");
-    }
-*/
 
     var heightPerCell = height / nodesY.length;
     var widthPerCell = width / nodesX.length;
 
     var heightPerParentCell = (margin.top-marginTop)/(treeDepthX+1);
     var widthPerParentCell = (margin.left-marginLeft)/(treeDepthY+1);
+
+    // add matrix borders and parent level lines
 
     svg.append("line")
       .attr("class", "line")
@@ -1231,6 +1208,7 @@ text.active {
 
     var maxNodeAmount = Math.max(nodesY.length, nodesX.length);
 
+    // rename the citation of a paper
     function renameText ( elm, d ) {
       var that = d3.select(elm);
       var isColumn = true;
@@ -1252,29 +1230,28 @@ text.active {
         var newText = $('#renameModalText').val();
         if (!!newText) {
           if (isColumn) {
-            //nodesX[d[0].x-1].text = newText;
             if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
               that.attr('data-fulltext', newText)
               that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
             } else that.text(newText);
           } else {
-            //nodesY[d[0].y-1].text = newText;
             if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
               that.attr('data-fulltext', newText)
               that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
             } else that.text(newText);
           }
-          // TODO set nodes value
-          //that.attr('data-renamed', true); // TODO shorten text -> save in fulltext attr
         }
-        //$('#renameModalButton').prop('disabled', true);
         $('#rename-modal').modal('hide');
       });
       $('#rename-modal').modal('show');
     }
 
+    // change the BibTex entry of a paper
     function changeBib ( elm, d ) {
       var that = d3.select(elm);
+      var isColumn = true;
+      var thatClass = that.attr('class');
+      if (!!thatClass && thatClass.split('rowText').length > 1) isColumn = false;
       var previousText = that.text();
       if (!previousText || previousText == '') return;
       var fullText = that.attr('data-fulltext');
@@ -1282,11 +1259,11 @@ text.active {
         if (!fullText) return;
         previousText = fullText;
       }
-      var previousCitation = that.attr('data-citation');
-      var previousBib = that.attr('data-bib');
+      var previousCitation = isColumn ? nodesX[d[0].x].citation : nodesY[d[0].y].citation;
+      var previousBib = isColumn ? nodesX[d[0].x].bib : nodesY[d[0].y].bib;
       if (!previousBib) previousBib = '';
       if (!previousCitation) previousCitation = '';
-      $('#bibModalTitle').html('Enter BibTex for "' + previousText + '" (citation: ' + previousCitation + ')');
+      $('#bibModalTitle').html('Enter BibTex for "' + previousText + '"');
       $('#bibModalLabel').html('BibTex:');
       $('#bibModalText').val(previousBib);
       $('#bibModalButton').prop('disabled', false);
@@ -1298,24 +1275,37 @@ text.active {
           if (!bibTex) return;
           for ( var key in bibTex ) {
             if (!!bibTex[key] && !$.isArray(bibTex[key])) {
-              that.attr('data-citation', key);
+              if (isColumn) {
+                nodesX[d[0].x].citation = key;
+                if (key.length * ROTATION_FACTOR > marginLeft && key.length > SHORTEN_LEAF_VALUE) {
+                  that.attr('data-fulltext', key)
+                  that.text(key.substr(0, SHORTEN_LEAF_VALUE) + '...');
+                } else that.text(key);
+              } else {
+                nodesY[d[0].y].citation = key;
+                if (key.length * ROTATION_FACTOR > marginLeft && key.length > SHORTEN_LEAF_VALUE) {
+                  that.attr('data-fulltext', key)
+                  that.text(key.substr(0, SHORTEN_LEAF_VALUE) + '...');
+                } else that.text(key);
+              }
               try {
-                that.attr('data-bib', JSON.stringify(bibTex[key]));
+                var bib = JSON.stringify(bibTex[key]);
+                if (isColumn) nodesX[d[0].x].bib = bib;
+                else nodesY[d[0].y].bib = bib;
               } catch ( err ) {
                 console.log('Error parsing BibTex object into string: ', err);
               }
               break;
             }
           }
-          console.log('saved citation: ', that.attr('data-citation'));
-          console.log('Saved bib: ', that.attr('data-bib'));
+          if ((isColumn && !nodesX[d[0].x].bib) || (!isColumn && !nodesY[d[0].y].bib)) handleError('Invalid BibTex format.');
         }
-        //$('#bibModalButton').prop('disabled', true);
         $('#bib-modal').modal('hide');
       });
       $('#bib-modal').modal('show');
     }
 
+    // add synonoms to a concept (used for the occurrence count calculation during the paper text parsing (Paper import))
     function updateSynonyms ( elm, d ) {
       console.log(d)
       var that = d3.select(elm);
@@ -1376,53 +1366,7 @@ text.active {
       $('#default-modal').modal('show');
     }
 
-    function addChild ( type, d, parent ) {
-      if (!IS_STATIC) return;
-      return; // TODO
-      $('#renameModalTitle').html('Add child to "' + parent + '"');
-      $('#renameModalLabel').html('Name:');
-      $('#renameModalText').val('');
-      $('#renameModalButton').prop('disabled', false);
-      $('#renameModalForm').unbind().on('submit', function ( evt ) {
-        evt.preventDefault();
-        var childName = $('#renameModalText').val();
-        if (!!childName && childName != '') {
-          var allAttributes = DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES];
-          var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
-          for ( var i = 0; i < allAttributes.response.length; i++ ) {
-            if (allAttributes.response[i].text == childName) {
-              handleError('This name already exists (as a concept name). Concepts must be unique.');
-              return;
-            }
-          }
-          for ( var i = 0; i < dimensions.response.length; i++ ) {
-            if (dimensions.response[i].text == childName) {
-              handleError('This name already exists (as a dimension name). Concepts must be unique.');
-              return;
-            }
-          }
-          if (type == 'row') {
-            var attributesY = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY];
-            // TODO
-            var parentNode = nodesY[d[0].y-1];
-            var parentText = parentNode.parentText;
-            var parents = parentNode.parents;
-            if (!!parentText) parentText += parentNode.text + (parentText != '' ? ',' : '');
-            if (!!parents) parents.shift(parentNode.text);
-            var attribute = {text: childName, dimension: parentNode.dimension, parentText: parentText, parents: parents};
-
-          } else if (type == 'column') {
-            var attributesX = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX];
-            // TODO
-            var parentNode = nodesX[d[0].x-1];
-          }
-        } else handleError('Invalid name.');
-        //$('#renameModalButton').prop('disabled', true);
-        $('#rename-modal').modal('hide');
-      });
-      $('#rename-modal').modal('show');
-    }
-
+    // update color gradient and cell text
     function updateText ( d, field, el, p_el, thatCell, txt ) {
       if (!isNaN(txt)) {
         d[field] = txt;
@@ -1449,6 +1393,7 @@ text.active {
       p_el.select("foreignObject").remove();
     }
 
+    // show or hide dimensions
     function filterDimension ( elm, dimension, show ) {
       var newNodesY = [];
       var newNodesX = [];
@@ -1480,6 +1425,7 @@ text.active {
       if (newNodesY.length > 0 && newNodesX.length > 0) buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
     }
 
+    // show or hide child nodes
     function filterChildAttributes ( elm, parent, show ) {
       var newNodesY = [];
       var newNodesX = [];
@@ -1511,6 +1457,7 @@ text.active {
      if (newNodesY.length > 0 && newNodesX.length > 0) buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
     }
 
+    // delete paper
     function deleteCitation ( elm ) {
       var that = d3.select(elm);
       var citation = that.attr('data-originalText');
@@ -1609,26 +1556,6 @@ text.active {
       disabled: false
     }];
 
-    if (IS_STATIC) menu.push({
-      title: 'Add child',
-      action: function (elm, d, i) {
-        var that = d3.select(elm);
-        var thatClass = that.attr('class');
-        var isRow = true;
-        if (!!thatClass && thatClass.split('column').length > 1) isRow = false;
-        var text = that.attr('data-originalText');
-        if (!text) text = that.text();
-        if (!text || text.split('...').length > 1) text = that.attr('data-fulltext');
-        if (!text) return;
-        if (isRow) {
-          addChild('row', d, text);
-        } else {
-          addChild('column', d, text);
-        }
-      },
-      disabled: false
-    });
-
     var advancedMenu = menu.concat([{
         title: 'Synonyms',
         action: function(elm, d, i) {
@@ -1653,7 +1580,7 @@ text.active {
       }
     ];
 
-    // http://bl.ocks.org/GerHobbelt/2653660
+    // source: http://bl.ocks.org/GerHobbelt/2653660
     function make_editable(d, field)
     {
         this
@@ -1727,6 +1654,7 @@ text.active {
           });
     }
 
+    // add text to matrix cells
     function appendCellTexts ( editable ) {
         var cellContainerText = d3.selectAll(".cellContainer").append("text")
             .attr("class", "occurrences")
@@ -1736,8 +1664,6 @@ text.active {
             .attr("font-size", FONT_SIZE)
             .attr("text-anchor", "middle")
             .style("fill", DEFAULT_TEXT_FILL)
-            //.attr('width', that.attr('width'))
-            //.attr('height', that.attr('height'))
             .text( function (d) {
               var value = d3.select(this.previousSibling).data()[0].z;
               if (value >= 1000) return ('' + Math.floor(value / 1000) + '...');
@@ -1767,6 +1693,7 @@ text.active {
         }
     }
 
+    // add row text labels
     function addRowText ( row ) {
       row.append("text")
           .attr("class", "rowText")
@@ -1787,6 +1714,10 @@ text.active {
           .attr("transform", function (d, i) { return "translate(-" + textTransformFactorY + ",0)"; });
     }
 
+    // Add row parent and dimension labels.
+    // This code prevents overlapping of text labels by shortening texts if needed.
+    // Parent and dimension text labels are only being added if the previous element did not have them.
+    // Text labels are being rotated by 90 degrees if possible (without overlapping)
     function addRowParentText ( row ) {
       var lastTextRef;
       var selectedOrder = $('#order').val();
@@ -1801,24 +1732,22 @@ text.active {
         row.append("text")
             .attr("class", "rowParentText")
             .attr("x", -6)
-            //.attr("y", function ( d ) { return nodesX[d[0].x].xPosition; })
             .attr("dy", ".32em")
             .attr("text-anchor", "start")
             .attr("font-size", FONT_SIZE)
             .text(function(d, i) {
               if (!nodesY[i].indices) nodesY[i].indices = [];
-              nodesY[i].indices[k] = -1; // if (nodesY[i].indices.length < k)
+              nodesY[i].indices[k] = -1;
               counter++;
               var index = (!!lastValueY && lastValueY != '') ? nodesY[i].parents.indexOf(lastValueY) : -1;
-              if (index == k) { // index > -1 && index < (treeDepthY-k+1)
+              if (index == k) {
                 nodesY[i].indices[k] = rowIndex;
                 return '';
               }
               if (index < 0) {
                 if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-                  if (counter <= 1) {//if (heightPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+                  if (counter <= 1) {
                     lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
-                    // TODO
                     var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
                     shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
                     if (lastValueY.length * FACTOR > widthPerParentCell && lastValueY.length > shortenValue) {
@@ -1837,12 +1766,6 @@ text.active {
                 counter = 0;
                 lastValueY = '';
                 rowIndex = -1;
-              /*
-                parentsY.length = 0;
-                for ( var l = 0; l < treeDepthY; l++ ) {
-                  parentsY.push([]);
-                }
-              */
               }
               if (nodesY[i].parents.length > k) var value = nodesY[i].parents[k];
               else if (nodesY[i].parents.length > 0) var value = nodesY[i].parents[nodesY[i].parents.length-1];
@@ -1868,7 +1791,7 @@ text.active {
                 parentsY[k].push(nodesY[i].parents[l]);
               }
               if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-                if (counter <= 1) {//if (heightPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+                if (counter <= 1) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
                     var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
                     shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
@@ -1901,7 +1824,7 @@ text.active {
               return value;
             });
         if (!!lastTextRef && !!lastValueY && lastValueY != '') {
-          if (counter <= 1) {//if (heightPerCell*counter < lastValueY.length * ROTATION_FACTOR) {
+          if (counter <= 1) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
                 var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
                 shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
@@ -1921,6 +1844,7 @@ text.active {
       }
       var lastParentsY = nodesY[0].parents;
       var shownTextsY = lastParentsY;
+      // add separating lines to separate rows visually from each other if the associated elements do not have the same parents/dimensions
       row.append("line")
           .attr("x1", function ( a, i ) {
             if (i == 0 || lastParentsY.length == 0 || nodesY[i].parents.length == 0) {
@@ -1939,6 +1863,7 @@ text.active {
             for ( var k = lastParentsY.length-1; k >= 0; k-- ) {
               var index = nodesY[i].parents.indexOf(lastParentsY[k]);
               if (index < 0) {
+                // maxIndex marks the minimal index in the parent text array where the parents of the 2 considered elements differ
                 var maxIndex = Infinity;
                 if (k < lastParentsY.length && sameParents.length > 0) {
                   sameParents.forEach ( function ( sameParent ) {
@@ -1964,9 +1889,6 @@ text.active {
                   return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
                 }
                 if (parentsDiff == 0) parentsDiff++;
-                //if (maxIndex > nodesY[i].parents.length-1) parentsDiff--;
-                //if (counter > maxIndex) maxIndex = shownTextsY.length - maxIndex; // TODO
-                //if (maxIndex < lastParentsY.length) maxIndex = lastParentsY.length-1;
                 var result = -margin.left + (treeDepthY - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthY - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsY = nodesY[i].parents;
                 if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
@@ -2004,6 +1926,7 @@ text.active {
               .style("stroke", "black");
           }
     }
+    // add row dimension text labels
     function addRowDimensionText ( row ) {
       var lastDimension = '';
       var lastTextRef;
@@ -2011,7 +1934,6 @@ text.active {
       row.append("text")
           .attr("class", "rowDimensionText")
           .attr("x", -6)
-          //.attr("y", function ( d ) { return nodesX[d[0].x].xPosition; })
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
           .attr("font-size", FONT_SIZE)
@@ -2021,7 +1943,7 @@ text.active {
               return '';
             } else {
               if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-                if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                if (counter <= 1) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
                   if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
                     lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
@@ -2062,7 +1984,7 @@ text.active {
             return value.split(' ').shift();
           });
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-          if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+          if (counter <= 1) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
             if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
               lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
@@ -2079,6 +2001,7 @@ text.active {
         }
       var counter = 0;
       lastDimension = '';
+      // add separating lines for rows
       row.append("line")
           .attr("x1", function ( a, i ) {
             if (i == 0) {
@@ -2118,9 +2041,7 @@ text.active {
           .attr("stroke-width", "1")
           .style("stroke", "black");    
     }
-    function addRowDimensionColors ( row ) {
-
-    }
+    // add row handlers for user interaction
     function addRowHandlers ( row ) {
       row.selectAll('.rowText,.rowParentText,.rowDimensionText')
         .on ("mouseover", function ( p, j ) {
@@ -2164,10 +2085,10 @@ text.active {
     addRowParentText(row);
     if (hasDimensionsY) {
       addRowDimensionText(row);
-      addRowDimensionColors(row);
     }
     addRowHandlers(row);
 
+    // add column text labels
     function addColumnText ( column ) {
       column.append("text")
           .attr("class", "columnText")
@@ -2185,9 +2106,10 @@ text.active {
             }
             return nodesX[i].text;
           })
-          .attr("transform", function (d, i) { return "translate(" + textTransformFactorX + ")"; }); // (-30,5)
+          .attr("transform", function (d, i) { return "translate(" + textTransformFactorX + ")"; });
     }
 
+    // add column parent and dimension labels
     function addColumnParentText ( column ) {
       var lastTextRef;
       var selectedOrder = $('#order').val();
@@ -2202,22 +2124,21 @@ text.active {
         column.append("text")
             .attr("class", "columnParentText")
             .attr("x", -6)
-            //.attr("y", function ( d ) { return nodesY[d[0].y].yPosition; })
             .attr("dy", ".32em")
             .attr("text-anchor", "start")
             .attr("font-size", FONT_SIZE)
             .text(function(d, i) {
               if (!nodesX[i].indices) nodesX[i].indices = [];
-              nodesX[i].indices[k] = -1; // if (nodesX[i].indices.length < k)
+              nodesX[i].indices[k] = -1;
               counter++;
               var index = (!!lastValueX && lastValueX != '') ? nodesX[i].parents.indexOf(lastValueX) : -1;
-              if (index == k) { // index > -1 && index < (treeDepthX-k+1)
+              if (index == k) {
                 nodesX[i].indices[k] = columnIndex;
                 return '';
               }
               if (index < 0) {
                 if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-                  if (counter <= 1) { // if (widthPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+                  if (counter <= 1) {
                     lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
                     var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
                     shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
@@ -2237,12 +2158,6 @@ text.active {
                 counter = 0;
                 lastValueX = '';
                 columnIndex = -1;
-              /*
-                parentsX.length = 0;
-                for ( var l = 0; l < treeDepthX; l++ ) {
-                  parentsX.push([]);
-                }
-              */
               }
               if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
               else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
@@ -2268,7 +2183,7 @@ text.active {
                 parentsX[k].push(nodesX[i].parents[l]);
               }
               if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-                if (counter <= 1) {//if (widthPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+                if (counter <= 1) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
                   var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
                   shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
@@ -2301,7 +2216,7 @@ text.active {
               return value;
             });
         if (!!lastTextRef && !!lastValueX && lastValueX != '') {
-          if (counter <= 1) {//if (widthPerCell*counter < lastValueX.length * ROTATION_FACTOR) {
+          if (counter <= 1) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
             var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
             shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
@@ -2321,6 +2236,7 @@ text.active {
       }
       var lastParentsX = nodesX[0].parents;
       var shownTextsX = lastParentsX;
+      // add separating lines for columns
       column.append("line")
           .attr("x1", function ( a, i ) {
             if (i == 0 || lastParentsX.length == 0 || nodesX[i].parents.length == 0) {
@@ -2339,6 +2255,7 @@ text.active {
             for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
               var index = nodesX[i].parents.indexOf(lastParentsX[k]);
               if (index < 0) {
+                // maxIndex marks the minimal index in the parent text array where the parents of the 2 considered elements differ
                 var maxIndex = Infinity;
                 if (k < lastParentsX.length && sameParents.length > 0) {
                   sameParents.forEach ( function ( sameParent ) {
@@ -2366,10 +2283,6 @@ text.active {
                   return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
                 }
                 if (parentsDiff == 0) parentsDiff++;
-                //if (maxIndex > nodesX[i].parents.length-1) parentsDiff--;
-                //if (counter > maxIndex) maxIndex = shownTextsX.length - maxIndex; // TODO
-                //if (maxIndex < lastParentsX.length) maxIndex = lastParentsX.length-1;
-                //if (treeDepthX - maxIndex + counter - parentsDiff >= treeDepthX) maxIndex++;
                 var result = margin.top - (treeDepthX - (maxIndex - parentsDiff + 1))*heightPerParentCell - (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
                 lastParentsX = nodesX[i].parents;
                 if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
@@ -2408,6 +2321,7 @@ text.active {
           }
     }
 
+    // add column dimension labels
     function addColumnDimensionText ( column ) {
       var lastDimension = '';
       var lastTextRef;
@@ -2415,7 +2329,6 @@ text.active {
       column.append("text")
           .attr("class", "columnDimensionText")
           .attr("x", -6)
-          //.attr("y", function ( d ) { return nodesY[d[0].y].yPosition; })
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
           .attr("font-size", FONT_SIZE)
@@ -2425,7 +2338,7 @@ text.active {
               return '';
             } else {
               if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-                if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                if (counter <= 1) {
                   lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
                   if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
                     lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
@@ -2466,7 +2379,7 @@ text.active {
             return value.split(' ').shift();
           });
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
-          if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+          if (counter <= 1) {
             lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
             if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
               lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
@@ -2483,6 +2396,7 @@ text.active {
         }
       var counter = 0;
       lastDimension = '';
+      // add dimension separating lines for columns
       column.append("line")
           .attr("x1", function ( a, i ) {
             if (i == 0) {
@@ -2523,6 +2437,7 @@ text.active {
           .style("stroke", "black");        
     }
 
+    // add column handlers for user interaction
     function addColumnHandlers ( column ) {
       column.selectAll('.columnText,.columnParentText,.columnDimensionText')
         .on ("mouseover", function ( p, j ) {
@@ -2567,9 +2482,10 @@ text.active {
     if (hasDimensionsX) addColumnDimensionText(column);
     addColumnHandlers(column);
 
+    // add cells to a row
     function row(row) {
       var cell = d3.select(this).selectAll(".cell")
-          .data(row) // row.filter(function(d) { return d.z; })
+          .data(row)
           .enter()
           .append("g")
           .attr("class", "cellContainer")
@@ -2588,6 +2504,7 @@ text.active {
           .on("click", clickCellOption);
     }
 
+    // make a matrix cell clickable
     function clickCellSelectable(p) {
       var that = d3.select(this);
       if (!!p.occurrences && p.occurrences.data.length > 0) {
@@ -2624,25 +2541,17 @@ text.active {
         var value = p.z > 0 ? p.z : 1;
         var fill = that.style("fill");
         var opacity = that.style("fill-opacity");
-        if (true || opacity == '0') { // TODO
-          p.z = value;
-          refreshColorGradients();
-          var colorThemeIndex = $('#colorTheme')[0].value - 0;
-          if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) {
-            var gradient = COLOR_GRADIENTS[colorThemeIndex];
-            d3.selectAll(".cell").transition().duration(TRANSITION_DURATION)
-              .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); })
-              .style("fill-opacity", function (d,i) { return z(d.z); });
-            var shownText = value >= 1000 ? ('' + Math.floor(value / 1000) + '...') : value;
-            d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text(shownText);
-            p.occurrences = {data: [{name: '', value: value}], total: value};
-          }
-        } else {
-          d3Tip.hide(p);
-          that.transition().duration(TRANSITION_DURATION)
-            .style("fill-opacity", 0);
-          p.z = 0;
-          d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text('');
+        p.z = value;
+        refreshColorGradients();
+        var colorThemeIndex = $('#colorTheme')[0].value - 0;
+        if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) {
+          var gradient = COLOR_GRADIENTS[colorThemeIndex];
+          d3.selectAll(".cell").transition().duration(TRANSITION_DURATION)
+            .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); })
+            .style("fill-opacity", function (d,i) { return z(d.z); });
+          var shownText = value >= 1000 ? ('' + Math.floor(value / 1000) + '...') : value;
+          d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text(shownText);
+          p.occurrences = {data: [{name: '', value: value}], total: value};
         }
       }
     }
@@ -2683,6 +2592,7 @@ text.active {
          });
     }
 
+    // show tooltips on hover and highlight associated text labels
     function mouseover(p) {
       if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
       d3Tip.show(p);
@@ -2701,6 +2611,7 @@ text.active {
       d3.selectAll(".rowText,.rowParentText,.rowDimensionText,.columnText,.columnParentText,.columnDimensionText").classed("active", false);
     }
 
+    // reorder the matrix (sort) depending on the selected option
     function order(value) {
       var labelsY = [];
       var labelsX = [];
@@ -2742,6 +2653,7 @@ text.active {
       x.domain(rangeX).rangeBands([0, width]);
       var t = svg.transition().duration(3000);
       const TRANSITION_FACTOR = 2;
+      // the transitions are only being used to make the reordering more visually pleasant and comprehensible
       t.selectAll(".row")
           .delay(function(d, i) { return y(i) * TRANSITION_FACTOR; })
           .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
@@ -2774,53 +2686,21 @@ text.active {
       if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) svg.selectAll(".cell").style("fill", function (d,i) { return COLOR_GRADIENTS[colorThemeIndex].colorScale(COLOR_GRADIENTS[colorThemeIndex].colorInterpolate(d.z)); });
     }
     $('#colorTheme').unbind().on('change', function ( e ) {
-      //var index = this.value - 0;
-      //if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue, true);
       onColorThemeChange();
     });
     onColorThemeChange();
     $('#order').unbind().on("change", function() {
       order(this.value);
     });
+    // button click handlers
     $('#exportPNG').unbind().click ( function () {
-/*
-      var svgTmp = document.querySelector( "#matrixSVG" );
-      if (!svgTmp) return;
-      var width = svg.attr('width');
-      var height = svg.attr('height');
-      var html = svg
-                  .attr("version", 1.1)
-                  .attr("xmlns", "http://www.w3.org/2000/svg")
-                  .node().parentNode.innerHTML;
-
-      var canvas = document.createElement( "canvas" );
-      var ctx = canvas.getContext( "2d" );
-
-      var img = document.createElement( "img" );
-      img.src = "";
-      img.onload = function() {
-          ctx.drawImage( img, 0, 0 );
-          console.log('img2 loaded');
-          var dataLink = document.createElement('a');
-          dataLink.download = 'CorrelationMatrix.png';
-          dataLink.href = canvas.toDataURL( "image/png" );
-          document.body.appendChild(dataLink);
-          dataLink.click();
-          document.body.removeChild(dataLink);
-          delete dataLink;
-          //delete this;
-      };
-      var str = new XMLSerializer().serializeToString( svgTmp );
-      img.src = "data:image/svg+xml;base64," + btoa(str); // unescape(encodeURIComponent(html))
-      console.log(img.src)
-*/
       var svg = d3.select("#matrixSVG");
       var svgString = getSVGString(svg.node());
       var width = svg.attr('width');
       var height = svg.attr('height');
       svgString2Image( svgString, width*3, height*3, 'png', function ( dataBlob, filesize ) {
-        saveAs( dataBlob, 'CorrelationMatrix.png' ); // FileSaver.js function
-      }); // passes Blob and filesize String to the callback        
+        saveAs( dataBlob, 'CorrelationMatrix.png' );
+      });     
     });
     $('#exportHTML').unbind().click ( function () {
       exportHTML('CorrelationMatrix.html');
@@ -2850,6 +2730,7 @@ text.active {
     $('#testPerformanceCorrelationProbability').unbind().click ( function () {
       testPerformanceCorrelationProbabilityDummy();
     });
+    // import 2 JSON correlation files to calculate the conformity between them
     $('#upload-input-JSON').unbind().on('change', function () {
       var files = $(this).get(0).files;
       if (files.length != 2) {
@@ -2884,22 +2765,6 @@ text.active {
           reader2.readAsText(file2);
         });
         promises.push(readFilePromise2);
-      /*
-        var newObject  = {
-           'lastModified'     : file1.lastModified,
-           'name'             : file1.name,
-           'size'             : file1.size,
-           'type'             : file1.type
-        };  
-        var correlations1 = JSON.parse(JSON.stringify(newObject));
-        newObject  = {
-           'lastModified'     : file2.lastModified,
-           'name'             : file2.name,
-           'size'             : file2.size,
-           'type'             : file2.type
-        };  
-        var correlations2 = JSON.parse(JSON.stringify(newObject));
-      */
         Promise.all(promises)
           .then ( function ( results ) {
             if (results.length < 2) {
@@ -2924,8 +2789,9 @@ text.active {
         handleError('Error converting imported files to JSON.');
       }
     });
+    // PDF file import and text parsing
     $('#upload-input, #upload-input-image').unbind().on('change', function() {
-      var minSimilarity = $('#importMinSimilarity').val() - 0;
+      minSimilarity = $('#importMinSimilarity').val() - 0;
       if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
       var files = $(this).get(0).files;
       if (files.length > 0) {
@@ -2947,7 +2813,17 @@ text.active {
           return;
         }
         var stringComparisonTechnique = $('#selectStringComparisonTechnique').val();
-        if (!stringComparisonTechnique || stringComparisonTechnique == '') stringComparisonTechnique = 'Regex';
+        var stringComparisonMethod = DEFAULT_STRING_COMPARISON_METHOD;
+        if (!stringComparisonTechnique || stringComparisonTechnique == '') {
+          stringComparisonTechnique = DEFAULT_STRING_COMPARISON_TECHNIQUE;
+        } else {
+          for ( var i = 0; i < STRING_COMPARISON_TECHNIQUES.length; i++ ) {
+            if (STRING_COMPARISON_TECHNIQUES[i].title == stringComparisonTechnique) {
+              stringComparisonMethod = STRING_COMPARISON_TECHNIQUES[i].method;
+              break;
+            }
+          }
+        }
         var showOccurrences = $('#showCellNumbers').is(':checked');
         var minImportOccurrences = $('#importMinOccurrences').val() - 0;
         if (isNaN(minImportOccurrences)) minImportOccurrences = MIN_IMPORT_OCCURRENCES;
@@ -2968,6 +2844,7 @@ text.active {
               var fileName = fileNameTmp;
               console.time('Import ' + fileName);
               console.time('Import + Process ' + fileName);
+              // importPDF is in "fileUploader.js"
               importPDF(files[i], function ( result ) {
                 if (!result.success) {
                   console.log('Error: ', result.msg);
@@ -2991,32 +2868,16 @@ text.active {
                   resolve({index: fileIndex-1, array: [], correlations: [], metaData: {}, fileName: fileName});
                   return;
                 }
-                // TODO changed
+              /*
                 if (false && !!result.msg.metaData.Title && result.msg.metaData.Title.split('.').length <= 1 && result.msg.metaData.Title != 'untitled' && result.msg.metaData.Title.toLowerCase() != 'title' && result.msg.metaData.Title != '') fileName = result.msg.metaData.Title.split(/(\-+)(\s*)/).pop();
+              */
                 var correlations = [];
                 var tmpArray = dataArray.slice(0);
                 for ( var j = 0; j < dataArray.length; j++ ) {
-                  switch(stringComparisonTechnique) {
-                    case "Dice's Coefficient":
-                      console.time("Occurrences Dice's Coefficient");
-                      var similarity = occurrencesStringSimilarity(text, dataArray[j].texts, minSimilarity);
-                      console.timeEnd("Occurrences Dice's Coefficient");
-                      break;
-                    case "Levenshtein":
-                      console.time('Occurrences Levenshtein');
-                      var similarity = occurrencesLevenshtein(text, dataArray[j].texts, minSimilarity);
-                      console.timeEnd('Occurrences Levenshtein');
-                      break;
-                    case "Fuzzysort":
-                      console.time('Occurrences Fuzzysort');
-                      var similarity = occurrencesFuzzysort(text, dataArray[j].texts);
-                      console.timeEnd('Occurrences Fuzzysort');
-                      break;
-                    default:
-                      console.time('Occurrences Regex');
-                      var similarity = occurrencesRegex(text, dataArray[j].texts);
-                      console.timeEnd('Occurrences Regex');
-                  }
+                  // apply selected string comparison technique in "stringComparison.js"
+                  console.time('Occurrences ' + stringComparisonTechnique);
+                  var similarity = stringComparisonMethod(text, dataArray[j].texts);
+                  console.timeEnd('Occurrences ' + stringComparisonTechnique);
                   var value = similarity.value;
                   if (value > 0) {
                     tmpArray[j].value += value;
@@ -3055,14 +2916,6 @@ text.active {
               if (!!result.metaData.Author && result.metaData.Author.split('.').length <= 1 && result.metaData.Author.toLowerCase() != 'author' && result.metaData.Author != '') citations[result.index].author = result.metaData.Author;
               if (!!result.metaData.Keywords && result.metaData.Keywords.split('.').length <= 1 && result.metaData.Keywords.toLowerCase() != 'keywords' && result.metaData.Keywords != '') citations[result.index].keywords = result.metaData.Keywords;
               correlations = correlations.concat(result.correlations);
-            /*
-              for ( var i = 0; i < result.array.length; i++ ) {
-                dataArray[i].value += result.array[i].value;
-              }
-              dataArray.forEach ( function ( entry ) {
-                console.log(entry.text + ': ' + entry.value);
-              });
-            */
             });
             function scopusCallback () {
               $('.progress-bar-text').html(files.length + '/' + files.length);
@@ -3082,6 +2935,7 @@ text.active {
                 var scopusPromise = new Promise ( function ( resolve, reject ) {
                   var index = i;
                   var lookup = fileTitles[i].lookup;
+                  // scopusLookup is in "scopus.js" and attempts to look for information on the imported papers via the scopus API
                   scopusLookup( fileTitles[i].text, function ( scopusResult ) {
                     resolve({index: index, result: scopusResult, lookup: lookup});
                   });
@@ -3129,9 +2983,7 @@ text.active {
         });
       }
     });
-    $('#importServerside').unbind().click ( function () {
-      //$('#upload-input-server').click(); // TODO
-    });
+    // basic KMeans algorithm, mainly used for testing and experimenting with clustering
     $('#clusterKMeans').unbind().click ( function () {
       $.ajax
         ({
@@ -3146,20 +2998,16 @@ text.active {
           }
       });
     });
+    // save mappings between concepts and papers to database
     $('#saveMappings').unbind().click ( function () {
       if (IS_STATIC || !admin) return;
       if (!selectableCells) return; // TODO
       var mappings = [];
       d3.selectAll(".cell").each ( function ( cell ) {
-/*
-        var attributeText = d3.select('.rowText[data-originalText="' + nodesY[cell.y-1].text + '"]');
-        if (!!attributeText && attributeText.length > 0) attributeText = attributeText.text();
-        else attributeText = nodesY[cell.y-1].text;
-*/
         var attributeText = nodesY[cell.y-1].text;
         var that = d3.select('.columnText[data-originalText="' + nodesX[cell.x].text + '"]');
         if (!!that && that.length > 0) {
-          var citationText = that.attr('data-citation');
+          var citationText = nodesX[cell.x].citation;
           if (!citationText) {
             var citationText = that.text();
             if (!!citationText && citationText != '') {
@@ -3167,12 +3015,13 @@ text.active {
               if (citationText.split('...').length > 1 && !!fullText) citationText = fullText;
             } else citationText = nodesX[cell.x].text;
           }
-          var bibTex = that.attr('data-bib');
+          var bibTex = nodesX[cell.x].bib;
         } else var citationText = nodesX[cell.x].text;
         var referenceCount = !!nodesX[cell.x].referenceCount ? nodesX[cell.x].referenceCount : 0;
         var author = !!nodesX[cell.x].author ? nodesX[cell.x].author : '';
         var keywords = !!nodesX[cell.x].keywords ? nodesX[cell.x].keywords : '';
         var paperID = !!nodesX[cell.x].id ? nodesX[cell.x].id : -1;
+        console.log("citation: " + citationText + ", id: " + paperID);
         var mapping = {attribute: attributeText, citation: citationText, occurrenceCount: cell.z, referenceCount: referenceCount, author: author, keywords: keywords, 'paper_id': paperID};
         if (!!bibTex) mapping.bib = bibTex;
         else mapping.bib = 'empty';
@@ -3202,176 +3051,17 @@ text.active {
     console.timeEnd('Build Matrix');
   }
 
-  /** Function that count occurrences of a substring in a string;
-   * @param {String} string               The string
-   * @param {String} subString            The sub string to search for
-   * @param {Boolean} [allowOverlapping]  Optional. (Default:false)
-   *
-   * @author Vitim.us https://gist.github.com/victornpb/7736865
-   * @see Unit Test https://jsfiddle.net/Victornpb/5axuh96u/
-   * @see http://stackoverflow.com/questions/4009756/how-to-count-string-occurrence-in-string/7924240#7924240
-   */
-  function occurrencesHelper(string, subString, allowOverlapping) {
-      string += "";
-      subString += "";
-      if (subString.length <= 0) return (string.length + 1);
-
-      var n = 0,
-          pos = 0,
-          step = allowOverlapping ? 1 : subString.length;
-
-      while (true) {
-          pos = string.indexOf(subString, pos);
-          if (pos >= 0) {
-              ++n;
-              pos += step;
-          } else break;
-      }
-      return n;
-  }
-
-  function occurrencesIndexOf(string, subStrings, allowOverlapping) {
-    var counter = 0;
-    var occurrences = [];
-    subStrings.forEach ( function ( subString ) {
-      var value = occurrencesHelper(string, subString, allowOverlapping);
-      if (value > 0) {
-        counter += value;
-        occurrences.push({name: subString, value: value});
-      }
-    });
-    return {value: counter, occurrences: occurrences}; 
-  }
-
-  function occurrencesRegex ( string, subStrings ) {
-    var counter = 0;
-    var occurrences = [];
-    subStrings.forEach ( function ( subString ) {
-      var value = (string.match(new RegExp(subString, 'gi')) || []).length;
-      if (value > 0) {
-        counter += value;
-        occurrences.push({name: subString, value: value});
-      }
-    });
-    return {value: counter, occurrences: occurrences};
-  }
-
-  function occurrencesStringSimilarity ( string, subStrings, minSimilarity ) {
-    var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
-    var counter = 0;
-    var occurrences = [];
-    words.forEach ( function ( entry ) {
-      if (entry.length > 2) { // TODO
-        subStrings.forEach ( function ( subString ) {
-          var value = compareTwoStrings(entry, subString);
-          if (value >= minSimilarity) {
-            counter++;
-            var index = -1;
-            for ( var i = 0; i < occurrences.length; i++ ) {
-              if (occurrences[i].name == entry) {
-                index = i;
-                break;
-              }
-            }
-            if (index < 0) occurrences.push({name: entry, value: 1});
-            else occurrences[index].value++;
-          }
-        });
-      }
-    });
-    return {value: counter, occurrences: occurrences};
-  }
-
-  function occurrencesLevenshtein ( string, subStrings, minSimilarity ) {
-    var levenshtein = window.Levenshtein;
-    var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
-    var counter = 0;
-    var occurrences = [];
-    words.forEach ( function ( entry ) {
-      if (entry.length > 2) { // TODO
-        subStrings.forEach ( function ( subString ) {
-          var value = levenshtein.get(entry, subString);
-          if (value <= minSimilarity) {
-            counter++;
-            var index = -1;
-            for ( var i = 0; i < occurrences.length; i++ ) {
-              if (occurrences[i].name == entry) {
-                index = i;
-                break;
-              }
-            }
-            if (index < 0) occurrences.push({name: entry, value: 1});
-            else occurrences[index].value++;
-          }
-        });
-      }
-    });
-    return {value: counter, occurrences: occurrences};
-  }
-
-  function occurrencesLiquidMetal ( string, subStrings, minSimilarity ) {
-    var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
-    var counter = 0;
-    var occurrences = [];
-    words.forEach ( function ( entry ) {
-      if (entry.length > 2) { // TODO
-        subStrings.forEach ( function ( subString ) {
-          var value = LiquidMetal.score(entry, subString);
-          if (value >= minSimilarity) {
-            counter++;
-            var index = -1;
-            for ( var i = 0; i < occurrences.length; i++ ) {
-              if (occurrences[i].name == entry) {
-                index = i;
-                break;
-              }
-            }
-            if (index < 0) occurrences.push({name: entry, value: 1});
-            else occurrences[index].value++;
-          }
-        });
-      }
-    });
-    return {value: counter, occurrences: occurrences};
-  }
-
-  function occurrencesFuzzysort ( string, subStrings ) {
-    var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
-    var counter = 0;
-    var occurrences = [];
-    words.forEach ( function ( entry ) {
-      if (entry.length > 2) { // TODO
-        var entryPrepared = fuzzysort.prepare(entry)
-        subStrings.forEach ( function ( subString ) {
-          var value = fuzzysort.single(subString, entryPrepared);
-          if (!!value && value.score >= FUZZY_SORT_MIN_SIMILARITY) { // minSimilarity // TODO
-            counter++;
-            var index = -1;
-            for ( var i = 0; i < occurrences.length; i++ ) {
-              if (occurrences[i].name == entry) {
-                index = i;
-                break;
-              }
-            }
-            if (index < 0) occurrences.push({name: entry, value: 1});
-            else occurrences[index].value++;
-          }
-        });
-      }
-    });
-    return {value: counter, occurrences: occurrences};
-  }
-
   function showMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL ) {
     buildMatrix(attributesY, attributesX, correlations, maxValue, onClickURL, true, false);
   }
 
+  // load x- and y- attributes from the database
   function loadAttributes ( init, correlations, options, maxValue, onClickURL, callback, filter ) {
     if (!IS_STATIC) {
       $.ajax
         ({
             type: options.ajaxTypeY,
-            url: options.attributeUrlY, // allChildrenAttributes
+            url: options.attributeUrlY,
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -3386,7 +3076,7 @@ text.active {
               $.ajax
                 ({
                     type: options.ajaxTypeX,
-                    url: options.attributeUrlX, // allChildrenAttributes
+                    url: options.attributeUrlX,
                     dataType: 'json',
                     contentType:'application/json',
                     async: true,
@@ -3438,11 +3128,15 @@ function renderMatrixHelper () {
       default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent2; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent2; }
     }
     var options = {ajaxTypeY: ajaxTypeY, ajaxTypeX: ajaxTypeX, attributeUrlY: attributeUrlY, attributeUrlX: attributeUrlX, requestY: requestY, requestX: requestX};
-    if (onClickURL == 'citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE], options, -1, onClickURL, showMatrix);
-    else loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS], options, -1, onClickURL, showMatrix);
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var coverageURL = correlationURLObj.coverageURL;
+    var maxValue = correlationURLObj.maxValue;
+   if (onClickURL == 'citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE], options, -1, onClickURL, showMatrix);
+   else loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS], options, -1, onClickURL, showMatrix);
 }
 
-function renderMatrix () { // TODO
+function renderMatrix () {
   if (!IS_STATIC && !buildingMatrix && (!!totalNumberOfCitations || !!maxReferenceCount)) renderMatrixHelper();
 }
 
@@ -3459,6 +3153,7 @@ function getCorrelationOptions () {
   return {url: url, coverageURL: coverageURL, maxValue: maxValue};
 }
 
+// init select fields
 function initFields ( citations, citationCount, dimensions, allAttributes, correlations, maxValue ) {
   var request = {'taxonomy_id': TAXONOMY_ID};
   dimensions.response.sort( function ( a, b ) {
@@ -3519,7 +3214,8 @@ function initFields ( citations, citationCount, dimensions, allAttributes, corre
   $('#showChildAttributes, #includeChildAttributes, #dataType').unbind().on('change', renderMatrix);
 }
 
-function loadData ( correlationURL, coverageURL, maxValue ) {
+// load all data from the database
+function loadData ( correlationURL, coverageURL, maxValue, callback ) {
   console.time('Load Data');
   var request = {'taxonomy_id': TAXONOMY_ID};
   var promises = [];
@@ -3655,7 +3351,78 @@ function loadData ( correlationURL, coverageURL, maxValue ) {
       var allAttributes = DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES];
       var correlations = DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS];
       console.timeEnd('Load Data');
-      initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+      callback(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+    }).catch ( function ( err ) {
+      console.log('Error loading data from DB: ', err);
+      handleError(err);
+    });
+}
+
+// load correlation data only from the database
+function loadCorrelationData ( correlationURL, coverageURL, maxValue, callback ) {
+  console.time('Load Data');
+  var request = {'taxonomy_id': TAXONOMY_ID};
+  var promises = [];
+  var getCorrelationsPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: correlationURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( correlations ) {
+          if (!correlations) {
+            reject('Cannot get correlation data from DB.');
+            return;
+          }
+          console.log("correlations: ", correlations.response)
+          if (!correlations.response) correlations.response = [];
+          resolve({name: 'CORRELATIONS', value: correlations});
+        }
+    });
+  });
+  promises.push(getCorrelationsPromise);
+  var getCoveragePromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: coverageURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( coverage ) {
+          if (!coverage) {
+            reject('Cannot get paper coverage data from DB.');
+            return;
+          }
+          console.log("coverage: ", coverage.response)
+          if (!coverage.response) coverage.response = [];
+          resolve({name: 'COVERAGE', value: coverage});
+        }
+    });
+  });
+  promises.push(getCoveragePromise);
+  Promise.all(promises)
+    .then ( function ( results ) {
+      results.forEach ( function ( result ) {
+        if (result.name == 'CITATIONCOUNT') {
+          totalNumberOfCitations = result.value.response[0].citationCount;
+          maxReferenceCount = result.value.response[0].maxReferenceCount;
+        }
+        DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
+      });
+      var citations = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONS];
+      var citationCount = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNT];
+      var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
+      var allAttributes = DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES];
+      var correlations = DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS];
+      console.timeEnd('Load Data');
+      callback(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
     }).catch ( function ( err ) {
       console.log('Error loading data from DB: ', err);
       handleError(err);
@@ -3669,7 +3436,7 @@ function initPage () {
   var coverageURL = correlationURLObj.coverageURL;
   var maxValue = correlationURLObj.maxValue;
   if (!IS_STATIC) {
-    loadData(correlationURL, coverageURL, maxValue);
+    loadData(correlationURL, coverageURL, maxValue, initFields);
   } else {
     TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
     try {

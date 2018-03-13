@@ -1,3 +1,5 @@
+// functions used to convert a HTML file to a "static" version that is independent from outside sources (like the database)
+// variables are being converted to strings via JSON.stringify and put as strings into the HTML file
 function exportHTML ( fileName ) {
   if (IS_STATIC) return;
   const DELIMITER = '<!-- main script end -->';
@@ -19,6 +21,8 @@ function exportHTML ( fileName ) {
   var scripts = document.scripts;
   var links = document.getElementsByTagName('link');
   var promises = [];
+
+  // fetch JS files
   for ( var i = 0; i < scripts.length; i++ ) {
     var srcURL = $(scripts[i]).attr('src');
     var webURL = $(scripts[i]).attr('data-web');
@@ -42,30 +46,31 @@ function exportHTML ( fileName ) {
       promises.push(fetchPromise);
     }
   }
-        for ( var i = 0; i < links.length; i++ ) {
-          var srcURL = $(links[i]).attr('href');
-          var webURL = $(links[i]).attr('data-web');
-          console.log(links[i])
-          if (!!webURL) {
-            fullHTML = fullHTML.replace(new RegExp('<link href="' + srcURL + '" type="text/css" rel="stylesheet" data-web="' + webURL + '">', 'g'), '<link href="' + webURL + '" type="text/css" rel="stylesheet" data-web="' + srcURL + '">');
-          } else if (!!srcURL && srcURL != '' && srcURL.split('.css').length > 1) { //
-            var fetchPromise = new Promise ( function ( resolve, reject ) {
-              var url = srcURL;
-              $.ajax({
-                type: "GET",  
-                url: url,
-                success: function(data){
-                  if (!data) reject('Cannot fetch file "' + url + '" from server.');
-                  else resolve({url: url, text: data, type: 'link'}); 
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) { 
-                  reject(errorThrown);
-                }       
-              });
-            });
-            promises.push(fetchPromise);
-          }
-        }
+  // fetch CSS files
+  for ( var i = 0; i < links.length; i++ ) {
+    var srcURL = $(links[i]).attr('href');
+    var webURL = $(links[i]).attr('data-web');
+    console.log(links[i])
+    if (!!webURL) {
+      fullHTML = fullHTML.replace(new RegExp('<link href="' + srcURL + '" type="text/css" rel="stylesheet" data-web="' + webURL + '">', 'g'), '<link href="' + webURL + '" type="text/css" rel="stylesheet" data-web="' + srcURL + '">');
+    } else if (!!srcURL && srcURL != '' && srcURL.split('.css').length > 1) { //
+      var fetchPromise = new Promise ( function ( resolve, reject ) {
+        var url = srcURL;
+        $.ajax({
+          type: "GET",  
+          url: url,
+          success: function(data){
+            if (!data) reject('Cannot fetch file "' + url + '" from server.');
+            else resolve({url: url, text: data, type: 'link'}); 
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown) { 
+            reject(errorThrown);
+          }       
+        });
+      });
+      promises.push(fetchPromise);
+    }
+  }
   if (promises.length == 0) saveAs(new Blob([fullHTML], {type: "text/html;charset=utf-8"}), fileName);
   else {
     Promise.all(promises)

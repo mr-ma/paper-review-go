@@ -1,18 +1,16 @@
+// functions to build a bootstrap table
   function adjustTableLayout ( tableID, buttons ) {
       // adjust cell width
-      $('#' + tableID).find('th:first').css('width','1%'); // Stats
-      $('#' + tableID).find('th:nth(1)').css('text-align','center').css('width','1%'); // version
-      $('#' + tableID).find('th:nth(2)').css('width','15%'); // date
-      $('#' + tableID).find('th:nth(4)').css('width','15%'); // edited by
-      $('#' + tableID).find('th:nth(8)').css('width','1%'); // buttons
+      $('#' + tableID).find('th:first').css('width','1%');
+      $('#' + tableID).find('th:nth(1)').css('text-align','center').css('width','1%');
+      $('#' + tableID).find('th:nth(2)').css('width','15%');
+      $('#' + tableID).find('th:nth(4)').css('width','15%');
+      $('#' + tableID).find('th:nth(8)').css('width','1%');
       $('.ml10').css('margin-left','10px');
       
       $('#' + tableID).find('tr').each ( function (index,row) { 
         if ( index == 0 ) return;
-        //$(row).find('td:nth(1)').css('text-align','center'); // version
-        //$(row).find('td:nth(2)').css('text-align','center'); // date
-        //$(row).find('td:nth(3)').css('text-align','center'); // edited by
-        if (buttons.length > 0) $(row).find('td:last').css('text-align','center'); // button
+        if (buttons.length > 0) $(row).find('td:last').css('text-align','center');
       });
       
   }

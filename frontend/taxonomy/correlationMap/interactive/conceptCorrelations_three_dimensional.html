@@ -125,30 +125,7 @@ text.active {
       matrixY[i] = {index: i, values: d3.range(n).map(function(j) { return {x: i, y: j, z: 0}; })};
     });
 
-
     correlations.response.forEach(function(link) {
-      //if (link.value > 49) console.log('ERROR: More than 49 citations: ', link);
-      //link.id1--;
-      //link.id2--;
-      /*
-      var foundLinks = 0;
-      for ( var i = 0; i < nodesX.length; i++ ) {
-        if (nodesX[i].text == link.text1 || nodesX[i].text == link.text2) {
-          nodesX[i].count += link.value;
-          foundLinks++;
-          if (foundLinks > 1) break;
-        }
-      }
-      foundNodes = 0;
-      for ( var i = 0; i < nodesY.length; i++ ) {
-        if (nodesY[i].text == link.text1 || nodesY[i].text == link.text2) {
-          nodesY[i].count += link.value;
-          foundLinks++;
-          if (foundLinks > 1) break;
-        }
-      }
-      foundLinks = 0;
-      */
       var foundLinks = 0;
       if (link.text1 == link.text2) {
         for ( var k = 0; k < nodesX.length; k++) {
@@ -208,79 +185,9 @@ text.active {
           }
         }
       }
-      /*
-      matrix[link.id1][link.id2].z += link.value;
-      matrix[link.id2][link.id1].z += link.value;
-      nodes[link.id1].count += link.value;
-      nodes[link.id2].count += link.value;
-      */
     });
-    /*
-
-            if (nodesX[i].id == link.id1) {
-          for ( var j = 0; j < nodesY.length; j++ ) {
-            if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id2) {
-              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesX[i].text;
-              matrixX[i][j].dest = nodesY[j].text;
-              matrixY[j][i].z += link.value;
-              matrixY[j][i].src = nodesX[i].text;
-              matrixY[j][i].dest = nodesY[j].text;
-              nodesX[i].count += link.value;
-              nodesY[j].count += link.value;
-              foundNodes = 2;
-              break;
-            } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
-              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesY[j].text;
-              matrixX[i][j].dest = nodesX[i].text;
-              matrixY[j][i].z += link.value;
-              matrixY[j][i].src = nodesY[j].text;
-              matrixY[j][i].dest = nodesX[i].text;
-              nodesX[i].count += link.value;
-              nodesY[j].count += link.value;
-              foundNodes = 2;
-              break;
-            }
-          }
-          if (foundNodes > 1) break;
-        } else if (nodesX[i].id == link.id2) {
-          for ( var j = 0; j < nodesY.length; j++ ) {
-            if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
-              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesX[i].text;
-              matrixX[i][j].dest = nodesY[j].text;
-              matrixY[j][i].z += link.value;
-              matrixY[j][i].src = nodesX[i].text;
-              matrixY[j][i].dest = nodesY[j].text;
-              nodesX[i].count += link.value;
-              nodesY[j].count += link.value;
-              foundNodes = 2;
-              break;
-            } else if (nodesX[i].id != nodesY[j].id && nodesY[j].id == link.id1) {
-              if (i != j) console.log('nodeX: ' + nodesX[i].text + ', nodeY: ' + nodesY[j].text + ', value: ' + link.value);
-              matrixX[i][j].z += link.value;
-              matrixX[i][j].src = nodesY[j].text;
-              matrixX[i][j].dest = nodesX[i].text;
-              matrixY[j][i].z += link.value;
-              matrixY[j][i].src = nodesY[j].text;
-              matrixY[j][i].dest = nodesX[i].text;
-              nodesX[i].count += link.value;
-              nodesY[j].count += link.value;
-              foundNodes = 2;
-              break;
-            }
-          }
-          if (foundNodes > 1) break;
-        }
-      */
 
   if (!!sortValues) {
-    console.log('sorting values...');
-    // TODO sort matrixX, matrixY ? or by a.z, b.z ?
     matrixY.sort( function ( a, b ) {
       return nodesY[b.index].count - nodesY[a.index].count;
     });
@@ -328,70 +235,6 @@ text.active {
     var svg = d3.select("body").append("svg")
       .attr('style', 'display:none;');
     var defs = svg.append("defs");
-
-    var coloursYGB = ["#FFFFDD","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"];
-    var colourRangeYGB = d3.range(0, 1, 1.0 / (coloursYGB.length - 1));
-    colourRangeYGB.push(1);
-           
-    //Create color gradient
-    var colorScaleYGB = d3.scale.linear()
-      .domain(colourRangeYGB)
-      .range(coloursYGB)
-      .interpolate(d3.interpolateHcl);
-
-    //Needed to map the values of the dataset to the color scale
-    var colorInterpolateYGB = d3.scale.linear()
-      .domain([minValue, maxValue])
-      .range([0,1]);
-
-    ///////////////////////////////////////////////////////////////////////////
-    ///////////////////// Create the YGB color gradient ///////////////////////
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Calculate the gradient  
-    defs.append("linearGradient")
-      .attr("id", "gradient-ygb-colors")
-      .attr("x1", "0%").attr("y1", "0%")
-      .attr("x2", "100%").attr("y2", "0%")
-      .selectAll("stop") 
-      .data(coloursYGB)                  
-      .enter().append("stop") 
-      .attr("offset", function(d,i) { return i/(coloursYGB.length-1); })   
-      .attr("stop-color", function(d) { return d; });
-
-    ///////////////////////////////////////////////////////////////////////////
-    //////////// Get continuous color scale for the Rainbow ///////////////////
-    ///////////////////////////////////////////////////////////////////////////
-
-    var coloursRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
-    var colourRangeRainbow = d3.range(0, 1, 1.0 / (coloursRainbow.length - 1));
-    colourRangeRainbow.push(1);
-           
-    //Create color gradient
-    var colorScaleRainbow = d3.scale.linear()
-      .domain(colourRangeRainbow)
-      .range(coloursRainbow)
-      .interpolate(d3.interpolateHcl);
-
-    //Needed to map the values of the dataset to the color scale
-    var colorInterpolateRainbow = d3.scale.linear()
-      .domain([minValue, maxValue])
-      .range([0,1]);
-
-    ///////////////////////////////////////////////////////////////////////////
-    //////////////////// Create the Rainbow color gradient ////////////////////
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Calculate the gradient  
-    defs.append("linearGradient")
-      .attr("id", "gradient-rainbow-colors")
-      .attr("x1", "0%").attr("y1", "0%")
-      .attr("x2", "100%").attr("y2", "0%")
-      .selectAll("stop") 
-      .data(coloursRainbow)                  
-      .enter().append("stop") 
-      .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
-      .attr("stop-color", function(d) { return d; });
 
     function clickCell(p) {
       var text1 = nodesX[p.y].text;
@@ -442,8 +285,6 @@ text.active {
       }
     }
 
-    console.log('max value: ' + maxValue)
-
     // specify options
     var options = {
       width:  '1000px',
@@ -459,8 +300,8 @@ text.active {
       yLabel: $('#parents1').val() != '' ? $('#parents1').val() : 'All attributes',
       xLabel: $('#parents2').val() != '' ? $('#parents2').val() : 'All attributes',
       zLabel: zLabel,
-      xStep: 1, // TODO
-      yStep: 1, // TODO
+      xStep: 1,
+      yStep: 1,
       xValueLabel: function ( x ) {
         if (!nodesY[x]) return '';
         return nodesY[x].text;
@@ -500,7 +341,7 @@ text.active {
     $.ajax
       ({
           type: options.ajaxTypeX,
-          url: options.attributeUrlX, // allChildrenAttributes
+          url: options.attributeUrlX,
           dataType: 'json',
           contentType:'application/json',
           async: true,
@@ -514,7 +355,7 @@ text.active {
             $.ajax
               ({
                   type: options.ajaxTypeY,
-                  url: options.attributeUrlY, // allChildrenAttributes
+                  url: options.attributeUrlY,
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
@@ -526,55 +367,6 @@ text.active {
                     }
                     var attributesX = {response: []};
                     var attributesY = {response: []};
-                    /*
-                    if (!!filter) {
-                      attributesResult.response.forEach ( function ( attribute ) {
-                        filter.each ( function ( index, entry ) {
-                          if ($(entry).val() == attribute.text) {
-                            attributes.response.push(attribute);
-                            return false;
-                          }
-                        });
-                      });
-                    } else attributes.response = attributesResult.response;
-                    if (init) {
-                      $('#parents1, #parents2, #attributeDropdownMenu').html('');
-                      attributesResultX.response.sort( function ( a, b ) {
-                        return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
-                      });
-                      attributesX.response.forEach ( function ( attribute ) {
-                        $('#parents1').append('<option>' + attribute.text + '</option>');
-                      });
-                      attributesResultY.response.sort( function ( a, b ) {
-                        return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
-                      });
-                      attributesY.response.forEach ( function ( attribute ) {
-                        $('#parents2').append('<option>' + attribute.text + '</option>');
-                      });
-                    }
-                    /*
-                    if (!filter) {
-                      $('#attributeDropdownMenu').html('<li><input class="attributeFilterCheck" id="attributeFilterCheckAll" type="checkbox" value="Check all" style="margin-right:5px;" checked><label value="Check all" title="Check all" style="margin-right:5px;">Check all</label></li>');
-                      attributes.response.forEach ( function ( attribute ) {
-                        $('#attributeDropdownMenu').append('<li><input class="attributeFilterCheck" type="checkbox" value="' + attribute.text + '" style="margin-right:5px;" checked><label value="' + attribute.text + '" title="' + attribute.text + '" style="margin-right:5px;">' +
-                                              attribute.text + '</label></li>');
-                      });
-                      $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').unbind().on('change', function ( e ) {
-                        var checked = $(this).is(':checked');
-                        console.log($('.attributeFilterCheck:not(:checked)'))
-                        if (!checked) $('#attributeFilterCheckAll').prop('checked', false);
-                        else if ($('.attributeFilterCheck:not(:checked)').length <= 1) $('#attributeFilterCheckAll').prop('checked', true);
-                      });
-                      $('#attributeFilterCheckAll').unbind().on('change', function ( e ) {
-                        var checked = $(this).is(':checked');
-                        if (checked) $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').prop('checked', true);
-                        else $('.attributeFilterCheck[id!="attributeFilterCheckAll"]').prop('checked', false);
-                      });
-                      $('#refreshFilter').unbind().on('click', function ( e ) {
-                        loadAttributes(false, correlations, ajaxType, attributeURL, request, showMatrix, $('.attributeFilterCheck[id!="attributeFilterCheckAll"]:checked'));
-                      });
-                    }
-                    */
                     $('#order').val('');
                     callback(attributesResultX, attributesResultY, correlations, maxValue, onClickURL);
                   }
@@ -635,11 +427,6 @@ function initPage () {
       handleError('Cannot get citations from DB.');
       return;
     }
-    /*
-    citations.response.forEach ( function ( citation ) {
-      console.log(JSON.parse(citation.bib).title);
-    });
-    */
     $.get('citationCount', function ( citationCount ) {
       if (!citationCount || !citationCount.response || citationCount.response.length == 0) {
         handleError('Cannot get number of papers from DB.');

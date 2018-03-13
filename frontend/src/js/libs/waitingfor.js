@@ -2,6 +2,8 @@
  * Module for displaying "Waiting for..." dialog using Bootstrap
  *
  * @author Eugene Maslovich <ehpc@em42.ru>
+
+   source: https://github.com/ehpc/bootstrap-waitingfor
  */
 
 (function (root, factory) {

@@ -1,11 +1,9 @@
 package data
 import (
 	"strconv"
-	//"time"
 	"strings"
 	"../gabs"
 	"sort"
-	//"../docconv"
 	"fmt"
 	"math/rand"
 	//overriding MySqlDriver
@@ -372,7 +370,6 @@ func (d MySQLDriver) RemoveTaxonomy(taxonomyId int64) (result model.Result, err 
 	defer dbRef.Close()
 	checkErr(err)
 	taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-	// TODO further checks?
 	dbRef.Exec("DELETE FROM taxonomy WHERE id_taxonomy = ?;", taxonomyIdStr)
 	result.Success = true
 	return result, err
@@ -445,7 +442,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
 		checkErr(err)
-		db, stmt, err := d.Query(`select id_paper,citation,citation as text,referenceCount
+		db, stmt, err := d.Query(`select id_paper,citation,citation as text,referenceCount,bib
 			from paper order by id_paper`)
 		defer stmt.Close()
 		defer db.Close()
@@ -453,7 +450,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
-			rows.Scan(&a.ID,&a.Citation,&a.Text,&a.ReferenceCount) // TODO: ,&a.Bib
+			rows.Scan(&a.ID,&a.Citation,&a.Text,&a.ReferenceCount,&a.Bib)
 			papers = append(papers, a)
 		}
 		defer rows.Close()
@@ -592,37 +589,47 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		savedPapers := []model.Paper{}
 		for _, elem := range mappings {
 			paperIDStr := strconv.Itoa(elem.PaperID)
-			db, stmt, err := d.Query("SELECT DISTINCT tmp.maxID, (CASE WHEN paper.id_paper IS NOT NULL THEN paper.id_paper ELSE -1 END) AS paperID FROM (SELECT MAX(id_paper) AS maxID FROM paper) AS tmp left outer join paper ON (paper.id_paper  = ?);")
-			rows, err := stmt.Query(paperIDStr)
-			checkErr(err)
-			stmt.Close()
-			db.Close()
-			var paperID int
-			paperID = -1
-			var maxID int
-			maxID = 0
-			for rows.Next() {
-				rows.Scan(&maxID,&paperID)
-			}
-			rows.Close()
-			paperIDStr = strconv.Itoa(paperID)
-			referenceCountStr := strconv.Itoa(elem.ReferenceCount)
-			if paperID < 0 {
-				paperID = maxID+1
+			found := false
+		    for i := 0; i < len(savedPapers); i++ {
+		        if (savedPapers[i].ID == elem.PaperID) {
+		        	found = true
+		        	break
+		        }
+		    }
+		    paperID := elem.PaperID
+		   	if (!found) {
 				paperIDStr = strconv.Itoa(paperID)
-				bibTex := ""
-				if elem.Bib != "empty" {
-					bibTex = elem.Bib
-				}
-				dbRef.Exec("INSERT INTO paper (id_paper, citation, bib, referenceCount, author, keywords) VALUES (?, ?, ?, ?, ?, ?);", paperIDStr, elem.Citation, bibTex, referenceCountStr, elem.Author, elem.Keywords)
-			} else {
-				if elem.Bib != "empty" {
-					dbRef.Exec("UPDATE paper SET citation = ?, bib = ?, referenceCount = ?, author = ?, keywords = ? WHERE id_paper = ?;", elem.Citation, elem.Bib, referenceCountStr, elem.Author, elem.Keywords, paperIDStr)
+				referenceCountStr := strconv.Itoa(elem.ReferenceCount)
+				if paperID < 0 {
+					db, stmt, err := d.Query("SELECT MAX(id_paper) AS maxID FROM paper;")
+					rows, err := stmt.Query()
+					checkErr(err)
+					stmt.Close()
+					db.Close()
+					var maxID int
+					maxID = 0
+					for rows.Next() {
+						rows.Scan(&maxID)
+					}
+					rows.Close()
+					paperID = maxID+1
+					bibTex := ""
+					if elem.Bib != "empty" {
+						bibTex = elem.Bib
+					}
+					dbRef.Exec("INSERT INTO paper (id_paper, citation, bib, referenceCount, author, keywords) VALUES (?, ?, ?, ?, ?, ?);", paperIDStr, elem.Citation, bibTex, referenceCountStr, elem.Author, elem.Keywords)
 				} else {
-					dbRef.Exec("UPDATE paper SET citation = ?, referenceCount = ?, author = ?, keywords = ?) WHERE id_paper = ?;", elem.Citation, referenceCountStr, elem.Author, elem.Keywords, paperIDStr)
+					if elem.Bib != "empty" {
+						dbRef.Exec("UPDATE paper SET citation = ?, bib = ?, referenceCount = ?, author = ?, keywords = ? WHERE id_paper = ?;", elem.Citation, elem.Bib, referenceCountStr, elem.Author, elem.Keywords, paperIDStr)
+					} else {
+						dbRef.Exec("UPDATE paper SET citation = ?, referenceCount = ?, author = ?, keywords = ?) WHERE id_paper = ?;", elem.Citation, referenceCountStr, elem.Author, elem.Keywords, paperIDStr)
+					}
 				}
+				a := model.Paper{ID: paperID}
+				savedPapers = append(savedPapers, a)
 			}
 			if elem.OccurrenceCount <= 0 {
 				dbRef.Exec("DELETE FROM mapping WHERE id_paper = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", paperIDStr, elem.Attribute, taxonomyIdStr)
@@ -981,7 +988,8 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, mapping.occurrenceCount as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper);`)
+		// mapping.occurrenceCount as value (for occurrence counts instead of 1's)
+		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, 1 as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper);`)
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(taxonomyIdStr)
@@ -1200,7 +1208,6 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return attributes, err
 		}
 
-	// TODO with input = number of children, levels
 	func (d MySQLDriver) GetIntermediateAttributes(taxonomyId int64, minValue int64, maxValue int64) (attributes []model.Attribute, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
@@ -1242,7 +1249,6 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return attributes, err
 		}
 
-	// TODO update taxonomy_relation.id_dimension
 	func (d MySQLDriver) GetAttributeRelationsPerDimension(taxonomyId int64, dimension string) (attributeRelations []model.AttributeRelation, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
@@ -1262,7 +1268,6 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return attributeRelations, err
 		}
 
-	// TODO update taxonomy_relation.id_dimension
 	func (d MySQLDriver) GetInterdimensionalRelations(taxonomyId int64) (attributeRelations []model.AttributeRelation, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
@@ -1288,8 +1293,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set x = ?, y = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr);
-			//time.Sleep(time.Second / 5)
+			dbRef.Exec("update " + elem.Table + " set x = ?, y = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err
@@ -1301,8 +1305,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set xMajor = ?, yMajor = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr);
-			//time.Sleep(time.Second / 5)
+			dbRef.Exec("update " + elem.Table + " set xMajor = ?, yMajor = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err
@@ -1315,8 +1318,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set x3D = ?, y3D = ?, z3D = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr);
-			//time.Sleep(time.Second / 5)
+			dbRef.Exec("update " + elem.Table + " set x3D = ?, y3D = ?, z3D = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err
@@ -1328,8 +1330,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set xMajor3D = ?, yMajor3D = ?, zMajor3D = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr);
-			//time.Sleep(time.Second / 5)
+			dbRef.Exec("update " + elem.Table + " set xMajor3D = ?, yMajor3D = ?, zMajor3D = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err

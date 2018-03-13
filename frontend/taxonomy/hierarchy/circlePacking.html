@@ -14,7 +14,7 @@
 
     <script src="multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
 
-    <link href="loginForm.css" type="text/css" rel="stylesheet">
+    <link href="main.css" type="text/css" rel="stylesheet">
 
     <link href="d3-context-menu.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
     <script src="d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
@@ -138,6 +138,7 @@
   var isInterDimensional = true;
   var displayedDimension;
 
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
   function getSVGString( svgNode ) {
     svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
     var cssStyleText = getCSSStyles( svgNode );
@@ -209,6 +210,7 @@
     }
   }
 
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
   function svgString2Image( svgString, width, height, format, callback ) {
     var format = format ? format : 'png';
 
@@ -239,6 +241,11 @@
     image.src = url;
   }
 
+  /*
+    Based on a d3 code example.
+
+    Source: http://bl.ocks.org/nbremer/5cd07f2cb4ad202a9facfbd5d2bc842e
+  */
  function applyColorGradient ( defs, gradient, minValue, maxValue ) {
     if (!gradient.name || !gradient.colors) return {};
     var colors = gradient.colors;
@@ -266,7 +273,7 @@
     return {colorScale: colorScale, colorInterpolate: colorInterpolate};
   }
 
-  // https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
+  // source: ttps://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
   function updateColorLegend ( gradientID, width, height, maxValue ) { //     var w = 300, h = 50;
     d3.select("#colorLegend").selectAll("svg").remove();
     var legend = d3.select("#colorLegend")
@@ -348,7 +355,8 @@
     return sum;
   }
 
-  // based on https://bl.ocks.org/mbostock/7607535
+  // based on a d3 code example:
+  // source: https://bl.ocks.org/mbostock/7607535
   function showHierarchy ( json, minValue, maxValue ) {
     d3.selectAll("svg").remove();
     $('#svgContainer').html('<svg id="circlePackingSVG" width="960" height="960"></svg>');
@@ -393,7 +401,6 @@
         .data(nodes)
         .enter().append("circle")
           .attr("class", function(d) { return d.parent ? (d.data.children && d.data.children.length > 0) ? "node" : "node node--leafnode" : "node node--root"; })
-          //.style("fill", function(d) { return (d.children && d.children.length > 0) ? color(d.depth) : 'lightgreen'; })
           .on("click", function(d) { if (focus !== d.parent) zoom(d.parent), d3.event.stopPropagation(); else if ($(this).attr("class").split('node--leafnode').length > 1) showCitations(d.data.name), d3.event.stopPropagation(); else if (focus !== d) zoom(d), d3.event.stopPropagation(); })
           .on("mouseover", function (d) { d3Tip.show(d); })
           .on("mouseout", function (d) { d3Tip.hide(d); });
@@ -427,9 +434,7 @@
 
         svg.selectAll("text")
           .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
-          .style("fill-opacity", function(d) { if (d.parent === focus) { this.style.display = "inline"; } else { this.style.display = "none"; } return d.parent === focus ? 1 : 0; })
-          //.on("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
-          //.on("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
+          .style("fill-opacity", function(d) { if (d.parent === focus) { this.style.display = "inline"; } else { this.style.display = "none"; } return d.parent === focus ? 1 : 0; });
       }
 
       function zoomTo(v) {
@@ -458,6 +463,7 @@
     });
   }
 
+  // calculate tree hierarchy respecting "parent-child" relations between elements
   function traverseTree ( json, attributes, parents, counter, useReferenceCount ) {
     if (attributes.length == 0 || counter > 100) {
       parents.forEach ( function ( parent ) {
@@ -488,6 +494,7 @@
     return traverseTree(json, remainingAttributes, parents, counter+1, useReferenceCount);
   }
 
+  // create JSON object used for the creation of the  d3 circle packing visualization
   function createJSON ( useCY, dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
     isInterDimensional = interDimensional;
     var useReferenceCount = $('#dataType').val() == 'referenceCount';

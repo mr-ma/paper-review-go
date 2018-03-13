@@ -1,3 +1,4 @@
+// functions used to build an editable table (where the user can add/delete rows and edit fields)
 	 	
 var edit = ' glyphicon glyphicon-pencil';
 var trash  = 'glyphicon glyphicon-trash';

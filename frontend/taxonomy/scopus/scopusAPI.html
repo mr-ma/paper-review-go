@@ -10,9 +10,8 @@
     <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
     <script src="bootstrap-dialog.min.js"></script>
 
-    <link href="loginForm.css" type="text/css" rel="stylesheet"/>
+    <link href="main.css" type="text/css" rel="stylesheet"/>
 
-    <!-- promises -->
     <script src="bluebird.min.js"></script>
     <script src="error.js"></script>
 
@@ -28,6 +27,9 @@
     <input type="button" id="importCitationCounts" value="Import citation counts">
   </div>
 <script>
+
+  // used to look up publication details on scopus like reference counts
+
   $(document).ready( function () {
     const API_KEY_LOCAL = 'c4ddcf695994bcc8b4a1c6d4a593a974';
     const API_KEY = '90c6191fcbabf8d9969eb9c750cc898e';
@@ -48,13 +50,10 @@
                   $.ajax
                     ({
                       type: "GET",
-                      // TODO replace other letters like (), : etc
                       url: 'https://api.elsevier.com/content/search/scopus?query=TITLE(' + bibObj.title.replace(/\s/g, '+') + ')&content=core',
-                      //dataType: 'json',
                       contentType:'application/json',
                       async: true,
                       headers: {'Accept':'application/json', 'X-ELS-APIKey': API_KEY_LOCAL},
-                      //data: JSON.stringify({'query': 'KEY(test)', 'field': 'All', 'content': 'core'}),
                       success: function ( result ) {
                         if (!result || !result['search-results'] || !result['search-results'].entry) return;
                         var entry = result['search-results'].entry;
@@ -93,7 +92,6 @@
               $.ajax
                 ({
                     type: "POST",
-                    //the url where you want to sent the userName and password to
                     url: 'updateCitationReferenceCounts',
                     dataType: 'json',
                     contentType:'application/json',

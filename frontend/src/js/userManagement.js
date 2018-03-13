@@ -1,12 +1,13 @@
+// functions used for the user management
 var admin = false;
 
+// check if an email is valid
 function validateEmail(email) {
   var re = /^[\w-']+(\.[\w-']+)*@([a-z0-9-]+(\.[a-z0-9-]+)*?\.[a-z]{2,6}|(\d{1,3}\.){3}\d{1,3})(:\d{4})?$/i;
   return re.test(email);}
 
   function addTaxonomy () {
     if (!admin) return;
-    //if (!!cy) cy.elements().trigger('qtiphide');
     $('#addTaxonomyModalText').val('');
     $('#addTaxonomyModalText1').val('');
     $('#addTaxonomyModalForm').on('submit', function ( evt ) {

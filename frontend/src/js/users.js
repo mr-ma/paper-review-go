@@ -1,4 +1,4 @@
-	 	
+// functions used to add, delete, change user accounts and permissions	 	
 var edit = ' glyphicon glyphicon-pencil';
 var trash  = 'glyphicon glyphicon-trash';
 var save   = 'glyphicon glyphicon-floppy-disk';
