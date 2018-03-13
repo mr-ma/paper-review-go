@@ -56,8 +56,8 @@ var (
 var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
 
 func main() {
-	sessionManager.Lifetime(time.Hour*24)
-	sessionManager.Persist(true)
+	sessionManager.Lifetime(time.Hour*24) // session data expires after 24 hours
+	sessionManager.Persist(true) // session data persists after the browser has been closed by the user
 	//sessionManager.Secure(true)
 	flag.Parse()
 
@@ -89,6 +89,8 @@ func main() {
 	mux.Handle("GET", "/tag/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTagsHandler), "getResearchTags", nil)))
 
 	// paper-review end
+
+	// taxonomyserver start
 
 	mux.Handle("GET", "/taxonomy", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTaxonomyHandler), "getTaxonomyHandler", nil)))
 	mux.Handle("POST", "/getTaxonomyID", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTaxonomyIDHandler), "getTaxonomyIDHandler", nil)))
@@ -132,6 +134,10 @@ func main() {
 	mux.Handle("POST", "/attributeCoverageWithOccurrenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithOccurrenceCountsHandler), "getAttributeCoverageWithOccurrenceCountsHandler", nil)))
 	mux.Handle("POST", "/attributeCoverageWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithReferenceCountsHandler), "getAttributeCoverageWithReferenceCountsHandler", nil)))
 	mux.Handle("POST", "/kMeans", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getKMeansHandler), "getKMeansHandler", nil)))
+
+	// taxonomyserver end
+
+	// user and access management:
 
 	mux.HandleFunc("POST", "/login", func(w http.ResponseWriter, r *http.Request) {
         var loginRequest model.LoginRequest
@@ -559,6 +565,10 @@ func main() {
 		p := loadPage("frontend/taxonomy/cytoscape/cytoscape.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
+	mux.HandleFunc("GET", "/konva.min.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/taxonomy/cytoscape/extensions/konva.min.js")
+		fmt.Fprintf(w, "%s", p)
+	})
 	mux.HandleFunc("GET", "/cytoscape-undo-redo.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-undo-redo.js")
 		fmt.Fprintf(w, "%s", p)
@@ -621,10 +631,6 @@ func main() {
 		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-node-resize.js")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/konva.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/konva.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
 	mux.HandleFunc("GET", "/cytoscape-noderesize.js", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-noderesize.js")
 		fmt.Fprintf(w, "%s", p)
@@ -668,7 +674,7 @@ func main() {
 		p := loadPage("frontend/src/js/libs/parse-bibtex.js")
 		fmt.Fprintf(w, "%s", p)
 	})
-	// mux.Handle("GET","/",cors.Build(tigertonic.Timed(tigertonic.Marshaled(getIndexHandler), "getIndexHandler", nil)))
+
 	mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/taxonomy/index.html")
 		fmt.Fprintf(w, "%s", p)
@@ -877,6 +883,7 @@ func jsonResponse(w http.ResponseWriter, code int, message string) {
     fmt.Fprint(w, message)
 }
 
+// check if user is admin
 func checkAdmin (w http.ResponseWriter, r *http.Request, callback fn) {
 	session := sessionManager.Load(r)
 	var admin int
@@ -912,6 +919,8 @@ func contains(s []int, e int) bool {
     return false
 }
 
+// check if user has edit permissions on a taxonomy with a specific ID
+// admins can edit every taxonomy
 func checkTaxonomyPermissions(w http.ResponseWriter, r *http.Request, callback fn) {
 	session := sessionManager.Load(r)
 	var admin int
@@ -974,6 +983,7 @@ func checkTaxonomyPermissions(w http.ResponseWriter, r *http.Request, callback f
 	w.Write(output)
 }
 
+// get list of users and their permissions
 func getUsersHandler(w http.ResponseWriter, r *http.Request) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	users, err := driver.GetUsers()
@@ -994,6 +1004,7 @@ func getUsersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
+// add user
 func createUserHandler(w http.ResponseWriter, r *http.Request) {
     var userRequest model.CreateUserRequest
     if r.Body == nil {
@@ -1017,6 +1028,7 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
+// update user permissions
 func updateUserHandler(w http.ResponseWriter, r *http.Request) {
     var userRequest model.UpdateUserRequest
     if r.Body == nil {
@@ -1040,6 +1052,7 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
+// delete user
 func deleteUserHandler(w http.ResponseWriter, r *http.Request) {
     var userRequest model.UserRequest
     if r.Body == nil {
@@ -1078,6 +1091,7 @@ func getTaxonomyIDHandler(u *url.URL, h http.Header, taxonomyIDRequest *model.Ta
 		&MyResponse{"0", len(taxonomyID), taxonomyID}, nil
 }
 
+// get taxonomy permissions
 func getTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
     var userRequest model.UserRequest
     if r.Body == nil {
@@ -1101,6 +1115,7 @@ func getTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
+// update taxonomy permissions
 func getUpdateTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
     var taxonomyPermissionsRequest model.TaxonomyPermissionsRequest
     if r.Body == nil {

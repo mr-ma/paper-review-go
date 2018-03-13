@@ -4,9 +4,23 @@
   <title>Taxonomy of Integrity Protection Techniques</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="text/javascript" src="d3.min.js"></script>
-    <script src="jquery.min.js"></script>
-    <script src="viz.min.js"></script>
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.css" rel="stylesheet"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/css/bootstrap.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.js"></script>
+
+  <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+  <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+  <link href="main.css" type="text/css" rel="stylesheet">
+  <script src="userManagement.js"></script>
+  <script src="error.js"></script>
 <style>
 .embed-responsive {
     position: relative;
@@ -32,38 +46,60 @@
 //        $(this).closest('ul').remove();
 //     });
 // });
+  const DEFAULT_TAXONOMY_ID = 1;
+  var TAXONOMY_ID;
+
 $(function() {
-// configuration
-// button
-var add = $('#add-btn');
-// click event for button
-add.on('click', function(event) {
-  addDimension(event,this);
-});
+  function onLoad () {
+    // configuration
+    // button
+    var add = $('#add-btn');
+    // click event for button
+    add.on('click', function(event) {
+      addDimension(event,this);
+    });
 
+    $.get('attribute', {}, function(data) {
+    if(data && data.response){
+        var result = data.response.map(function(a) {return a.text;});
+        $(".autocomplete").autocomplete({
+          source:result
+        });
+      }
 
+    });
 
-$.get('attribute', {}, function(data) {
-if(data && data.response){
-    var result = data.response.map(function(a) {return a.text;});
-    $(".autocomplete").autocomplete({
-      source:result
+    $('#dimension-input').bind("enterKey",function(e){
+       //do stuff here
+       addDimension();
+    });
+    $('#dimension-input').keyup(function(e){
+        if(e.keyCode == 13)
+        {
+            $(this).trigger("enterKey");
+        }
     });
   }
 
-});
-
-$('#dimension-input').bind("enterKey",function(e){
-   //do stuff here
-   addDimension();
-});
-$('#dimension-input').keyup(function(e){
-    if(e.keyCode == 13)
-    {
-        $(this).trigger("enterKey");
-    }
-});
-
+  function initPage () {
+    window.onhashchange = function () {
+      var hash = window.location.hash;
+      console.log("hash changed to: " + hash);
+      window.location.reload(false);
+    };
+    var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+      initUserManagement(resolve, reject);
+    }).then ( function ( user ) {
+      if (!!user && user.admin == 1) {
+      }
+      onLoad();
+    }).catch ( function ( err ) {
+      console.log('Error loading user: ', err);
+      handleError(err);
+      onLoad();
+    });
+  }
+  initPage();
 });
 function dumpBibCitation(citation){
   cit = JSON.parse(citation)
@@ -192,6 +228,9 @@ function correlateReport(){
 </script>
 </head>
 <body>
+
+<div class="navbar"></div>
+<div class="modals"></div>
 
 <div class="container-fluid">
   <h3>Software integrity protection taxonomy correlation generator</h3>

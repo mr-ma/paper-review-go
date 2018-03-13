@@ -10,11 +10,21 @@
 
     <link href="bootstrap.min.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
- <script src="jquery.min.js"></script>
+ 	<script src="jquery.min.js"></script>
     <script src="bootstrap.min.js"></script>
     <script src="scripts.js"></script>
 
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+    <link href="main.css" type="text/css" rel="stylesheet">
+    <script src="userManagement.js"></script>
+    <script src="error.js"></script>
+
 		<script>
+		const DEFAULT_TAXONOMY_ID = 1;
+		var TAXONOMY_ID;
+
 		var r_id ;
 		var authors;
 		var title;
@@ -223,11 +233,33 @@ function urlParam(name){
 	;
    }
 
-  window.onload = onLoad();
+	function initPage () {
+	  window.onhashchange = function () {
+	    var hash = window.location.hash;
+	    console.log("hash changed to: " + hash);
+	    window.location.reload(false);
+	  };
+	  var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+	    initUserManagement(resolve, reject);
+	  }).then ( function ( user ) {
+	    if (!!user && user.admin == 1) {
+	    }
+	    onLoad();
+	  }).catch ( function ( err ) {
+	    console.log('Error loading user: ', err);
+	    handleError(err);
+	    onLoad();
+	  });
+	}
+
+  window.onload = initPage();
 	</script>
   </head>
 
   <body>
+
+  	<div class="navbar"></div>
+	<div class="modals"></div>
 
     <div class="container-fluid">
 	<div class="row">
