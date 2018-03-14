@@ -86,11 +86,21 @@ INSERT IGNORE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relati
 
 ALTER TABLE taxonomy_relation ADD COLUMN edgeBendPoints longtext;
 
+ALTER TABLE paper ADD COLUMN id_taxonomy INT(11) UNSIGNED DEFAULT 1;
 ALTER TABLE paper ADD COLUMN referenceCount int(20) DEFAULT "0";
 ALTER TABLE paper ADD COLUMN author varchar(500) DEFAULT "";
 ALTER TABLE paper ADD COLUMN keywords varchar(500) DEFAULT "";
-ALTER TABLE mapping ADD COLUMN occurrenceCount int(20) DEFAULT "1";
 
+ALTER TABLE paper DROP INDEX id_paper_UNIQUE;
+ALTER TABLE paper DROP INDEX paper_id_paper;
+ALTER TABLE paper ADD UNIQUE KEY paper_id_UNIQUE (id_taxonomy, id_paper);
+
+/* change primary key */
+ALTER TABLE paper MODIFY id_paper int(11) UNSIGNED NOT NULL, DROP PRIMARY KEY, ADD PRIMARY KEY (id_taxonomy, id_paper);
+ALTER TABLE paper ADD INDEX paper_id_paper (id_paper), MODIFY id_paper int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE paper ADD CONSTRAINT paper_id_taxonomy_foreign FOREIGN KEY (id_taxonomy) REFERENCES taxonomy (id_taxonomy) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+ALTER TABLE mapping ADD COLUMN occurrenceCount int(20) DEFAULT "1";
 ALTER TABLE mapping CHANGE COLUMN id_paper id_paper INT(11) UNSIGNED NOT NULL;
 ALTER TABLE mapping CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL;
 
@@ -115,7 +125,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 ALTER TABLE taxonomy CHANGE COLUMN id_taxonomy id_taxonomy INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
-ALTER TABLE paper CHANGE COLUMN id_paper id_paper INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+/* ALTER TABLE paper CHANGE COLUMN id_paper id_paper INT(11) UNSIGNED NOT NULL AUTO_INCREMENT; */
 ALTER TABLE paper CHANGE COLUMN citation citation varchar(500) NOT NULL;
 
 ALTER TABLE attribute CHANGE COLUMN id_attribute id_attribute INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;

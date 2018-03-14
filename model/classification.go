@@ -51,10 +51,14 @@ type Paper struct {
 
 type Position struct {
   ID string `json:"id"`
+  Text string `json:"text"`
   Table string `json:"table"`
   X string `json:"x"`
   Y string `json:"y"`
   Z string `json:"z"`
+  XMajor string `json:"xMajor"`
+  YMajor string `json:"yMajor"`
+  ZMajor string `json:"zMajor"`
 }
 
 type CitationMapping struct {
@@ -73,6 +77,7 @@ type FileRequest struct {
 }
 
 type CitationRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   Citation string `json:"citation"`
 }
 
@@ -90,6 +95,13 @@ type AttributeRequest struct {
 type DimensionRequest struct {
   TaxonomyID int64 `json:"taxonomy_id"`
   Text string `json:"text"`
+}
+
+type ChangeDimensionRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  Attribute string `json:"attribute"`
+  Dimension string `json:"dimension"`
+  Position Position `json:"position"`
 }
 
 type CorrelationRequest struct {
@@ -209,6 +221,7 @@ type ReferenceCount struct {
 }
 
 type UpdateReferenceCountsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
   ReferenceCounts []ReferenceCount `json:"referenceCounts"`
 }
 

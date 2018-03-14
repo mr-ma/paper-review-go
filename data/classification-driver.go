@@ -37,10 +37,10 @@ type ClassificationDriver interface {
 	GetMajorAttributes(int64) ([]model.Attribute, error)
 	GetAttributeRelationsPerDimension(int64, string) ([]model.AttributeRelation, error)
 	GetInterdimensionalRelations(int64) ([]model.AttributeRelation, error)
-	GetCitationCount() ([]model.CitationCount, error)
+	GetCitationCount(int64) ([]model.CitationCount, error)
 	GetCitationCounts(int64) ([]model.CitationCount, error)
 	GetCitationCountsIncludingChildren(int64) ([]model.CitationCount, error)
-	UpdateCitationReferenceCounts([]model.ReferenceCount) (model.Result, error)
+	UpdateCitationReferenceCounts(int64, []model.ReferenceCount) (model.Result, error)
 	UpdateMajor(int64, string, int) (model.Result, error)
 	UpdateCitationMapping(int64, string, []model.Paper) (model.Result, error)
 	UpdateCitationMappings(int64, []model.CitationMapping) (model.Result, error)
@@ -55,7 +55,7 @@ type ClassificationDriver interface {
 	GetAllAttributes(int64) ([]model.Attribute, error)
 	GetLeafAttributes(int64) ([]model.Attribute, error)
 	GetAllDimensions(int64) ([]model.Dimension, error)
-	GetAllCitations() ([]model.Paper, error)
+	GetAllCitations(int64) ([]model.Paper, error)
 	GetConceptRelations(int64) ([]model.ConceptCorrelation, error)
 	GetConceptRelations3D(int64) ([]model.ConceptCorrelation, error)
 	GetConceptRelationsWithReferenceCounts(int64) ([]model.ConceptCorrelation, error)
@@ -71,18 +71,19 @@ type ClassificationDriver interface {
 	GetSharedPapersIncludingChildren(int64, string, string) ([]model.Paper, error)
 	GetSharedPapersIncludingChildren3D(int64, string, string, string) ([]model.Paper, error)
 	GetAttributeDetails(int64, string) ([]model.Attribute, error)
-	GetCitationDetails(string, string) ([]model.Paper, error)
+	GetCitationDetails(int64, string, string) ([]model.Paper, error)
 	GetAttributeCoverage(int64) ([]model.AttributeCoverage, error)
 	GetAttributeCoverageWithOcurrenceCounts(int64) ([]model.AttributeCoverage, error)
 	GetAttributeCoverageWithReferenceCounts(int64) ([]model.AttributeCoverage, error)
 	ExportCorrelationsCSV(filterAttributes []model.Attribute)
 	AddAttribute(int64, model.Attribute) (model.Result, error)
 	AddDimension(int64, string) (model.Result, error)
+	ChangeDimension(int64, string, string) (model.Result, error)
 	RenameAttribute(int64, string, string) (model.Result, error)
 	UpdateSynonyms(int64, string, string) (model.Result, error)
 	RenameDimension(int64, string, string) (model.Result, error)
 	AddTaxonomyRelation(model.AttributeRelation) (model.Result, error)
-	DeleteCitation(model.Paper) (model.Result, error)
+	DeleteCitation(int64, model.Paper) (model.Result, error)
 	RemoveAttribute(int64, model.Attribute) (model.Result, error)
 	RemoveDimension(int64, model.Dimension) (model.Result, error)
 	RemoveTaxonomyRelation(model.AttributeRelation) (model.Result, error)
@@ -437,16 +438,17 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 	return dimensions, err
 	}
 
-	func (d MySQLDriver) GetAllCitations() (papers []model.Paper,
+	func (d MySQLDriver) GetAllCitations(taxonomyId int64) (papers []model.Paper,
 		err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
 		checkErr(err)
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
 		db, stmt, err := d.Query(`select id_paper,citation,citation as text,referenceCount,bib
-			from paper order by id_paper`)
+			from paper where id_taxonomy = ? order by id_paper`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query()
+		rows, err := stmt.Query(taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -457,14 +459,15 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return papers, err
 		}
 
-	func (d MySQLDriver) GetCitationCount() (citationCounts []model.CitationCount, err error){
+	func (d MySQLDriver) GetCitationCount(taxonomyId int64) (citationCounts []model.CitationCount, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
 		checkErr(err)
-		db, stmt, err := d.Query("select count(distinct id_paper) as citationCount, max(referenceCount) as maxReferenceCount, sum(referenceCount) as referenceCountSum from paper;")
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		db, stmt, err := d.Query("select count(distinct id_paper) as citationCount, max(referenceCount) as maxReferenceCount, sum(referenceCount) as referenceCountSum from paper where id_taxonomy = ?;")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query()
+		rows, err := stmt.Query(taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.CitationCount{}
@@ -513,13 +516,14 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return citationCounts, err
 		}
 
-	func (d MySQLDriver) UpdateCitationReferenceCounts(referenceCounts []model.ReferenceCount) (result model.Result, err error){
+	func (d MySQLDriver) UpdateCitationReferenceCounts(taxonomyId int64, referenceCounts []model.ReferenceCount) (result model.Result, err error){
 	  	dbRef, err := d.OpenDB()
 		defer dbRef.Close()
 		checkErr(err)
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range referenceCounts {
     		referenceCountStr := strconv.Itoa(elem.ReferenceCount)
-			dbRef.Exec("update paper set referenceCount = ? where citation = ?;", referenceCountStr, elem.Citation);
+			dbRef.Exec("update paper set referenceCount = ? where id_taxonomy = ? and citation = ?;", referenceCountStr, taxonomyIdStr, elem.Citation);
 		}
 		result.Success = true
 		return result, err
@@ -604,8 +608,8 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 				paperIDStr = strconv.Itoa(paperID)
 				referenceCountStr := strconv.Itoa(elem.ReferenceCount)
 				if paperID < 0 {
-					db, stmt, err := d.Query("SELECT MAX(id_paper) AS maxID FROM paper;")
-					rows, err := stmt.Query()
+					db, stmt, err := d.Query("SELECT MAX(id_paper) AS maxID FROM paper WHERE id_taxonomy = ?;")
+					rows, err := stmt.Query(taxonomyIdStr)
 					checkErr(err)
 					stmt.Close()
 					db.Close()
@@ -620,12 +624,12 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 					if elem.Bib != "empty" {
 						bibTex = elem.Bib
 					}
-					dbRef.Exec("INSERT INTO paper (id_paper, citation, bib, referenceCount, author, keywords) VALUES (?, ?, ?, ?, ?, ?);", paperIDStr, elem.Citation, bibTex, referenceCountStr, elem.Author, elem.Keywords)
+					dbRef.Exec("INSERT INTO paper (id_taxonomy, id_paper, citation, bib, referenceCount, author, keywords) VALUES (?, ?, ?, ?, ?, ?, ?);", taxonomyIdStr, paperIDStr, elem.Citation, bibTex, referenceCountStr, elem.Author, elem.Keywords)
 				} else {
 					if elem.Bib != "empty" {
-						dbRef.Exec("UPDATE paper SET citation = ?, bib = ?, referenceCount = ?, author = ?, keywords = ? WHERE id_paper = ?;", elem.Citation, elem.Bib, referenceCountStr, elem.Author, elem.Keywords, paperIDStr)
+						dbRef.Exec("UPDATE paper SET citation = ?, bib = ?, referenceCount = ?, author = ?, keywords = ? WHERE id_taxonomy = ? AND id_paper = ?;", elem.Citation, elem.Bib, referenceCountStr, elem.Author, elem.Keywords, taxonomyIdStr, paperIDStr)
 					} else {
-						dbRef.Exec("UPDATE paper SET citation = ?, referenceCount = ?, author = ?, keywords = ?) WHERE id_paper = ?;", elem.Citation, referenceCountStr, elem.Author, elem.Keywords, paperIDStr)
+						dbRef.Exec("UPDATE paper SET citation = ?, referenceCount = ?, author = ?, keywords = ?) WHERE id_taxonomy = ? AND id_paper = ?;", elem.Citation, referenceCountStr, elem.Author, elem.Keywords, taxonomyIdStr, paperIDStr)
 					}
 				}
 				a := model.Paper{ID: paperID}
@@ -666,10 +670,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount, mapping.occurrenceCount from paper inner join mapping on (paper.id_paper = mapping.id_paper) inner join attribute on (mapping.id_attribute = attribute.id_attribute and attribute.text = ? and attribute.id_taxonomy = ?) order by paper.id_paper;")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount, mapping.occurrenceCount from paper inner join mapping on (paper.id_paper = mapping.id_paper and paper.id_taxonomy = ?) inner join attribute on (mapping.id_attribute = attribute.id_attribute and attribute.text = ? and attribute.id_taxonomy = ?) order by paper.id_paper;")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(attribute, taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, attribute, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -946,14 +950,15 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return attributes, err
 		}
 
-	func (d MySQLDriver) GetCitationDetails(text1 string, text2 string) (papers []model.Paper, err error){
+	func (d MySQLDriver) GetCitationDetails(taxonomyId int64, text1 string, text2 string) (papers []model.Paper, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
 		checkErr(err)
-		db, stmt, err := d.Query("select distinct id_paper, citation, bib, referenceCount from paper where citation = ? or citation = ? order by id_paper;")
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		db, stmt, err := d.Query("select distinct id_paper, citation, bib, referenceCount from paper where id_taxonomy = ? and (citation = ? or citation = ?) order by id_paper;")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(text1, text2)
+		rows, err := stmt.Query(taxonomyIdStr, text1, text2)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -1444,6 +1449,17 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return result, err
 		}
 
+	func (d MySQLDriver) ChangeDimension(taxonomyId int64, attribute string, dimension string) (result model.Result, err error){
+		dbRef, err := d.OpenDB()
+		defer dbRef.Close()
+		checkErr(err)
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		dbRef.Exec("UPDATE taxonomy_dimension SET id_dimension = (SELECT DISTINCT id_dimension FROM dimension WHERE text = ?) WHERE id_taxonomy = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ?);", dimension, taxonomyIdStr, attribute)
+		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND (id_src_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ?) OR id_dest_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ?));", taxonomyIdStr, attribute, attribute)
+		result.Success = true
+		return result, err
+		}
+
 	func (d MySQLDriver) RenameAttribute(taxonomyId int64, previousName string, newName string) (result model.Result, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
@@ -1658,11 +1674,12 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return result, err
 		}
 
-	func (d MySQLDriver) DeleteCitation(paper model.Paper) (result model.Result, err error){
+	func (d MySQLDriver) DeleteCitation(taxonomyId int64, paper model.Paper) (result model.Result, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
 		checkErr(err)
-		dbRef.Exec("DELETE FROM paper WHERE citation = ?;", paper.Citation)
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		dbRef.Exec("DELETE FROM paper WHERE id_taxonomy = ? AND citation = ?;", taxonomyIdStr, paper.Citation)
 		result.Success = true
 		return result, err
 		}
@@ -1746,9 +1763,9 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			return clusters, err
 		}
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT id_paper, citation FROM paper;")
+		db, stmt, err := d.Query("SELECT id_paper, citation FROM paper WHERE id_taxonomy = ?;")
 		checkErr(err)
-		rows, err := stmt.Query()
+		rows, err := stmt.Query(taxonomyIdStr)
 		checkErr(err)
 		stmt.Close()
 		db.Close()

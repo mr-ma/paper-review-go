@@ -99,6 +99,21 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="dimension-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="dimensionModalTitle"></h1><br>
+      <form id="dimensionModalForm">
+        <label for="dimensionModalText" id="dimensionModalLabel"></label>
+        <select id="dimensionModalSelect"></select>
+        <div style="margin-top:20px;">
+          <input type="submit" id="dimensionModalButton" class="btn btn-success" value="Save">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="multiselect-modal" class="loginmodal" tabindex="-1" role="dialog" aria-labelledby="movePageLabel" aria-hidden="true" style="display: none;">
   <div class="modal-dialog">
     <div class="loginmodal-container">
@@ -402,6 +417,65 @@
     $('#default-modal').modal('show');
   }
 
+  // change dimension of a concept node
+  function changeDimension ( cy, ele ) {
+    if (!DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS]) {
+      handleErrorHelper('Cannot find list of dimensions for this taxonomy.');
+      return;
+    }
+    cy.elements().trigger('qtiphide');
+    $('#dimensionModalTitle').html('Select new dimension');
+    $('#dimensionModalLabel').html('Dimension:');
+    $('#dimensionModalSelect').html('');
+    DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].forEach ( function ( entry ) {
+      $('#dimensionModalSelect').append('<option>' + entry.text + '</option>');
+    });
+    var attribute = ele.data('id');
+    var previousDimension = ele.data('parent');
+    $('#dimensionModalSelect').val(previousDimension);
+    $('#dimensionModalForm').unbind().on('submit', function ( evt ) {
+      evt.preventDefault();
+      $('#dimensionModalButton').prop('disabled', true);
+      var dimension = $('#dimensionModalSelect').val();
+      if (dimension == previousDimension || !dimension || dimension == '') {
+        $('#dimensionModalButton').prop('disabled', false);
+        $('#dimension-modal').modal('hide');
+        return;
+      }
+      var dimensionObj = cy.$('[id="' + dimension + '"]');
+      if (!dimensionObj || dimensionObj.length == 0) {
+        handleErrorHelper('Invalid dimension selected.');
+        return;
+      }
+      if (!admin) {
+        $('#dimensionModalButton').prop('disabled', false);
+        $('#dimension-modal').modal('hide');
+        cy.$('[id="' + attribute + '"]').move({parent: dimension});
+      } else {
+        $.ajax
+          ({
+              type: "POST",
+              url: 'changeDimension',
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute, dimension: dimension}),
+              success: function ( result ) {
+                if (!result || !result.success) {
+                  handleErrorHelper('Cannot change dimension for attribute "' + attribute + '".');
+                  $('#dimensionModalButton').prop('disabled', false);
+                  return;
+                }
+                $('#dimensionModalButton').prop('disabled', false);
+                $('#dimension-modal').modal('hide');
+                cy.$('[id="' + attribute + '"]').move({parent: dimension});
+              }
+          });
+        }
+    });
+    $('#dimension-modal').modal('show');
+  }
+
   // change the "major" attribute of a node
   function switchMajor ( ele, dimension ) {
     var text = ele.id();
@@ -518,6 +592,7 @@
       var request = {'taxonomy_id': TAXONOMY_ID, text: dimensionName};
       function callback () {
         var position = ele.position();
+        DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].push(dimensionName);
         cy.add({data: { id: dimensionName, table: 'dimension' }, classes: 'dimension', position: {x: position.x + ele.width(), y: position.y + ele.height()} });
         $('#defaultModalButton').prop('disabled', false);
         $('#default-modal').modal('hide');
@@ -582,7 +657,13 @@
     Promise.all(promises)
       .then ( function ( results ) {
         console.log('Removed ' + results.length + ' attribute' + (results.length > 1 ? 's' : '') + ' successfully.');
-        selecteds.filter( function ( entry ) { return entry.data('table') == 'attribute'; }).forEach ( function ( selected ) {
+        selecteds.forEach ( function ( selected ) {
+          if (entry.data('table') == 'dimension' && !!DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS]) {
+            for ( var i = 0; i < DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].length; i++ ) {
+              var dimensionEntry = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS][i];
+              if (dimensionEntry.text == selectedID) DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].unshift(dimensionEntry);
+            }
+          }
           var api = selected.qtip('api');
           api.destroy();
           api.disable();
@@ -753,46 +834,55 @@
       return;
     }
     var text = ele.data('id');
-    $.get('citation', function ( allCitations ) {
-      if (!allCitations) {
-        handleErrorHelper('Cannot get citations from DB.');
-        return;
-      }
-      $.ajax
-        ({
-          type: "POST",
-          url: 'citationsPerAttribute',
-          dataType: 'json',
-          contentType:'application/json',
-          async: true,
-          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text}),
-          success: function ( citationsPerAttribute ) {
-            if (!citationsPerAttribute) {
-              handleErrorHelper('Cannot get citations of attribute "' + text + '" from DB.');
-              return;
-            }
-            loadCitationMappingMultiselect(!!citationsPerAttribute.response ? citationsPerAttribute.response : [], !!allCitations.response ? allCitations.response : [], 'Citation mapping of "' + text + '"', function ( mappedCitations ) {
-              $.ajax
-                ({
-                  type: "POST",
-                  url: 'updateCitationMapping',
-                  dataType: 'json',
-                  contentType:'application/json',
-                  async: true,
-                  data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text, citations: mappedCitations}),
-                  success: function ( result ) {
-                    if (!result || !result.success) {
-                      handleErrorHelper('Cannot update citation mapping of attribute: "' + text + '". Can only map papers to leaf nodes.');
-                      return;
-                    }
-                    ele.data('citationCount', mappedCitations.length);
-                    console.log('Updated citations mapping of attribute "' + text + '" successfully, mapped papers: ' + mappedCitations.length);
-                  }
-              });
-            });
+    $.ajax
+      ({
+        type: "POST",
+        url: 'citation',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+        success: function ( allCitations ) {
+          if (!allCitations) {
+            handleErrorHelper('Cannot get citations from DB.');
+            return;
           }
-        });
-    });
+          $.ajax
+            ({
+              type: "POST",
+              url: 'citationsPerAttribute',
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text}),
+              success: function ( citationsPerAttribute ) {
+                if (!citationsPerAttribute) {
+                  handleErrorHelper('Cannot get citations of attribute "' + text + '" from DB.');
+                  return;
+                }
+                loadCitationMappingMultiselect(!!citationsPerAttribute.response ? citationsPerAttribute.response : [], !!allCitations.response ? allCitations.response : [], 'Citation mapping of "' + text + '"', function ( mappedCitations ) {
+                  $.ajax
+                    ({
+                      type: "POST",
+                      url: 'updateCitationMapping',
+                      dataType: 'json',
+                      contentType:'application/json',
+                      async: true,
+                      data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: text, citations: mappedCitations}),
+                      success: function ( result ) {
+                        if (!result || !result.success) {
+                          handleErrorHelper('Cannot update citation mapping of attribute: "' + text + '". Can only map papers to leaf nodes.');
+                          return;
+                        }
+                        ele.data('citationCount', mappedCitations.length);
+                        console.log('Updated citations mapping of attribute "' + text + '" successfully, mapped papers: ' + mappedCitations.length);
+                      }
+                  });
+                });
+              }
+            });
+        }
+      });
   }
 
   // fork 1 node into 2
@@ -1151,6 +1241,14 @@
       content: 'Rename',
       select: function(ele){
         renameNode(cy, ele);
+      },
+      enabled: true
+    });
+    nodeCommands.push({
+      fillColor: 'rgba(200, 200, 200, 0.75)',
+      content: 'Change Dimension',
+      select: function(ele){
+        changeDimension(cy, ele);
       },
       enabled: true
     });

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Approve Screen</title>
+
+
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+ 	<script src="jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <script src="scripts.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+	<link href="/bootstrap-table.css" rel="stylesheet" type="text/css"> 
+	<script src="/bootstrap-table.js"></script>
+
+    <script src="tables.js"></script>
+
+    <link href="main.css" type="text/css" rel="stylesheet">
+    <script src="userManagement.js"></script>
+    <script src="error.js"></script>
+
+		<script>
+		const DEFAULT_TAXONOMY_ID = 1;
+		var TAXONOMY_ID;
+
+		const DEFAULT_THRESHOLD = 1;
+		const DEFAULT_RESEARCH_ID = 1;
+
+		const TABLE_FIELDS = [{
+			field: 'articleID',
+			title: 'Article ID'
+		},
+		{
+		  field: 'title',
+		  title: 'Title'
+		},
+		{
+		  field: 'authors',
+		  title: 'Authors'
+		},
+		{
+		  field: 'year',
+		  title: 'Year'
+		},
+		{
+		  field: 'approved',
+		  title: 'Approved'
+		},
+		{
+		  field: 'approvedBy',
+		  title: 'Approved By'
+		},
+		{
+		  field: 'rejected',
+		  title: 'Rejected'
+		},
+		{
+		  field: 'rejectedBy',
+		  title: 'Rejected By'
+		}];
+
+		//var APIURL = location.protocol + '//' + location.hostname+':8000/';
+		var APIURL = '';
+	  function onLoad() {
+	  	APIURL = window.location.origin + '/';
+	  	listReviews();
+	  }
+
+function listReviews () {
+	var threshold = $('#threshold').val() - 0;
+	if (isNaN(threshold)) threshold = DEFAULT_THRESHOLD;
+	var researchID = $('#researchID').val() - 0;
+	if (isNaN(researchID)) researchID = DEFAULT_RESEARCH_ID;
+    $.ajax
+      ({
+        type: "POST",
+        url: 'getReviewList',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify({'research_id': researchID, threshold: threshold}),
+        success: function ( reviews ) {
+        	console.log("reviews: ", reviews)
+          if (!reviews) {
+            handleError('Cannot get reviews from the database.');
+            return;
+          }
+          if (!reviews.response) reviews.response = [];
+          showTable (reviews.response, 'reviewTable', true, false, [], TABLE_FIELDS, 50);
+        }
+    });
+}
+
+function saveReviewMappings() {
+	if (!admin) return;
+	var reviewMappings = [];
+	$('#reviewTable').bootstrapTable('getSelections').forEach ( function ( entry ) {
+		reviewMappings.push(entry);
+	});
+    $.ajax
+      ({
+        type: "POST",
+        url: 'saveReviewMappings',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, mappings: reviewMappings}),
+        success: function ( result ) {
+          if (!result || !result.success) {
+            handleError('Cannot save review mappings for this taxonomy to the database.');
+            return;
+          }
+          BootstrapDialog.show({
+            title: 'Success',
+            message: 'Saved review mappings successfully.'
+          });
+        }
+    });	
+}
+
+function urlParam(name){
+
+	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	return results[1] || 0;
+        }
+
+	function initPage () {
+	  window.onhashchange = function () {
+	    var hash = window.location.hash;
+	    console.log("hash changed to: " + hash);
+	    window.location.reload(false);
+	  };
+	  var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+	    initUserManagement(resolve, reject);
+	  }).then ( function ( user ) {
+	    if (!!user && user.admin == 1) {
+			$( "#saveReviewMappings" ).unbind().click(function() {
+				saveReviewMappings();
+			});
+	    }
+		$( "#refreshList" ).unbind().click(function() {
+			listReviews();
+		});
+	    onLoad();
+	  }).catch ( function ( err ) {
+	    console.log('Error loading user: ', err);
+	    handleError(err);
+	    onLoad();
+	  });
+	}
+
+  window.onload = initPage();
+	</script>
+  </head>
+
+  <body>
+
+  	<div class="navbar"></div>
+	<div class="modals"></div>
+
+    <div class="container-fluid">
+	<div class="row">
+		<div class="col-md-4">
+		  <h3>Approve Mappings</h3>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-4">
+		    <form>
+			  <label for="researchID">Research ID:</label><input type="text" class="form-control" id="researchID" style="margin-left:10px;width:50px;" value="1">
+			  <label for="threshold" style="margin-top:10px;">Threshold:</label><input type="text" class="form-control" id="threshold" style="margin-left:10px;width:50px;" value="1">
+			  <input type="button" class="btn btn-primary" id="refreshList" style="margin-top:10px;" value="Refresh">
+			</form>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<div id="reviewTableContainer"></div>
+		</div>
+	</div>
+	<div class="row" style="margin-top:20px;">
+		<div class="col-md-8">
+			<button type="button"  id="saveReviewMappings" class="btn btn-success">
+				Save Mappings To DB
+			</button>
+		</div>
+
+
+			</div>
+	</div>
+</div>
+  </body>
+</html>

@@ -201,7 +201,6 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 						     var list = selected.concat(notSelected);
 						     showTable(list, 'taxonomyTable', true, false, [], fields, 10);
 						     $('#taxonomyTable').bootstrapTable('checkBy', { field : 'id', values : taxonomyIDs });
-						     $('')
 						   },
 				            buttons: [{
 				                label: 'Cancel',

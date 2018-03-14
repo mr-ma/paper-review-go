@@ -1749,7 +1749,7 @@ function doParse(input) {
             dataType: 'json',
             contentType:'application/json',
             async: true,
-            data: JSON.stringify({citation: citation}),
+            data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, citation: citation}),
             success: function ( result ) {
               if (!result || !result.success) {
                 handleError('Cannot delete citation: ' + citation);
@@ -3405,13 +3405,13 @@ function renderMatrixHelper () {
     var dataTypeIsReferenceCount = $('#dataType')[0].value == 'referenceCount';
     switch(parent1) {
       case 'All attributes': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttribute'; break;
-      case 'All citations': ajaxTypeY = 'GET'; attributeUrlY = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'All citations': ajaxTypeY = 'POST'; attributeUrlY = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent1; break;
       default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent1; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent1; }
     }
     switch(parent2) {
       case 'All attributes': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttribute'; break;
-      case 'All citations': ajaxTypeX = 'GET'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
+      case 'All citations': ajaxTypeX = 'POST'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
       case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent2; break;
       default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent2; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent2; }
     }
@@ -3523,14 +3523,24 @@ function loadData ( correlationURL, coverageURL, maxValue, callback ) {
   var request = {'taxonomy_id': TAXONOMY_ID};
   var promises = [];
   var getCitationsPromise = new Promise ( function ( resolve, reject ) {
-    $.get('citation', function ( citations ) {
-      if (!citations) {
-        reject('Cannot get citations from DB.');
-        return;
-      }
-      if (!citations.response) citations.response = [];
-      resolve({name: 'CITATIONS', value: citations});
-    });
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: 'citation',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( citations ) {
+          if (!citations) {
+            reject('Cannot get citations from DB.');
+            return;
+          }
+          if (!citations.response) citations.response = [];
+          resolve({name: 'CITATIONS', value: citations});
+        }
+      });
   });
   promises.push(getCitationsPromise);
   var getCitationCountPromise = new Promise ( function ( resolve, reject ) {

@@ -109,7 +109,7 @@ func main() {
 	mux.Handle("POST", "/attribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributesHandler), "getAttributesHandler", nil)))
 	mux.Handle("POST", "/leafAttribute", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getLeafAttributesHandler), "getLeafAttributesHandler", nil)))
 	mux.Handle("POST", "/dimension", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getDimensionsHandler), "getDimensionsHandler", nil)))
-	mux.Handle("GET", "/citation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsHandler), "getCitationsHandler", nil)))
+	mux.Handle("POST", "/citation", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationsHandler), "getCitationsHandler", nil)))
 	mux.Handle("POST", "/citationCount", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountHandler), "getCitationCountHandler", nil)))
 	mux.Handle("POST", "/citationCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsHandler), "getCitationCountsHandler", nil)))
 	mux.Handle("POST", "/citationCountsIncludingChildren", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getCitationCountsIncludingChildrenHandler), "getCitationCountsIncludingChildrenHandler", nil)))
@@ -290,7 +290,7 @@ func main() {
 		checkAdmin(w, r, getRemoveTaxonomyHandler)
 	})
 	mux.HandleFunc("POST", "/deleteCitation", func(w http.ResponseWriter, r *http.Request) {
-		checkAdmin(w, r, deleteCitationHandler)
+		checkTaxonomyPermissions(w, r, deleteCitationHandler)
 	})
 	mux.HandleFunc("POST", "/savePositions", func(w http.ResponseWriter, r *http.Request) {
 		checkTaxonomyPermissions(w, r, savePositionsHandler)
@@ -312,6 +312,9 @@ func main() {
 	})
 	mux.HandleFunc("POST", "/addDimension", func(w http.ResponseWriter, r *http.Request) {
 		checkTaxonomyPermissions(w, r, addDimensionHandler)
+	})
+	mux.HandleFunc("POST", "/changeDimension", func(w http.ResponseWriter, r *http.Request) {
+		checkTaxonomyPermissions(w, r, changeDimensionHandler)
 	})
 	mux.HandleFunc("POST", "/removeAttribute", func(w http.ResponseWriter, r *http.Request) {
 		checkTaxonomyPermissions(w, r, removeAttributeHandler)
@@ -359,12 +362,20 @@ func main() {
 		checkTaxonomyPermissions(w, r, getForkAttributeHandler)
 	})
 
-	mux.HandleFunc("GET", "/review.html", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/getReviewList", func(w http.ResponseWriter, r *http.Request) {
+		checkAdmin(w, r, getReviewListHandler)
+	})
+
+	mux.HandleFunc("GET", "/review", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/review.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/landing", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/landing.html")
+		fmt.Fprintf(w, "%s", p)
+	})
+	mux.HandleFunc("GET", "/approve", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("frontend/src/approve.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 
@@ -1441,6 +1452,28 @@ func addDimensionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	w.Write(output)
 }
+func changeDimensionHandler(w http.ResponseWriter, r *http.Request) {
+    var changeDimensionRequest model.ChangeDimensionRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&changeDimensionRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.ChangeDimension(changeDimensionRequest.TaxonomyID, changeDimensionRequest.Attribute, changeDimensionRequest.Dimension)
+	checkErr(err)
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
 func deleteCitationHandler(w http.ResponseWriter, r *http.Request) {
     var citationRequest model.CitationRequest
     if r.Body == nil {
@@ -1454,7 +1487,7 @@ func deleteCitationHandler(w http.ResponseWriter, r *http.Request) {
     }
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citation := model.Paper{Citation: citationRequest.Citation}
-	result, err := driver.DeleteCitation(citation)
+	result, err := driver.DeleteCitation(citationRequest.TaxonomyID, citation)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {
@@ -1692,15 +1725,15 @@ func getDimensionsHandler(u *url.URL, h http.Header, dimensionRequest *model.Tax
 	return http.StatusOK, nil,
 		&MyResponse{"0", len(dimensions), dimensions}, nil
 }
-func getCitationsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
+func getCitationsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
-	citations, err := driver.GetAllCitations()
+	citations, err := driver.GetAllCitations(taxonomyRequest.TaxonomyID)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citations), citations}, nil
 }
 func getCitationCountHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
-	citationCount, err := driver.GetCitationCount()
+	citationCount, err := driver.GetCitationCount(taxonomyRequest.TaxonomyID)
 	checkErr(err)
 	return http.StatusOK, nil,
 		&MyResponse{"0", len(citationCount), citationCount}, nil
@@ -1725,7 +1758,7 @@ func getUpdateCitationReferenceCountsHandler(w http.ResponseWriter, r *http.Requ
         return
     }
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
-	result, err := driver.UpdateCitationReferenceCounts(updateReferenceCountsRequest.ReferenceCounts)
+	result, err := driver.UpdateCitationReferenceCounts(updateReferenceCountsRequest.TaxonomyID, updateReferenceCountsRequest.ReferenceCounts)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {
@@ -1923,7 +1956,7 @@ func getAttributeDetailsHandler(u *url.URL, h http.Header, attributeDetailsReque
 }
 func getCitationDetailsHandler(u *url.URL, h http.Header, citationDetailsRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
-	citationDetails, err := driver.GetCitationDetails(citationDetailsRequest.Text1, citationDetailsRequest.Text2)
+	citationDetails, err := driver.GetCitationDetails(citationDetailsRequest.TaxonomyID, citationDetailsRequest.Text1, citationDetailsRequest.Text2)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citationDetails), citationDetails}, nil
 }
@@ -2186,4 +2219,27 @@ func getReviewStatsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.H
 		resp.Response = all
 	}
 	return http.StatusOK, nil, &resp, nil
+}
+
+func getReviewListHandler(w http.ResponseWriter, r *http.Request) {
+    var reviewListRequest model.ReviewListRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&reviewListRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.GetApprovedPapers(reviewListRequest.ResearchID, reviewListRequest.Threshold)
+	checkErr(err)
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
 }

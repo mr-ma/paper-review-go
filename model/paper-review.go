@@ -56,3 +56,8 @@ type Stats struct {
 	RemainingArticles int `json:"remaining_articles"`
 	MitarbeiterID     int `json:"mitarbeiter_id"`
 }
+
+type ReviewListRequest struct {
+	ResearchID int64 `json:"research_id"`
+	Threshold int `json:"threshold"`
+}
