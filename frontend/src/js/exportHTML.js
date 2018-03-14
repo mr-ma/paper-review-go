@@ -14,8 +14,17 @@ function exportHTML ( fileName ) {
   }
   fullHTML = fullHTMLTmp[0] + DELIMITER + '\n</body>\n</html>';
   fullHTML = fullHTML.replace(new RegExp('const IS_STATIC = false', ''), 'const IS_STATIC = true');
-  STATIC_ARRAY.forEach ( function ( entry ) { // TODO fix
-    fullHTML = fullHTML.replace(new RegExp('var STATIC_' + entry, ''), 'var STATIC_' + entry + ' = `' + unescape(JSON.stringify(DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(entry)])) + '`');
+  STATIC_ARRAY.forEach ( function ( entry ) {
+    if (entry == 'CITATIONS') {
+      var citationData = DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(entry)];
+      if (!!citationData && !!citationData.response) {
+        // getting rid of BibTex entries, since they cause JSON.parse errors
+        citationData.response.forEach ( function ( citationEntry ) {
+          if (!!citationEntry.bib) delete citationEntry.bib;
+        });
+      }
+      fullHTML = fullHTML.replace(new RegExp('var STATIC_' + entry, ''), 'var STATIC_' + entry + ' = `' + unescape(JSON.stringify(citationData)).replace(/\\\"/g, "'") + '`');
+    } else fullHTML = fullHTML.replace(new RegExp('var STATIC_' + entry, ''), 'var STATIC_' + entry + ' = `' + unescape(JSON.stringify(DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(entry)])) + '`');
   });
 
   var scripts = document.scripts;
@@ -28,7 +37,7 @@ function exportHTML ( fileName ) {
     var webURL = $(scripts[i]).attr('data-web');
     if (!!webURL) {
       fullHTML = fullHTML.replace(new RegExp('<script src="' + srcURL + '" data-web="' + webURL + '">', 'g'), '<script src="' + webURL + '" data-web="' + srcURL + '">');
-    } else if (!!srcURL && srcURL != '' && srcURL.split('.js').length > 1) { // TODO
+    } else if (!!srcURL && srcURL != '' && srcURL.split('.js').length > 1) {
       var fetchPromise = new Promise ( function ( resolve, reject ) {
         var url = srcURL;
         $.ajax({
