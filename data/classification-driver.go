@@ -1311,7 +1311,6 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return result, err
 		}
 
-	// TODO taxonomyId + dimension
 	func (d MySQLDriver) Save3DPositions(taxonomyId int64, positions []model.Position) (result model.Result, err error){
 	  	dbRef, err := d.OpenDB()
 		defer dbRef.Close()

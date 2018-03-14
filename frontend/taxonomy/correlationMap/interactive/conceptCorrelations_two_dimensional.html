@@ -1464,7 +1464,7 @@ function doParse(input) {
         .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
         .each(row);
 
-    if (!!selectableCells) appendCellTexts(true); // TODO add button
+    if (!!selectableCells) appendCellTexts(true);
     else if ($('#showCellNumbers').is(':checked')) appendCellTexts(false);
 
     $('#showCellNumbers').unbind().on('change', function () {
@@ -1901,7 +1901,7 @@ function doParse(input) {
                                 return el.text();
                             })
                             .attr("style", "width: 19; font-size: " + FONT_SIZE + ";")
-                            .on("blur", function() { // TODO
+                            .on("blur", function() {
                                 var txt = inp.node().value - 0;
                                 updateText(d, field, el, p_el, that, txt);
                             })
@@ -2346,7 +2346,7 @@ function doParse(input) {
             text = fullText;
           } else if (i >= treeDepthY && hasDimensionsY) text += ' view';
           if (i >= treeDepthY && hasDimensionsY) isDimension = true;
-          if (false && !IS_STATIC) { // TODO
+          if (false && !IS_STATIC) {
             if (!selectize1) return;
             if (parents.indexOf(text) < 0) return;
             selectize1.setValue(text, false);
@@ -2748,7 +2748,7 @@ function doParse(input) {
             text = fullText;
           } else if (i >= treeDepthX && hasDimensionsX) text += ' view';
           if (i >= treeDepthX && hasDimensionsX) isDimension = true;
-          if (false && !IS_STATIC) { // TODO
+          if (false && !IS_STATIC) {
             if (!selectize2) return;
             if (parents.indexOf(text) < 0) return;
             selectize2.setValue(text, false);
@@ -3288,7 +3288,7 @@ function doParse(input) {
     // save mappings between concepts and papers to database
     $('#saveMappings').unbind().click ( function () {
       if (IS_STATIC || !admin) return;
-      if (!selectableCells) return; // TODO
+      if (!selectableCells) return;
       var mappings = [];
       d3.selectAll(".cell").each ( function ( cell ) {
         var attributeText = nodesY[cell.y-1].text;
