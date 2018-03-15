@@ -86,9 +86,10 @@ function validateEmail(email) {
       loadNavbarFields(user);
       $('#navbar li a').unbind().on('click', function ( e ) {
         e.preventDefault();
-        var hash = window.location.hash;
+        var hashArray = window.location.hash.split('#');
+        var hash = hashArray.length > 1 ? ('#' + hashArray[1].split('_').shift()) : '';
         var link = $(this).attr('href');
-        if (!!link && link != '' && link.split('javascript').length <= 1) window.location.href = window.location.origin + link + hash;
+        if (!!link && link != '' && link.split('javascript').length <= 1) window.location.href = window.location.origin + link + hash
       });
       $('#taxonomyDropdown').html('');
       $.get('taxonomy', function ( taxonomies ) {
