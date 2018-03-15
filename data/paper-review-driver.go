@@ -29,6 +29,7 @@ type PaperReviewDriver interface {
 	GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s model.Stats, err error)
 	GetResearchStats(researchID int64) (s []model.Stats, err error)
 	GetApprovedPapers(researchID int64, threshold int) ([]model.Article, error)
+	GetApprovedPapersWithDetails(researchID int64, threshold int) ([]model.ArticleMapping, error)
 }
 
 
@@ -505,4 +506,30 @@ having a.ResearchId = ? and count(votes.Vote_State) > ?`)
 	}
 
 	return articles, err
+}
+
+//GetApprovedPapers get approved papers with details by threshold
+func (d MySQLDriver) GetApprovedPapersWithDetails(researchID int64, threshold int) (articleMappings []model.ArticleMapping, err error) {
+	db, err := d.OpenDB()
+	checkErr(err)
+	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
+a.Keywords,a.Abstract,a.Journal,a.ResearchId,a.Authors, GROUP_CONCAT(tmp.TagId SEPARATOR ',') as tagIDs, GROUP_CONCAT(tmp.Tag SEPARATOR ',') as tags, sum(case when votes.Vote_State = 1 then 1 else 0 end) as approvedCount, sum(case when votes.Vote_State = 0 then 1 else 0 end) as rejectedCount
+from articles_view a
+inner join votes on a.ArticleId = votes.ArticleId
+left outer join (select vote_tags.VoteId as VoteId, GROUP_CONCAT(tags.TagId SEPARATOR ',') as TagId, GROUP_CONCAT(tags.Text SEPARATOR ',') as Tag from vote_tags inner join tags on (vote_tags.Tag_Id = tags.TagId) group by vote_tags.VoteId) as tmp on votes.VoteId = tmp.VoteId and votes.Vote_State = 1
+group by a.ArticleId,a.ResearchId
+having a.ResearchId = ? and sum(case when votes.Vote_State = 1 then 1 else 0 end) >= ?`)
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query(researchID, threshold)
+	checkErr(err)
+
+	for rows.Next() {
+		a := model.ArticleMapping{}
+		rows.Scan(&a.ID, &a.Title, &a.Year, &a.CitedBy, &a.Keywords,
+			&a.Abstract, &a.Journal, &a.AssociatedResearchId, &a.Authors, &a.TagIds, &a.Tags, &a.ApprovedCount, &a.RejectedCount)
+		articleMappings = append(articleMappings, a)
+	}
+
+	return articleMappings, err
 }

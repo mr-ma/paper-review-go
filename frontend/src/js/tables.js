@@ -15,7 +15,7 @@
       
   }
 
- function initTable( data, tableID, hasCheckboxes, expandable, buttons, fields, pageSize ) {
+ function initTable( data, tableID, hasCheckboxes, expandable, buttons, fields, pageSize, callback ) {
     $('#' + tableID + 'Container').html('<table id="' + tableID + '"><thead></thead><tbody></tbody></table>');
     var columns = [{
           field: 'select',
@@ -34,7 +34,7 @@
         detailView: !!expandable,
         search: true,
         searchAlign: 'left',
-        clickToSelect: true,
+        clickToSelect: false,
         maintainSelected: true,
         pageSize: !!pageSize ? pageSize : 10,
         pagination: data.length > (!!pageSize ? pageSize : 10) ? true : false,
@@ -42,6 +42,7 @@
           detail.html(row.nested.content);
         }
       });
+      if (!!callback) callback();
   }
 
   function showTable ( tableData, tableID, hasCheckboxes, expandable, buttons, fields, pageSize ) {
@@ -69,13 +70,16 @@
       data.push(dataRow);
       counter++;
     });
-    initTable(data, tableID, hasCheckboxes, expandable, buttons, fields, pageSize);
-    if (buttons) {
-      buttons.forEach ( function ( button ) {
-        $('.' + button.class).unbind().on('click', function ( event ) {
-          button.onClick(event, this);
+    initTable(data, tableID, hasCheckboxes, expandable, buttons, fields, pageSize, function () {
+      if (!!buttons) {
+        buttons.forEach ( function ( button ) {
+          if (!!button.onClick) {
+            $('.' + button.class).unbind().on('click', function ( event ) {
+              button.onClick(event, this);
+            });
+          }
         });
-      });
-    }
+      }
+    });
     adjustTableLayout(tableID, buttons);
   }

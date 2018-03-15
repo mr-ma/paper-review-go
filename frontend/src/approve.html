@@ -34,7 +34,7 @@
 		const DEFAULT_RESEARCH_ID = 1;
 
 		const TABLE_FIELDS = [{
-			field: 'articleID',
+			field: 'id',
 			title: 'Article ID'
 		},
 		{
@@ -50,20 +50,16 @@
 		  title: 'Year'
 		},
 		{
-		  field: 'approved',
+		  field: 'tagList',
+		  title: 'Tags'
+		},
+		{
+		  field: 'approvedCount',
 		  title: 'Approved'
 		},
 		{
-		  field: 'approvedBy',
-		  title: 'Approved By'
-		},
-		{
-		  field: 'rejected',
+		  field: 'rejectedCount',
 		  title: 'Rejected'
-		},
-		{
-		  field: 'rejectedBy',
-		  title: 'Rejected By'
 		}];
 
 		//var APIURL = location.protocol + '//' + location.hostname+':8000/';
@@ -72,6 +68,35 @@
 	  	APIURL = window.location.origin + '/';
 	  	listReviews();
 	  }
+
+function listTags ( event, button ) {
+	if (!button) return;
+	var tagString = $(button).attr('data-field');
+	if (!tagString) return;
+	var tags = tagString != '' ? tagString.split(',') : [];
+
+    var tagTable = '<table class="table table-bordered"><thead><th>Word</th><th>#</th><th style="width:1%;"></th></thead><tbody>';
+    tags.forEach ( function ( tag ) {
+      tagTable += '<tr><td>' + tag + '</td><td>' + 1 + '</td><td style="cursor:pointer;text-align:center;"><span class="glyphicon glyphicon-remove" title="Remove"></span></td></tr>';
+    });
+    tagTable += '</tbody></table>';
+    BootstrapDialog.show({
+      title: '' + tags.length + ' tags',
+      message: tagTable,
+      onshown: function () {
+        $('.glyphicon-remove').unbind().on('click', function () {
+        	var thatRow = $(this).parentsUntil('tbody');
+        	var name = thatRow.find('td:first').text();
+			for ( var i = tags.length - 1; i >= 0; i-- ) {
+			    if (tags[i] === name) tags.splice(i, 1);
+			}
+        	$(button).attr('data-field', tags.join(','));
+        	thatRow.remove();
+        	console.log("new tags: " + tags.join(','));
+        });
+      }
+    });
+}
 
 function listReviews () {
 	var threshold = $('#threshold').val() - 0;
@@ -88,12 +113,9 @@ function listReviews () {
         data: JSON.stringify({'research_id': researchID, threshold: threshold}),
         success: function ( reviews ) {
         	console.log("reviews: ", reviews)
-          if (!reviews) {
-            handleError('Cannot get reviews from the database.');
-            return;
-          }
-          if (!reviews.response) reviews.response = [];
-          showTable (reviews.response, 'reviewTable', true, false, [], TABLE_FIELDS, 50);
+          if (!reviews) reviews = [];
+
+          showTable (reviews, 'reviewTable', true, false, [{name: 'tags', title: 'Tags', class: 'glyphicon-tags', 'data-field': 'tags', onClick: listTags}], TABLE_FIELDS, 50);
         }
     });
 }
@@ -104,6 +126,7 @@ function saveReviewMappings() {
 	$('#reviewTable').bootstrapTable('getSelections').forEach ( function ( entry ) {
 		reviewMappings.push(entry);
 	});
+	console.log("mappings: ", reviewMappings)
     $.ajax
       ({
         type: "POST",

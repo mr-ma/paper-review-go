@@ -31,6 +31,7 @@
   }
 
     function loadTaxonomyData ( taxonomyID, attributeURL, citationCountsURL, useCY ) {
+      var dimensionHashText = unescape(window.location.hash.split('_').pop());
       if (!IS_STATIC) {
         var request = {'taxonomy_id': taxonomyID};
         var promises = [];
@@ -189,9 +190,11 @@
         Promise.all(promises)
           .then ( function ( results ) {
             DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS] = dimensions;
+            var foundDimension = false;
             dimensions.forEach ( function ( dimension ) {
               DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION] = [];
               DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS] = [];
+              if (dimension.text == dimensionHashText) foundDimension = true;
             });
             results.forEach ( function ( result ) {
               if (result.name == 'DIMENSIONDATA') {
@@ -202,7 +205,8 @@
                 });
               } else DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
             });
-            displayedDimension = 'Interdimensional view';
+            if (foundDimension) displayedDimension = dimensionHashText;
+            else displayedDimension = 'Interdimensional view';
             showDimension(displayedDimension, useCY);
           }).catch ( function ( err ) {
             console.log('Error loading data from DB: ', err);
@@ -223,11 +227,14 @@
           var attributesPerDimension = JSON.parse(STATIC_ATTRIBUTESPERDIMENSION);
           var attributeRelations = JSON.parse(STATIC_ATTRIBUTERELATIONS);
 
+          var foundDimension = false;
           for ( var i = 0; i < dimensions.length; i++ ) {
             if (attributesPerDimension.length > i) DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION][i] = attributesPerDimension[i];
             if (attributeRelations.length > i) DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS][i] = attributeRelations[i];
+            if (dimensions[i].text == dimensionHashText) foundDimension = true;
           }
-          displayedDimension = 'Interdimensional view';
+          if (foundDimension) displayedDimension = dimensionHashText;
+          else displayedDimension = 'Interdimensional view';
           showDimension(displayedDimension, useCY);
         } catch ( err ) {
           console.log('Error parsing STATIC data: ', err);

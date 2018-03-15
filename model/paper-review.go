@@ -31,6 +31,23 @@ type Article struct {
 	Source               string `json:"source"`
 	AssociatedResearchId int64  `json:"associated_research_id"`
 }
+type ArticleMapping struct {
+	ID                   int    `json:"id"`
+	Title                string `json:"title"`
+	Authors              string `json:"authors"`
+	Year                 string `json:"year"`
+	CitedBy              string `json:"cited_by"`
+	Keywords             string `json:"keywords"`
+	Abstract             string `json:"abstract"`
+	Journal              string `json:"journal"`
+	File                 string `json:"file"`
+	Source               string `json:"source"`
+	AssociatedResearchId int64  `json:"associated_research_id"`
+	TagIds string `json:"tagIDs"`
+	Tags string `json:"tags"`
+	ApprovedCount int `json:"approvedCount"`
+	RejectedCount int `json:"rejectedCount"`
+}
 type Mitarbeiter struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`

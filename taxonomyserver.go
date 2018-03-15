@@ -2233,7 +2233,7 @@ func getReviewListHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
-	result, err := driver.GetApprovedPapers(reviewListRequest.ResearchID, reviewListRequest.Threshold)
+	result, err := driver.GetApprovedPapersWithDetails(reviewListRequest.ResearchID, reviewListRequest.Threshold)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {

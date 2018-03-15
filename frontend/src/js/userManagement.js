@@ -31,6 +31,7 @@ function validateEmail(email) {
               }
               $('#addTaxonomy-modal').modal('hide');
               var url = window.location.origin;
+              var dimensionText = window.location.hash.split('_').pop();
               window.location.href = url + '/taxonomyRelations#' + taxonomy;
             }
         });
@@ -250,8 +251,9 @@ function validateEmail(email) {
     }
     var getTaxonomyIDPromise = new Promise ( function ( resolve, reject ) {
       var url = window.location.href.split('#');
-      var hash = window.location.hash.split('#').pop();
-      if (!!hash && hash != '') {
+      var hash = window.location.hash.split('#').pop().split('_').shift();
+      var hashInt = hash - 0;
+      if (hashInt == 0 || isNaN(hashInt)) {
         $.ajax
           ({
             type: "POST",
@@ -262,22 +264,23 @@ function validateEmail(email) {
             data: JSON.stringify({text: unescape(hash)}),
             success: function ( taxonomy ) {
               if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
-                console.log('Cannot get taxonomy ID From DB.');
                 TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                window.location.href = url.shift();
+                //window.location.href = url.shift();
                 resolve();
                 return;
               } else {
                 var id = taxonomy.response[0].id - 0;
-                console.log("taxonomy id: ", id)
                 if (!isNaN(id)) TAXONOMY_ID = id;
                 else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
               }
               resolve();
+            }, failure: function () {
+              TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+              resolve();
             }
         });
       } else {
-        TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+        TAXONOMY_ID = hashInt;
         resolve();
       }
     });
