@@ -2260,8 +2260,7 @@ func saveReviewMappingsHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
-	// make taxonomy specific? (1 is the default taxonomy ID)
-	result, err := driver.SaveReviewMappings(1, saveReviewMappingsRequest.Attributes, saveReviewMappingsRequest.Mappings)
+	result, err := driver.SaveReviewMappings(saveReviewMappingsRequest.TaxonomyID, saveReviewMappingsRequest.Attributes, saveReviewMappingsRequest.Mappings)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {
