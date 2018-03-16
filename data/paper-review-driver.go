@@ -43,6 +43,7 @@ func InitPaperReviewDriver(user string, password string) PaperReviewDriver {
 //SelectResearchWithArticles a research with it's associated articles
 func (d MySQLDriver) SelectResearchWithArticles(id int64) (r model.Research, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`Select Research.researchid,research.questions,research.Review_template, research.Title researchTitle,
 		a.ArticleId, a.Title, a.year, a.cited_by, a.keywords, a.abstract, a.journal,
@@ -66,6 +67,7 @@ func (d MySQLDriver) SelectResearchWithArticles(id int64) (r model.Research, err
 //SelectAllResearchWithArticles a research with it's associated articles
 func (d MySQLDriver) SelectAllResearchWithArticles() (r []model.Research, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`Select Research.researchid,research.questions,
 		research.Review_template,research.Title researchTitle, a.ArticleId, a.Title, a.year,
@@ -101,6 +103,7 @@ func (d MySQLDriver) SelectAllResearchWithArticles() (r []model.Research, err er
 //SelectAllResearch a research without articles
 func (d MySQLDriver) SelectAllResearch() (r []model.Research, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`Select researchid,questions,Review_template,Title
 		from research`)
@@ -133,6 +136,7 @@ func (d MySQLDriver) SelectAllResearch() (r []model.Research, err error) {
 func (d MySQLDriver) SelectVote(id int64) (model.Vote, error) {
 	v := model.Vote{}
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
 		m.Id MitarbeiterID,m.Nme,t.TagId as TagID,t.text as TagText,t.ResearchID
@@ -161,6 +165,7 @@ func (d MySQLDriver) SelectVote(id int64) (model.Vote, error) {
 //SelectAllVotes selects all votes
 func (d MySQLDriver) SelectAllVotes() (r []model.Vote, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
 m.Id MitarbeiterID,m.Nme
@@ -204,6 +209,7 @@ left outer join Tags t on vt.Tag_Id = t.TagId`)
 //SelectResearchVotes selects all votes
 func (d MySQLDriver) SelectResearchVotes(researchID int64) (r []model.Vote, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
 m.Id MitarbeiterID,m.Nme
@@ -247,6 +253,7 @@ where a.ResearchId=?`)
 }
 func (d MySQLDriver) SelectAllTags(researchID int64) (tags []model.Tag, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select TagId,Text,ResearchID from Tags where ResearchID=?`)
 	defer stmt.Close()
@@ -266,6 +273,7 @@ func (d MySQLDriver) SelectAllTags(researchID int64) (tags []model.Tag, err erro
 //SelectMitarbeiter select
 func (d MySQLDriver) SelectMitarbeiter(id int64) (m model.Mitarbeiter, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Id,Nme from Mitarbeiters where Id=?`)
 	defer stmt.Close()
@@ -282,6 +290,7 @@ func (d MySQLDriver) SelectMitarbeiter(id int64) (m model.Mitarbeiter, err error
 //SelectAllMitarbeiters all mitarbeiters
 func (d MySQLDriver) SelectAllMitarbeiters() (marr []model.Mitarbeiter, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Id,Nme from Mitarbeiters`)
 	defer stmt.Close()
@@ -299,6 +308,7 @@ func (d MySQLDriver) SelectAllMitarbeiters() (marr []model.Mitarbeiter, err erro
 
 func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articleArray []model.Article, r model.Research, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year, a.cited_by,a.Keywords,
 a.Abstract,a.Journal,a.Authors,a.ResearchId,
@@ -326,6 +336,7 @@ where v.MitarbeiterId is null and a.researchId=?`)
 //ReviewNumPapers review limited papers
 func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limit int) (articleArray []model.Article, r model.Research, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year, a.cited_by,a.Keywords,
 	a.Abstract,a.Journal,a.Authors,a.ResearchId,
@@ -435,6 +446,7 @@ func (d MySQLDriver) InsertMitarbeiter(mitarbeiter model.Mitarbeiter) (affected 
 //GetResearchStatsPerMitarbeiter get statistics on reviewing process
 func (d MySQLDriver) GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s model.Stats, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
 from articles_view cross join Mitarbeiters
@@ -459,6 +471,7 @@ having articles_view.ResearchId = ? and Mitarbeiters.Id = ?`)
 //GetResearchStats get statistics on reviewing process
 func (d MySQLDriver) GetResearchStats(researchID int64) (s []model.Stats, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Mitarbeiters.Id, LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
 from articles_view cross join Mitarbeiters
@@ -486,6 +499,7 @@ having articles_view.ResearchId = ? `)
 //GetApprovedPapers get approved papers by threshold
 func (d MySQLDriver) GetApprovedPapers(researchID int64, threshold int) (articles []model.Article, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
 a.Keywords,a.Abstract,a.Journal,a.ResearchId,a.Authors
@@ -511,6 +525,7 @@ having a.ResearchId = ? and count(votes.Vote_State) > ?`)
 //GetApprovedPapers get approved papers with details by threshold
 func (d MySQLDriver) GetApprovedPapersWithDetails(researchID int64, threshold int) (articleMappings []model.ArticleMapping, err error) {
 	db, err := d.OpenDB()
+	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
 a.Keywords,a.Abstract,a.Journal,a.ResearchId,a.Authors, GROUP_CONCAT(tmp.TagId SEPARATOR ',') as tagIDs, GROUP_CONCAT(tmp.Tag SEPARATOR ',') as tags, sum(case when votes.Vote_State = 1 then 1 else 0 end) as approvedCount, sum(case when votes.Vote_State = 0 then 1 else 0 end) as rejectedCount

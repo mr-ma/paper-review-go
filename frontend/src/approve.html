@@ -64,6 +64,7 @@
 
 		//var APIURL = location.protocol + '//' + location.hostname+':8000/';
 		var APIURL = '';
+		var taxonomyDimensions = [];
 	  function onLoad() {
 	  	APIURL = window.location.origin + '/';
 	  	listReviews();
@@ -106,46 +107,141 @@ function listReviews () {
     $.ajax
       ({
         type: "POST",
-        url: 'getReviewList',
+        url: 'dimension',
         dataType: 'json',
         contentType:'application/json',
         async: true,
-        data: JSON.stringify({'research_id': researchID, threshold: threshold}),
-        success: function ( reviews ) {
-        	console.log("reviews: ", reviews)
-          if (!reviews) reviews = [];
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+        success: function ( dimensions ) {
+        	if (!dimensions) {
+        	  handleError('Cannot get dimensions From DB.');
+        	  return;
+        	}
+        	if (!dimensions.response) dimensions.response = [];
+        	taxonomyDimensions = dimensions.response;
+		    $.ajax
+		      ({
+		        type: "POST",
+		        url: 'getReviewList',
+		        dataType: 'json',
+		        contentType:'application/json',
+		        async: true,
+		        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, 'research_id': researchID, threshold: threshold}),
+		        success: function ( reviews ) {
+		        	console.log("reviews: ", reviews)
+		          if (!reviews) reviews = [];
+		          showTable (reviews, 'reviewTable', true, false, [{name: 'tags', title: 'Tags', class: 'glyphicon-tags', 'data-field': 'tags', onClick: listTags}], TABLE_FIELDS, 50);
+		        }
+		    });
+		}
+	});
+}
 
-          showTable (reviews, 'reviewTable', true, false, [{name: 'tags', title: 'Tags', class: 'glyphicon-tags', 'data-field': 'tags', onClick: listTags}], TABLE_FIELDS, 50);
-        }
+function tableCallback () {
+	if (!taxonomyDimensions) return;
+    taxonomyDimensions.forEach ( function ( dimension ) {
+    	$('.selectDimension').append('<option>' + dimension.text + '</option>');
     });
+    $('.selectDimension').val('Interdimensional view');
 }
 
 function saveReviewMappings() {
 	if (!admin) return;
 	var reviewMappings = [];
 	$('#reviewTable').bootstrapTable('getSelections').forEach ( function ( entry ) {
-		reviewMappings.push(entry);
+		var tagObj = $(entry.tags);
+		if (!!tagObj) {
+			var tagString = tagObj.attr('data-field');
+			if (!!tagString) {
+				var tags = tagString != '' ? tagString.split(',') : []; 
+				reviewMappings.push({id: entry.id, tags: tags});
+			}
+		}
 	});
-	console.log("mappings: ", reviewMappings)
-    $.ajax
-      ({
-        type: "POST",
-        url: 'saveReviewMappings',
-        dataType: 'json',
-        contentType:'application/json',
-        async: true,
-        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, mappings: reviewMappings}),
-        success: function ( result ) {
-          if (!result || !result.success) {
-            handleError('Cannot save review mappings for this taxonomy to the database.');
-            return;
-          }
-          BootstrapDialog.show({
-            title: 'Success',
-            message: 'Saved review mappings successfully.'
-          });
-        }
-    });	
+	var savedTags = [];
+	var savedTagObjects = [];
+	var conceptMappings = [];
+	reviewMappings.forEach ( function ( entry ) {
+		if (!!entry.tags) {
+			entry.tags.forEach ( function ( tag ) {
+				if (savedTags.indexOf(tag) < 0) {
+					savedTags.push(tag);
+					savedTagObjects.push({tag: tag, selectDimension: '<select id="selectDimension_' + tag + '" class="selectDimension" style="width:150px;"></select>'});
+				}
+				conceptMappings.push({attribute: tag, articleID: entry.id});
+			});
+		}
+	});
+	var tableContainers = '<div id="tableContainer"><div><p style="font-size:large"><b>Concepts</b></p></div><div id="conceptsTableContainer"></div><input type="button" class="btn btn-success" id="saveConceptMappings" style="margin-top:15px;" value="Save"></div>';
+    var fields = [{
+      field: 'tag',
+      title: 'Concept'
+    }, {
+      field: 'selectDimension',
+      title: 'Dimension'
+    }];
+    BootstrapDialog.show({
+      title: 'Concepts',
+      message: tableContainers,
+      size : BootstrapDialog.SIZE_WIDE,
+      closeable : true,
+      onshown: function ( dialogRef ) {
+        showTable(savedTagObjects, 'conceptsTableContainer', false, false, [], fields, 10, function () {
+        	if (!taxonomyDimensions) {
+			    $.ajax
+			      ({
+			        type: "POST",
+			        url: 'dimension',
+			        dataType: 'json',
+			        contentType:'application/json',
+			        async: true,
+			        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+			        success: function ( dimensions ) {
+			        	if (!dimensions) {
+			        	  handleError('Cannot get dimensions From DB.');
+			        	  return;
+			        	}
+			        	if (!dimensions.response) dimensions.response = [];
+			        	taxonomyDimensions = dimensions.response;
+			        	tableCallback();
+			        }
+			    });
+        	} else tableCallback();
+        	$('#saveConceptMappings').unbind().click ( function () {
+        		var attributes = [];
+        		savedTags.forEach ( function ( tag ) {
+        			var dimension = $('select[id="selectDimension_' + tag + '"]').val();
+        			if (!dimension) dimension = '';
+        			attributes.push({text: tag, dimension: dimension});
+        		});
+        		console.log("attr: ", attributes);
+        		console.log("mappings: ", conceptMappings);
+			    $.ajax
+			      ({
+			        type: "POST",
+			        url: 'saveReviewMappings',
+			        dataType: 'json',
+			        contentType:'application/json',
+			        async: true,
+			        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributes: attributes, mappings: conceptMappings}),
+			        success: function ( result ) {
+			          if (!result || !result.success) {
+			            handleError('Cannot save review mappings for this taxonomy to the database.');
+			            return;
+			          }
+			          dialogRef.close();
+			          BootstrapDialog.show({
+			            title: 'Success',
+			            message: 'Saved review mappings successfully.'
+			          });
+			        }, failure: function () {
+			        	handleError('Cannot connect to the database server.');
+			        }
+			    });
+        	});
+        });
+      }
+    });
 }
 
 function urlParam(name){
@@ -155,13 +251,12 @@ function urlParam(name){
         }
 
 	function initPage () {
-	/*
 	  window.onhashchange = function () {
 	    var hash = window.location.hash;
 	    console.log("hash changed to: " + hash);
 	    window.location.reload(false);
 	  };
-	*/
+	  
 	  var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
 	    initUserManagement(resolve, reject);
 	  }).then ( function ( user ) {

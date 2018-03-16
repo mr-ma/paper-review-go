@@ -45,7 +45,7 @@
       if (!!callback) callback();
   }
 
-  function showTable ( tableData, tableID, hasCheckboxes, expandable, buttons, fields, pageSize ) {
+  function showTable ( tableData, tableID, hasCheckboxes, expandable, buttons, fields, pageSize, callback ) {
     var data = [];
     var counter = 1;
     if (!buttons) var buttons = [];
@@ -80,6 +80,7 @@
           }
         });
       }
+      if (!!callback) callback();
     });
     adjustTableLayout(tableID, buttons);
   }

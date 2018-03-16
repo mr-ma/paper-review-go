@@ -131,6 +131,17 @@ type AttributeRelationsRequest struct {
   MaxValue int64 `json:"maxValue"`
 }
 
+type ReviewMapping struct {
+  Attribute string `json:"attribute"`
+  ArticleID int `json:"articleID"`
+}
+
+type SaveReviewMappingsRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  Attributes []Attribute `json:"attributes"`
+  Mappings []ReviewMapping `json:"mappings"`
+}
+
 type TaxonomyRequest struct {
   TaxonomyID int64 `json:"taxonomy_id"`
 }

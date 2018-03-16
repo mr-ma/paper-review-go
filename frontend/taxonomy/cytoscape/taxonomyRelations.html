@@ -81,6 +81,9 @@
     <button type="button" class="btn btn-default" id="getEdges" title="Save Positions" style="display:none;"><span class="glyphicon glyphicon-floppy-disk" value="Save Positions" ></span></button>
     <button type="button" class="btn btn-default" id="merge" title="Merge nodes" style="display:none;"><span class="glyphicon glyphicon-resize-small" value="Merge nodes" ></span></button>
   </div>
+  <div style="margin-left:13px;">
+    <input type="text" id="search" style="width:157px;" title="Search" value="" placeholder="Search">
+  </div>
   <div id="cyContainer">
   </div>
 
@@ -1475,6 +1478,7 @@
 
     // initialize cytoscape extensions
 
+    cy.panzoom();
     cy.edgehandles({handleNodes: '.child, .parent'});
     var viewUtilities = cy.viewUtilities({
       node: {
@@ -1590,6 +1594,16 @@
       if (hash.split('#').length > 1) currentHash = hash.split('_').shift() + '_' + displayedDimension;
       else currentHash = '#' + DEFAULT_TAXONOMY_ID + '_' + displayedDimension;
       window.location.hash = currentHash;
+    });
+    $('#search').unbind().on('input', function () {
+      var text = this.value;
+      if (!!text && text.length > 1) {
+        var foundNodes = cy.$('[id="' + text + '"]');
+        viewUtilities.unhighlight(cy.$('[id!="' + text + '"]'));
+        viewUtilities.highlight(foundNodes);
+        if (!!foundNodes && foundNodes.length > 0) console.log('Found: ', foundNodes);
+        else console.log('Did not find any nodes with that name.');
+      }
     });
     $('#clickMe').unbind().click ( function () {
       savePositions(cy, dimensions);

@@ -362,8 +362,12 @@ func main() {
 		checkTaxonomyPermissions(w, r, getForkAttributeHandler)
 	})
 
+	// make taxonomy specific?
 	mux.HandleFunc("POST", "/getReviewList", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getReviewListHandler)
+	})
+	mux.HandleFunc("POST", "/saveReviewMappings", func(w http.ResponseWriter, r *http.Request) {
+		checkAdmin(w, r, saveReviewMappingsHandler)
 	})
 
 	mux.HandleFunc("GET", "/review", func(w http.ResponseWriter, r *http.Request) {
@@ -2234,6 +2238,30 @@ func getReviewListHandler(w http.ResponseWriter, r *http.Request) {
     }
 	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.GetApprovedPapersWithDetails(reviewListRequest.ResearchID, reviewListRequest.Threshold)
+	checkErr(err)
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
+
+func saveReviewMappingsHandler(w http.ResponseWriter, r *http.Request) {
+    var saveReviewMappingsRequest model.SaveReviewMappingsRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&saveReviewMappingsRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	// make taxonomy specific? (1 is the default taxonomy ID)
+	result, err := driver.SaveReviewMappings(1, saveReviewMappingsRequest.Attributes, saveReviewMappingsRequest.Mappings)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {
