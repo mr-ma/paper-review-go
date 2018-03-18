@@ -61,7 +61,7 @@ type Tag struct {
 type Vote struct {
 	ID                  int         `json:"id"`
 	State               VoteStatus  `json:"state"`
-	Voter               Mitarbeiter `json:"voter"`
+	Voter               User `json:"voter"`
 	Tags                []Tag       `json:"tags"`
 	AssociatedArticleID int         `json:"associated_article_id"`
 	Review              string      `json:"review"`

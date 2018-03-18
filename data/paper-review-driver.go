@@ -14,9 +14,9 @@ type PaperReviewDriver interface {
 	InsertTag(tag model.Tag) (affected int64, id int64, err error)
 	InsertVoteTags(tags []model.Tag, voteID int64) (affected int64, err error)
 	InsertVote(vote model.Vote) (affected int64, id int64, err error)
-	InsertMitarbeiter(mitarbeiter model.Mitarbeiter) (affected int64, id int64, err error)
-	SelectMitarbeiter(id int64) (model.Mitarbeiter, error)
-	SelectAllMitarbeiters() ([]model.Mitarbeiter, error)
+	// InsertMitarbeiter(mitarbeiter model.Mitarbeiter) (affected int64, id int64, err error)
+	// SelectMitarbeiter(string) (model.User, error)
+	// SelectAllMitarbeiters() ([]model.User, error)
 	SelectResearchWithArticles(id int64) (r model.Research, err error)
 	SelectAllResearch() (r []model.Research, err error)
 	SelectAllResearchWithArticles() (r []model.Research, err error)
@@ -139,10 +139,10 @@ func (d MySQLDriver) SelectVote(id int64) (model.Vote, error) {
 	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
-		m.Id MitarbeiterID,m.Nme,t.TagId as TagID,t.text as TagText,t.ResearchID
+		m.id MitarbeiterID,m.name,t.TagId as TagID,t.text as TagText,t.ResearchID
 		from Votes inner join articles a
-		on Votes.ArticleId = a.ArticleID inner join Mitarbeiters m
-		on Votes.MitarbeiterId = m.Id left outer join Vote_Tags vt
+		on Votes.ArticleId = a.ArticleID inner join user m
+		on Votes.MitarbeiterId = m.id left outer join Vote_Tags vt
 		on Votes.VoteId =vt.VoteId left outer join Tags t
 		on vt.Tag_Id = t.TagId where votes.VoteId=?`)
 	defer stmt.Close()
@@ -168,12 +168,12 @@ func (d MySQLDriver) SelectAllVotes() (r []model.Vote, err error) {
 	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
-m.Id MitarbeiterID,m.Nme
+m.id MitarbeiterID,m.name
 ,t.TagId as TagID,t.text as TagText,t.ResearchID
 from Votes inner join articles a
 on Votes.ArticleId = a.ArticleID
-inner join Mitarbeiters m
-on Votes.MitarbeiterId = m.Id
+inner join user m
+on Votes.MitarbeiterId = m.id
 left outer join Vote_Tags vt on Votes.VoteId =vt.VoteId
 left outer join Tags t on vt.Tag_Id = t.TagId`)
 	defer stmt.Close()
@@ -186,7 +186,7 @@ left outer join Tags t on vt.Tag_Id = t.TagId`)
 		State := model.UNSURE
 		voteReview := ""
 		articleID := 0
-		mit := model.Mitarbeiter{}
+		mit := model.User{}
 		a := model.Tag{}
 		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text, &a.ResearchID)
 		vote := m[id]
@@ -212,12 +212,12 @@ func (d MySQLDriver) SelectResearchVotes(researchID int64) (r []model.Vote, err 
 	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
-m.Id MitarbeiterID,m.Nme
+m.id MitarbeiterID,m.name
 ,t.TagId as TagID,t.text as TagText,t.ResearchID
 from Votes inner join articles a
 on Votes.ArticleId = a.ArticleID
-inner join Mitarbeiters m
-on Votes.MitarbeiterId = m.Id
+inner join user m
+on Votes.MitarbeiterId = m.id
 left outer join Vote_Tags vt on Votes.VoteId =vt.VoteId
 left outer join Tags t on vt.Tag_Id = t.TagId
 where a.ResearchId=?`)
@@ -231,7 +231,7 @@ where a.ResearchId=?`)
 		State := model.UNSURE
 		voteReview := ""
 		articleID := 0
-		mit := model.Mitarbeiter{}
+		mit := model.User{}
 		a := model.Tag{}
 		rows.Scan(&id, &State, &voteReview, &articleID, &mit.ID, &mit.Name, &a.ID, &a.Text, &a.ResearchID)
 		vote := m[id]
@@ -270,41 +270,43 @@ func (d MySQLDriver) SelectAllTags(researchID int64) (tags []model.Tag, err erro
 	return tags, err
 }
 
+/*
 //SelectMitarbeiter select
-func (d MySQLDriver) SelectMitarbeiter(id int64) (m model.Mitarbeiter, err error) {
+func (d MySQLDriver) SelectMitarbeiter(email string) (m model.User, err error) {
 	db, err := d.OpenDB()
 	defer db.Close()
 	checkErr(err)
-	db, stmt, err := d.Query(`select Id,Nme from Mitarbeiters where Id=?`)
+	db, stmt, err := d.Query(`select id,name from user where email=?`)
 	defer stmt.Close()
 	defer db.Close()
-	rows, err := stmt.Query(id)
+	rows, err := stmt.Query(email)
 	checkErr(err)
 	for rows.Next() {
-		m = model.Mitarbeiter{}
+		m = model.User{}
 		rows.Scan(&m.ID, &m.Name)
 	}
 	return m, err
 }
 
 //SelectAllMitarbeiters all mitarbeiters
-func (d MySQLDriver) SelectAllMitarbeiters() (marr []model.Mitarbeiter, err error) {
+func (d MySQLDriver) SelectAllMitarbeiters() (marr []model.User, err error) {
 	db, err := d.OpenDB()
 	defer db.Close()
 	checkErr(err)
-	db, stmt, err := d.Query(`select Id,Nme from Mitarbeiters`)
+	db, stmt, err := d.Query(`select id,name from user`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query()
 	checkErr(err)
 	for rows.Next() {
 		id := 0
-		nme := ""
-		rows.Scan(&id, &nme)
-		marr = append(marr, model.Mitarbeiter{ID: id, Name: nme})
+		name := ""
+		rows.Scan(&id, &name)
+		marr = append(marr, model.User{ID: id, Name: name})
 	}
 	return marr, err
 }
+*/
 
 func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articleArray []model.Article, r model.Research, err error) {
 	db, err := d.OpenDB()
@@ -314,7 +316,7 @@ func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articl
 a.Abstract,a.Journal,a.Authors,a.ResearchId,
 r.Questions,r.Review_Template
 
-from articles_view a inner join Research r on a.researchId =r.researchid
+from articles a inner join Research r on a.researchId =r.researchid and a.Enabled = 1
 left outer join (select * from votes where MitarbeiterId =?) v on a.ArticleId = v.ArticleId
 where v.MitarbeiterId is null and a.researchId=?`)
 	defer stmt.Close()
@@ -342,7 +344,7 @@ func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limi
 	a.Abstract,a.Journal,a.Authors,a.ResearchId,
 	r.Questions,r.Review_Template
 
-	from articles_view a inner join Research r on a.researchId =r.researchid
+	from articles a inner join Research r on a.researchId =r.researchid and a.Enabled = 1
 	left outer join (select * from votes where MitarbeiterId =?) v on a.ArticleId = v.ArticleId
 	where v.MitarbeiterId is null and a.researchId=?
 	limit ?`)
@@ -437,11 +439,13 @@ func (d MySQLDriver) InsertVote(vote model.Vote) (affected int64, id int64, err 
 	return affect, id, err
 }
 
+/*
 //InsertMitarbeiter insert researcher
 func (d MySQLDriver) InsertMitarbeiter(mitarbeiter model.Mitarbeiter) (affected int64, id int64, err error) {
 	affect, id, err := d.Insert("Mitarbeiters", "Pass_Hash=?,Nme=?", mitarbeiter.PassHash, mitarbeiter.Name)
 	return affect, id, err
 }
+*/
 
 //GetResearchStatsPerMitarbeiter get statistics on reviewing process
 func (d MySQLDriver) GetResearchStatsPerMitarbeiter(researchID int64, mitarbeiterID int64) (s model.Stats, err error) {
@@ -449,12 +453,12 @@ func (d MySQLDriver) GetResearchStatsPerMitarbeiter(researchID int64, mitarbeite
 	defer db.Close()
 	checkErr(err)
 	db, stmt, err := d.Query(`select LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
-from articles_view cross join Mitarbeiters
-left outer join votes on articles_view.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
-inner join (select ResearchId,count(*) CountArticles from articles_view
-group by ResearchId) ar on articles_view.ResearchId = ar.ResearchId
-group by articles_view.ResearchId, Mitarbeiters.Id
-having articles_view.ResearchId = ? and Mitarbeiters.Id = ?`)
+from articles cross join user
+left outer join votes on articles.ArticleId =votes.ArticleId and votes.MitarbeiterId = user.id
+inner join (select ResearchId,count(*) CountArticles from articles where articles.Enabled = 1
+group by ResearchId) ar on articles.ResearchId = ar.ResearchId and articles.Enabled = 1
+group by articles.ResearchId, user.id
+having articles.ResearchId = ? and user.id = ?`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(researchID, mitarbeiterID)
@@ -473,13 +477,13 @@ func (d MySQLDriver) GetResearchStats(researchID int64) (s []model.Stats, err er
 	db, err := d.OpenDB()
 	defer db.Close()
 	checkErr(err)
-	db, stmt, err := d.Query(`select Mitarbeiters.Id, LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
-from articles_view cross join Mitarbeiters
-left outer join votes on articles_view.ArticleId =votes.ArticleId and votes.MitarbeiterId = Mitarbeiters.Id
-inner join (select ResearchId,count(*) CountArticles from articles_view
-group by ResearchId) ar on articles_view.ResearchId = ar.ResearchId
-group by articles_view.ResearchId, Mitarbeiters.Id
-having articles_view.ResearchId = ? `)
+	db, stmt, err := d.Query(`select user.id, LEAST(count(votes.Vote_State),ar.CountArticles) votes,ar.CountArticles
+from articles cross join user
+left outer join votes on articles.ArticleId =votes.ArticleId and votes.MitarbeiterId = user.id
+inner join (select ResearchId,count(*) CountArticles from articles where articles.Enabled = 1
+group by ResearchId) ar on articles.ResearchId = ar.ResearchId and articles.Enabled = 1
+group by articles.ResearchId, user.id
+having articles.ResearchId = ? `)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(researchID)
@@ -503,8 +507,8 @@ func (d MySQLDriver) GetApprovedPapers(researchID int64, threshold int) (article
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
 a.Keywords,a.Abstract,a.Journal,a.ResearchId,a.Authors
-from articles_view a
-inner join votes on a.ArticleId = votes.ArticleId
+from articles a
+inner join votes on a.ArticleId = votes.ArticleId and a.Enabled = 1
 group by a.ArticleId,a.ResearchId
 having a.ResearchId = ? and count(votes.Vote_State) > ?`)
 	defer stmt.Close()
@@ -529,8 +533,8 @@ func (d MySQLDriver) GetApprovedPapersWithDetails(researchID int64, threshold in
 	checkErr(err)
 	db, stmt, err := d.Query(`select a.ArticleId,a.Title,a.year,a.cited_by,
 a.Keywords,a.Abstract,a.Journal,a.ResearchId,a.Authors, GROUP_CONCAT(tmp.TagId SEPARATOR ',') as tagIDs, GROUP_CONCAT(tmp.Tag SEPARATOR ',') as tags, sum(case when votes.Vote_State = 1 then 1 else 0 end) as approvedCount, sum(case when votes.Vote_State = 0 then 1 else 0 end) as rejectedCount
-from articles_view a
-inner join votes on a.ArticleId = votes.ArticleId
+from articles a
+inner join votes on a.ArticleId = votes.ArticleId and a.Enabled = 1
 left outer join (select vote_tags.VoteId as VoteId, GROUP_CONCAT(tags.TagId SEPARATOR ',') as TagId, GROUP_CONCAT(tags.Text SEPARATOR ',') as Tag from vote_tags inner join tags on (vote_tags.Tag_Id = tags.TagId) group by vote_tags.VoteId) as tmp on votes.VoteId = tmp.VoteId and votes.Vote_State = 1
 group by a.ArticleId,a.ResearchId
 having a.ResearchId = ? and sum(case when votes.Vote_State = 1 then 1 else 0 end) >= ?`)

@@ -144,7 +144,7 @@ func (d MySQLDriver) SaveUser(email string, password string) (result model.Resul
 		result.Success = false
 		return result, err
 	}
-	dbRef.Exec("INSERT IGNORE INTO user (email, password) VALUES (?, ?);", email, password)
+	dbRef.Exec("INSERT IGNORE INTO user (email, name, password) VALUES (?, ?, ?);", email, email, password)
 	result.Success = true
 	return result, err
 	}
@@ -168,7 +168,7 @@ func (d MySQLDriver) CreateUser(email string, password string, admin int) (resul
 		return result, err
 	}
 	adminStr := strconv.Itoa(admin)
-	dbRef.Exec("INSERT IGNORE INTO user (email, password, admin) VALUES (?, ?, ?);", email, password, adminStr)
+	dbRef.Exec("INSERT IGNORE INTO user (email, name, password, admin) VALUES (?, ?, ?, ?);", email, email, password, adminStr)
 	result.Success = true
 	return result, err
 	}
@@ -196,17 +196,18 @@ func (d MySQLDriver) GetUser(email string) (user model.User, err error){
 	dbRef, err := d.OpenDB()
 	defer dbRef.Close()
 	checkErr(err)
-	db, stmt, err := d.Query("SELECT email, admin FROM user WHERE email = ?;")
+	db, stmt, err := d.Query("SELECT id, name FROM user WHERE email = ?;")
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(email)
 	checkErr(err)
 	if rows.Next() {
 		a := model.User{}
-		rows.Scan(&a.Email,&a.Admin)
+		rows.Scan(&a.ID,&a.Name)
 		user = a
 	}
 	defer rows.Close()
+	user.Email = email
 	return user, err
 	}
 
@@ -484,10 +485,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attribute.text, count(distinct tmp.id_paper) as citationCount, sum(case when tmp.referenceCount is not null then tmp.referenceCount else 0 end) as referenceCountSum from attribute left outer join (select distinct mapping.id_attribute, mapping.id_paper, paper.referenceCount from mapping inner join paper on (mapping.id_paper = paper.id_paper)) as tmp on (attribute.id_attribute = tmp.id_attribute) where attribute.id_taxonomy = ? group by attribute.id_attribute;")
+		db, stmt, err := d.Query("select distinct attribute.text, count(distinct tmp.id_paper) as citationCount, sum(case when tmp.referenceCount is not null then tmp.referenceCount else 0 end) as referenceCountSum from attribute left outer join (select distinct mapping.id_attribute, mapping.id_paper, paper.referenceCount from mapping inner join paper on (mapping.id_paper = paper.id_paper and paper.id_taxonomy = ?)) as tmp on (attribute.id_attribute = tmp.id_attribute) where attribute.id_taxonomy = ? group by attribute.id_attribute;")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.CitationCount{}
@@ -503,10 +504,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct allchildrenperattribute.text, count(distinct tmp.id_paper) as citationCount, sum(case when tmp.referenceCount is not null then tmp.referenceCount else 0 end) from allchildrenperattribute left outer join (select distinct mapping.id_attribute, mapping.id_paper, paper.referenceCount from mapping inner join paper on (mapping.id_paper = paper.id_paper)) as tmp on (FIND_IN_SET(tmp.id_attribute, allchildrenperattribute.children)) where allchildrenperattribute.id_taxonomy = ? group by allchildrenperattribute.text;")
+		db, stmt, err := d.Query("select distinct allchildrenperattribute.text, count(distinct tmp.id_paper) as citationCount, sum(case when tmp.referenceCount is not null then tmp.referenceCount else 0 end) from allchildrenperattribute left outer join (select distinct mapping.id_attribute, mapping.id_paper, paper.referenceCount from mapping inner join paper on (mapping.id_paper = paper.id_paper and paper.id_taxonomy = ?)) as tmp on (FIND_IN_SET(tmp.id_attribute, allchildrenperattribute.children)) where allchildrenperattribute.id_taxonomy = ? group by allchildrenperattribute.text;")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.CitationCount{}
@@ -691,10 +692,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount, sum(mapping.occurrenceCount) as occurrenceCount from allchildrenperattribute inner join mapping on (allchildrenperattribute.text = ? and allchildrenperattribute.id_taxonomy = ? and FIND_IN_SET(mapping.id_attribute, allchildrenperattribute.children)) inner join paper on (mapping.id_paper = paper.id_paper) group by allchildrenperattribute.id_attribute, mapping.id_paper order by paper.id_paper;")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount, sum(mapping.occurrenceCount) as occurrenceCount from allchildrenperattribute inner join mapping on (allchildrenperattribute.text = ? and allchildrenperattribute.id_taxonomy = ? and FIND_IN_SET(mapping.id_attribute, allchildrenperattribute.children)) inner join paper on (mapping.id_paper = paper.id_paper and paper.id_taxonomy = ?) group by allchildrenperattribute.id_attribute, mapping.id_paper order by paper.id_paper;")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(attribute, taxonomyIdStr)
+		rows, err := stmt.Query(attribute, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -748,10 +749,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query(`select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute1.text as Text1, attribute2.text as Text2, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, SUM(paper.referenceCount) as value from attribute as attribute1 inner join (select distinct mapping1.id_attribute as attr1, mapping2.id_attribute as attr2, mapping1.id_paper from mapping as mapping1 inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper and mapping1.id_attribute <= mapping2.id_attribute)) as correlation on (attribute1.id_taxonomy = ? and attribute1.id_attribute = correlation.attr1) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and attribute2.id_attribute = correlation.attr2) inner join paper on (correlation.id_paper = paper.id_paper) group by attribute1.id_attribute, attribute2.id_attribute;`)
+		db, stmt, err := d.Query(`select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute1.text as Text1, attribute2.text as Text2, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, SUM(paper.referenceCount) as value from attribute as attribute1 inner join (select distinct mapping1.id_attribute as attr1, mapping2.id_attribute as attr2, mapping1.id_paper from mapping as mapping1 inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper and mapping1.id_attribute <= mapping2.id_attribute)) as correlation on (attribute1.id_taxonomy = ? and attribute1.id_attribute = correlation.attr1) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and attribute2.id_attribute = correlation.attr2) inner join paper on (correlation.id_paper = paper.id_paper and paper.id_taxonomy = ?) group by attribute1.id_attribute, attribute2.id_attribute;`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.ConceptCorrelation{}
@@ -767,10 +768,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query(`select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute3.text as Attribute3, attribute1.text as Text1, attribute2.text as Text2, attribute3.text as Text3, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, attribute3.id_attribute as ID3, SUM(paper.referenceCount) as value from attribute as attribute1 inner join (select distinct mapping1.id_attribute as attr1, mapping2.id_attribute as attr2, mapping3.id_attribute as attr3, mapping1.id_paper from mapping as mapping1 inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper)) as correlation on (attribute1.id_taxonomy = ? and attribute1.id_attribute = correlation.attr1) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and attribute2.id_attribute = correlation.attr2) inner join attribute as attribute3 on (attribute3.id_taxonomy = ? and attribute3.id_attribute = correlation.attr3) inner join paper on (correlation.id_paper = paper.id_paper) group by attribute1.id_attribute, attribute2.id_attribute, attribute3.id_attribute;`)
+		db, stmt, err := d.Query(`select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute3.text as Attribute3, attribute1.text as Text1, attribute2.text as Text2, attribute3.text as Text3, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, attribute3.id_attribute as ID3, SUM(paper.referenceCount) as value from attribute as attribute1 inner join (select distinct mapping1.id_attribute as attr1, mapping2.id_attribute as attr2, mapping3.id_attribute as attr3, mapping1.id_paper from mapping as mapping1 inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper)) as correlation on (attribute1.id_taxonomy = ? and attribute1.id_attribute = correlation.attr1) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and attribute2.id_attribute = correlation.attr2) inner join attribute as attribute3 on (attribute3.id_taxonomy = ? and attribute3.id_attribute = correlation.attr3) inner join paper on (correlation.id_paper = paper.id_paper and paper.id_taxonomy = ?) group by attribute1.id_attribute, attribute2.id_attribute, attribute3.id_attribute;`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr, taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.ConceptCorrelation{}
@@ -824,10 +825,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query(`select distinct correlation.Attribute1, correlation.Attribute2, correlation.Text1, correlation.Text2, correlation.ID1, correlation.ID2, SUM(paper.referenceCount) as value from (select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute1.text as Text1, attribute2.text as Text2, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, mapping1.id_paper from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.id_taxonomy = ? and allchildrenperattribute1.id_attribute <= allchildrenperattribute2.id_attribute and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children)) inner join attribute as attribute1 on (allchildrenperattribute1.id_attribute = attribute1.id_attribute) inner join attribute as attribute2 on (allchildrenperattribute2.id_attribute = attribute2.id_attribute)) as correlation inner join paper on (correlation.id_paper = paper.id_paper) group by correlation.ID1, correlation.ID2;`)
+		db, stmt, err := d.Query(`select distinct correlation.Attribute1, correlation.Attribute2, correlation.Text1, correlation.Text2, correlation.ID1, correlation.ID2, SUM(paper.referenceCount) as value from (select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute1.text as Text1, attribute2.text as Text2, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, mapping1.id_paper from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.id_taxonomy = ? and allchildrenperattribute1.id_attribute <= allchildrenperattribute2.id_attribute and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children)) inner join attribute as attribute1 on (allchildrenperattribute1.id_attribute = attribute1.id_attribute) inner join attribute as attribute2 on (allchildrenperattribute2.id_attribute = attribute2.id_attribute)) as correlation inner join paper on (correlation.id_paper = paper.id_paper and paper.id_taxonomy = ?) group by correlation.ID1, correlation.ID2;`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.ConceptCorrelation{}
@@ -843,10 +844,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query(`select distinct correlation.Attribute1, correlation.Attribute2, correlation.Attribute3, correlation.Text1, correlation.Text2, correlation.Text3, correlation.ID1, correlation.ID2, correlation.ID3, SUM(paper.referenceCount) as value from (select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute3.text as Attribute3, attribute1.text as Text1, attribute2.text as Text2, attribute3.text as Text3, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, attribute3.id_attribute as ID3, mapping1.id_paper from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.id_taxonomy = ? and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper) inner join allparentsperattribute as allchildrenperattribute3 on (allchildrenperattribute3.id_taxonomy = ? and FIND_IN_SET(mapping3.id_attribute, allchildrenperattribute3.children)) inner join attribute as attribute1 on (allchildrenperattribute1.id_attribute = attribute1.id_attribute) inner join attribute as attribute2 on (allchildrenperattribute2.id_attribute = attribute2.id_attribute) inner join attribute as attribute3 on (allchildrenperattribute3.id_attribute = attribute3.id_attribute)) as correlation inner join paper on (correlation.id_paper = paper.id_paper) group by correlation.ID1, correlation.ID2, correlation.ID3;`)
+		db, stmt, err := d.Query(`select distinct correlation.Attribute1, correlation.Attribute2, correlation.Attribute3, correlation.Text1, correlation.Text2, correlation.Text3, correlation.ID1, correlation.ID2, correlation.ID3, SUM(paper.referenceCount) as value from (select distinct attribute1.text as Attribute1, attribute2.text as Attribute2, attribute3.text as Attribute3, attribute1.text as Text1, attribute2.text as Text2, attribute3.text as Text3, attribute1.id_attribute as ID1, attribute2.id_attribute as ID2, attribute3.id_attribute as ID3, mapping1.id_paper from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.id_taxonomy = ? and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper) inner join allparentsperattribute as allchildrenperattribute3 on (allchildrenperattribute3.id_taxonomy = ? and FIND_IN_SET(mapping3.id_attribute, allchildrenperattribute3.children)) inner join attribute as attribute1 on (allchildrenperattribute1.id_attribute = attribute1.id_attribute) inner join attribute as attribute2 on (allchildrenperattribute2.id_attribute = attribute2.id_attribute) inner join attribute as attribute3 on (allchildrenperattribute3.id_attribute = attribute3.id_attribute)) as correlation inner join paper on (correlation.id_paper = paper.id_paper and paper.id_taxonomy = ?) group by correlation.ID1, correlation.ID2, correlation.ID3;`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr, taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.ConceptCorrelation{}
@@ -862,10 +863,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from attribute as attribute1 inner join mapping as mapping1 on (attribute1.text = ? and attribute1.id_taxonomy = ? and attribute1.id_attribute = mapping1.id_attribute) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join attribute as attribute2 on (attribute2.text = ? and attribute2.id_taxonomy = ? and attribute2.id_attribute = mapping2.id_attribute) inner join paper on (mapping1.id_paper = paper.id_paper);")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from attribute as attribute1 inner join mapping as mapping1 on (attribute1.text = ? and attribute1.id_taxonomy = ? and attribute1.id_attribute = mapping1.id_attribute) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join attribute as attribute2 on (attribute2.text = ? and attribute2.id_taxonomy = ? and attribute2.id_attribute = mapping2.id_attribute) inner join paper on (mapping1.id_paper = paper.id_paper and paper.id_taxonomy = ?);")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr)
+		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -881,10 +882,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from attribute as attribute1 inner join mapping as mapping1 on (attribute1.text = ? and attribute1.id_taxonomy = ? and attribute1.id_attribute = mapping1.id_attribute) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join attribute as attribute2 on (attribute2.text = ? and attribute2.id_taxonomy = ? and attribute2.id_attribute = mapping2.id_attribute) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper) inner join attribute as attribute3 on (attribute3.text = ? and attribute3.id_taxonomy = ? and attribute3.id_attribute = mapping3.id_attribute) inner join paper on (mapping1.id_paper = paper.id_paper);")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from attribute as attribute1 inner join mapping as mapping1 on (attribute1.text = ? and attribute1.id_taxonomy = ? and attribute1.id_attribute = mapping1.id_attribute) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join attribute as attribute2 on (attribute2.text = ? and attribute2.id_taxonomy = ? and attribute2.id_attribute = mapping2.id_attribute) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper) inner join attribute as attribute3 on (attribute3.text = ? and attribute3.id_taxonomy = ? and attribute3.id_attribute = mapping3.id_attribute) inner join paper on (mapping1.id_paper = paper.id_paper and paper.id_taxonomy = ?);")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr, text3, taxonomyIdStr)
+		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr, text3, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -900,10 +901,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.text = ? and allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.text = ? and allchildrenperattribute2.id_taxonomy = ? and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children)) inner join paper on (mapping1.id_paper = paper.id_paper);")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.text = ? and allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.text = ? and allchildrenperattribute2.id_taxonomy = ? and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children)) inner join paper on (mapping1.id_paper = paper.id_paper and paper.id_taxonomy = ?);")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr)
+		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -919,10 +920,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.text = ? and allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.text = ? and allchildrenperattribute2.id_taxonomy = ? and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children)) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper) inner join allchildrenperattribute as allchildrenperattribute3 on (allchildrenperattribute3.text = ? and allchildrenperattribute3.id_taxonomy = ? and FIND_IN_SET(mapping3.id_attribute, allchildrenperattribute3.children)) inner join paper on (mapping1.id_paper = paper.id_paper);")
+		db, stmt, err := d.Query("select distinct paper.id_paper, paper.citation, paper.bib, paper.referenceCount from allchildrenperattribute as allchildrenperattribute1 inner join mapping as mapping1 on (allchildrenperattribute1.text = ? and allchildrenperattribute1.id_taxonomy = ? and FIND_IN_SET(mapping1.id_attribute, allchildrenperattribute1.children)) inner join mapping as mapping2 on (mapping1.id_paper = mapping2.id_paper) inner join allchildrenperattribute as allchildrenperattribute2 on (allchildrenperattribute2.text = ? and allchildrenperattribute2.id_taxonomy = ? and FIND_IN_SET(mapping2.id_attribute, allchildrenperattribute2.children)) inner join mapping as mapping3 on (mapping1.id_paper = mapping3.id_paper) inner join allchildrenperattribute as allchildrenperattribute3 on (allchildrenperattribute3.text = ? and allchildrenperattribute3.id_taxonomy = ? and FIND_IN_SET(mapping3.id_attribute, allchildrenperattribute3.children)) inner join paper on (mapping1.id_paper = paper.id_paper and paper.id_taxonomy = ?);")
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr, text3, taxonomyIdStr)
+		rows, err := stmt.Query(text1, taxonomyIdStr, text2, taxonomyIdStr, text3, taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.Paper{}
@@ -976,10 +977,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, 1 as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper);`)
+		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, 1 as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper and paper.id_taxonomy = ?);`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.AttributeCoverage{}
@@ -996,10 +997,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
 		// mapping.occurrenceCount as value (for occurrence counts instead of 1's)
-		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, 1 as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper);`)
+		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, 1 as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper and paper.id_taxonomy = ?);`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.AttributeCoverage{}
@@ -1015,10 +1016,10 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, paper.referenceCount as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper);`)
+		db, stmt, err := d.Query(`select distinct attribute.text as attributeName, paper.citation as paperName, attribute.text as text1, paper.citation as text2, attribute.id_attribute as attributeID, paper.id_paper as paperID, paper.referenceCount as value from attribute inner join mapping on (attribute.id_taxonomy = ? and attribute.id_attribute = mapping.id_attribute) inner join paper on (mapping.id_paper = paper.id_paper and paper.id_taxonomy = ?);`)
 		defer stmt.Close()
 		defer db.Close()
-		rows, err := stmt.Query(taxonomyIdStr)
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
 		checkErr(err)
 		for rows.Next() {
 			a := model.AttributeCoverage{}
@@ -1807,8 +1808,8 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 					dbRef.Exec("INSERT IGNORE INTO attribute (id_taxonomy, text, major) VALUES (?, ?, ?);", taxonomyIdStr, elem.Attribute, major)
 					dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND text = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE id_taxonomy = ? AND text = ?));", taxonomyIdStr, taxonomyIdStr, elem.Attribute, taxonomyIdStr, dimension)
 				}
-				db, stmt, err = d.Query("SELECT tmp.maxID, paper.id_paper FROM (SELECT MAX(id_paper) AS maxID FROM paper WHERE id_taxonomy = ?) AS tmp LEFT OUTER JOIN paper ON (paper.citation = ?);")
-				rows, err = stmt.Query(taxonomyIdStr, article.Title)
+				db, stmt, err = d.Query("SELECT tmp.maxID, paper.id_paper FROM (SELECT MAX(id_paper) AS maxID FROM paper WHERE id_taxonomy = ?) AS tmp LEFT OUTER JOIN paper ON (paper.citation = ? and paper.id_taxonomy = ?);")
+				rows, err = stmt.Query(taxonomyIdStr, article.Title, taxonomyIdStr)
 				checkErr(err)
 				stmt.Close()
 				db.Close()

@@ -318,6 +318,9 @@
   var isInterDimensional = true;
   var displayedDimension;
 
+  var tappedBefore;
+  var tappedTimeout;
+
   function handleErrorHelper ( error ) {
     if (!!cy) cy.elements().trigger('qtiphide');
     handleError(error);
@@ -1100,7 +1103,6 @@
       },
       events: {
         render: function(event, api) {
-          console.log("rendering")
           $('.listCitations').unbind().click( function () {
             event.preventDefault();
             var attribute = $(this).attr('name');
@@ -1228,6 +1230,7 @@
       },
       style: STYLES
     });
+    cy.center(); // centers the view on all elements in the graph
     if (!!useCY) cy.json(DYNAMIC_ARRAY[STATIC_ARRAY.indexOf('CY')]);
     var edgeBendEditingApi = cy.edgeBendEditing({ initBendPointsAutomatically: true });
 
@@ -1563,11 +1566,13 @@
     });
     cy.$('.interdimensional').on('expandcollapse.beforecollapse', function ( e ) {
       e.preventDefault();
+      e.stopPropagation();
     });
     cy.$('.interdimensional').on('expandcollapse.beforeexpand', function ( e ) {
       e.preventDefault();
+      e.stopPropagation();
     });
-    cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
+    function expandDimension ( node ) {
       cy.$('.parent,.child').each ( function ( node, index ) {
         var api = node.qtip('api');
         api.destroy();
@@ -1577,7 +1582,7 @@
         cxtmenu.destroy();
       });
       cy.destroy();
-      if (isInterDimensional) var dimText = this.id();
+      if (isInterDimensional) var dimText = node.id();
       else var dimText = 'Interdimensional view';
       displayedDimension = dimText;
       var hash = window.location.hash;
@@ -1586,15 +1591,40 @@
       else currentHash = '#' + DEFAULT_TAXONOMY_ID + '_' + dimText;
       window.location.hash = currentHash;
       showDimension(dimText);
-    });
-    cy.$('.dimension').on('expandcollapse.beforeexpand', function ( e ) {
+    }
+    function collapseDimension () {
       displayedDimension = 'Interdimensional view';
       var hash = window.location.hash;
       // prevent page reload on hash change
       if (hash.split('#').length > 1) currentHash = hash.split('_').shift() + '_' + displayedDimension;
       else currentHash = '#' + DEFAULT_TAXONOMY_ID + '_' + displayedDimension;
       window.location.hash = currentHash;
+    }
+    cy.$('.dimension').on('expandcollapse.beforecollapse', function ( e ) {
+      expandDimension(this);
     });
+    cy.$('.dimension').on('expandcollapse.beforeexpand', function ( e ) {
+      collapseDimension();
+    });
+
+    // Source: https://stackoverflow.com/questions/18610621/cytoscape-js-check-for-double-click-on-nodes
+    cy.on('tap', '.dimension', function(event) {
+      var tappedNow = event.cyTarget;
+      if (tappedTimeout && tappedBefore) {
+        clearTimeout(tappedTimeout);
+      }
+      if(tappedBefore === tappedNow) {
+        this.trigger('doubleTap');
+        tappedBefore = null;
+      } else {
+        tappedTimeout = setTimeout(function(){ tappedBefore = null; }, 300);
+        tappedBefore = tappedNow;
+      }
+    });
+    cy.on('doubleTap', '.dimension', function(event) {
+      expandDimension(event.target);
+    });
+
     $('#search').unbind().on('input', function () {
       var text = this.value;
       if (!!text && text.length > 1) {

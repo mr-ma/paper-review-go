@@ -42,17 +42,17 @@ function getSelectedResearch() {
 	  }
 
 function initResearchOptions () {
-	  var mitarbeiterAPI = APIURL+"mitarbeiter";
+	  var mitarbeiterAPI = APIURL+"user";
 	  $.getJSON( mitarbeiterAPI, {
 	    format: "json"
 	  })
 	    .done(function( data ) {
-		data = data.response;
-		console.log('response contains: '+data.length);
-
-		
-		
-	      $.each( data, function( i, item ) {		
+	      if (!data) {
+	      	handleError('Cannot get user data from the database.');
+	      	return;
+	      }
+	      var users = [data];
+	      users.forEach ( function( item ) {
 				var id = item.id;
 				var name = item.name;
 			   $('#list').append('<div id="'+ id +'" class="list-group-item"><a href="#" name='+name+' id='+id+' class="list-group-item active">'+name +' <span id="stat_'+ id +'" class="badge">14</span> </a></div>')
@@ -107,7 +107,6 @@ function initResearchOptions () {
     function PopulateStats() {
    
    var statAPI=  APIURL+"review/stats/"+getSelectedResearch();
-   console.log("apirino: ", statAPI)
   $.getJSON( statAPI, {
     format: "json"
   })
@@ -169,7 +168,7 @@ function initResearchOptions () {
 	<div class="row">
 		<div class="col-md-6">
 			<div id="list" class="list-group">
-				 <span href="#" class="list-group-item active">List of Reviewers</span>
+				 <span href="#" class="list-group-item active">Reviewer Account:</span>
 
 			</div>
 		</div>

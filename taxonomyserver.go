@@ -82,9 +82,9 @@ func main() {
 
 	mux.Handle("GET", "/approved/{researchID}/{threshold}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getApprovedHandler), "getApprovedHandler", nil)))
 
-	mux.Handle("POST", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postMitarbeiterHandler), "postMitarbeiterHandler", nil)))
-	mux.Handle("GET", "/mitarbeiter/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getMitarbeiterHandler", nil)))
-	mux.Handle("GET", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getAllMitarbeitersHandler", nil)))
+	// mux.Handle("POST", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(postMitarbeiterHandler), "postMitarbeiterHandler", nil)))
+	// mux.Handle("GET", "/mitarbeiter/{id}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getMitarbeiterHandler", nil)))
+	// mux.Handle("GET", "/mitarbeiter", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getMitarbeiterHandler), "getAllMitarbeitersHandler", nil)))
 
 	mux.Handle("GET", "/tag/{researchID}", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getTagsHandler), "getResearchTags", nil)))
 
@@ -264,6 +264,9 @@ func main() {
 		}
 		w.Header().Set("content-type", "application/json")
 		w.Write(output)
+	})
+	mux.HandleFunc("GET", "/user", func(w http.ResponseWriter, r *http.Request) {
+		checkAdmin(w, r, getUserHandler)
 	})
 	mux.HandleFunc("GET", "/getUsers", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getUsersHandler)
@@ -998,6 +1001,25 @@ func checkTaxonomyPermissions(w http.ResponseWriter, r *http.Request, callback f
 	w.Write(output)
 }
 
+func getUserHandler(w http.ResponseWriter, r *http.Request) {
+	session := sessionManager.Load(r)
+	var email string
+	email, err := session.GetString("email")
+	user := model.User{}
+	if err == nil {
+		driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+		user, err = driver.GetUser(email)
+		checkErr(err)
+	}
+	output, err := json.Marshal(user)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
+
 // get list of users and their permissions
 func getUsersHandler(w http.ResponseWriter, r *http.Request) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
@@ -1006,9 +1028,6 @@ func getUsersHandler(w http.ResponseWriter, r *http.Request) {
 	userResult := []model.User{}
 	if err == nil {
 		userResult = users
-	}
-	for _, el := range userResult {
-		fmt.Println("user: " + el.Email)
 	}
 	output, err := json.Marshal(userResult)
 	if err != nil {
@@ -2154,12 +2173,14 @@ func getReviewHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header
 
 }
 
+/*
 func postMitarbeiterHandler(u *url.URL, h http.Header, mitarbeiter *model.Mitarbeiter) (int, http.Header, *MyResponse, error) {
 	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
 	_, id, err := driver.InsertMitarbeiter(*mitarbeiter)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{strconv.FormatInt(id, 10), 1, "Mitarbeiter inserted"}, nil
 }
+
 func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
 	resp := MyResponse{}
@@ -2176,6 +2197,7 @@ func getMitarbeiterHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.H
 	}
 	return http.StatusOK, nil, &resp, nil
 }
+*/
 
 func getTagsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)

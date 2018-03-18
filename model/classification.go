@@ -310,7 +310,9 @@ type Result struct {
 }
 
 type User struct {
+  ID int `json:"id"`
   Email string `json:"email"`
+  Name string `json:"name"`
   Taxonomies string `json:"taxonomies"`
   Admin int `json:"admin"`
 }

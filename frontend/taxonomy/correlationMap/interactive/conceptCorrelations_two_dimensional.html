@@ -575,7 +575,7 @@ function doParse(input) {
         <label for="showChildAttributes">Show child attributes</label>
         <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
         <label for="includeChildAttributes">Include child attributes</label>
-        <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;" checked>
+        <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;">
       </div>
       <div class="dataTypeSelectContainer">
         <label for="dataType">Data Type: </label><select class="form-control" id="dataType">
@@ -1193,6 +1193,8 @@ function doParse(input) {
     top = sortedTop;
     svgMarginLeft = 0;
     svgMarginTop = 0;
+
+    console.log("correlations: ", correlations.response)
 
     // fill matrix values
     correlations.response.forEach(function(link) {
@@ -3400,7 +3402,8 @@ function renderMatrixHelper () {
     var correlationURLObj = getCorrelationOptions();
     var correlationURL = correlationURLObj.url;
     var maxValue = correlationURLObj.maxValue;
-    var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
+    var onClickURL = 'sharedPapers';
+    //var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
     var showChildAttributes = $('#showChildAttributes').is(':checked');
     var dataTypeIsReferenceCount = $('#dataType')[0].value == 'referenceCount';
     switch(parent1) {
@@ -3427,10 +3430,12 @@ function renderMatrix () {
 // get correlation options depending on user selection
 function getCorrelationOptions () {
   if ($('#dataType')[0].value == 'referenceCount') {
-  var url = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelationsWithReferenceCounts' : 'conceptCorrelationWithReferenceCounts';
+  var url = 'conceptCorrelationWithReferenceCounts';
+  //var url = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelationsWithReferenceCounts' : 'conceptCorrelationWithReferenceCounts';
   var coverageURL = 'attributeCoverageWithReferenceCounts';
 } else {
-  var url = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
+  var url = 'conceptCorrelation';
+  //var url = $('#includeChildAttributes').is(':checked') ? 'allConceptCorrelations' : 'conceptCorrelation';
   var coverageURL = 'attributeCoverageWithOccurrenceCounts';
 }
   var maxValue = totalNumberOfCitations;
@@ -3501,7 +3506,8 @@ function initFields ( citations, citationCount, dimensions, allAttributes, corre
     }
   } else $('.parentSelectContainer, .dataTypeSelectContainer, #exportHTML, #saveMappings').hide();
   var options = {ajaxTypeY: 'POST', ajaxTypeX: 'POST', attributeUrlY: 'leafAttribute', attributeUrlX: 'leafAttribute', requestY: request, requestX: request};
-  var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
+  var onClickURL = 'sharedPapers';
+  //var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
 
   loadAttributes(true, correlations, options, maxValue, onClickURL, showMatrix);
   $('#showChildAttributes, #includeChildAttributes, #dataType').unbind().on('change', function () {

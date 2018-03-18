@@ -74,7 +74,7 @@ CREATE TABLE taxonomy_relation_annotation (
   annotation longtext,
   PRIMARY KEY (id_taxonomy_relation),
   UNIQUE KEY id_taxonomy_relation_annotation_UNIQUE (id_taxonomy_relation)
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 ALTER TABLE taxonomy_relation ADD COLUMN id_dimension int(10) DEFAULT "0";
 
@@ -149,20 +149,26 @@ ALTER TABLE dimension ADD CONSTRAINT dimension_id_taxonomy_foreign FOREIGN KEY (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+DROP TABLE IF EXISTS user;
 CREATE TABLE IF NOT EXISTS user (
+  id int(11) unsigned NOT NULL AUTO_INCREMENT,
   email varchar(128) NOT NULL,
+  name varchar(128) NOT NULL,
   password varchar(128) NOT NULL,
   taxonomies varchar(500) DEFAULT "",
   admin tinyint(1) DEFAULT "0",
-  PRIMARY KEY (email),
-  UNIQUE KEY email_UNIQUE (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  PRIMARY KEY (id),
+  UNIQUE KEY user_id_UNIQUE (id),
+  UNIQUE KEY user_email_UNIQUE (email)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 /* dummy user admin account */
 
-INSERT INTO user (email, password, admin)
+INSERT INTO user (email, name, password, admin)
   VALUES
-    ("felixhuber2@gmx.de", "123", 1);
+    ("mohsen.ahmadvand@tum.de", "Mohsen Ahmadvand", "123", 1),
+    ("amjad.ibrahim@tum.de", "Amjad Ibrahim", "123", 1),
+    ("felixhuber2@gmx.de", "Felix Huber", "123", 1);
 
 /* foreign keys end */
 
@@ -179,7 +185,7 @@ CREATE TABLE allchildrenperattribute (
   PRIMARY KEY (id_attribute),
   UNIQUE KEY allchildrenperattribute_id_attribute_UNIQUE (id_attribute),
   CONSTRAINT allchildrenperattribute_id_attribute_foreign FOREIGN KEY (id_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 DROP PROCEDURE IF EXISTS insertallchildrenperattribute;
 DELIMITER ;;
@@ -215,7 +221,7 @@ CREATE TABLE allparentsperattribute (
   PRIMARY KEY (id_attribute),
   UNIQUE KEY allparentsperattribute_id_attribute_UNIQUE (id_attribute),
   CONSTRAINT allparentsperattribute_id_attribute_foreign FOREIGN KEY (id_attribute) REFERENCES attribute (id_attribute) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 DROP PROCEDURE IF EXISTS insertallparentsperattribute;
 DELIMITER ;;
