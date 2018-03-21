@@ -67,7 +67,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 
 	function updateRow( e ) {
 	  var email = $(e.target).parentsUntil('tbody').find('td:first').text();
-	  var admin = $(e.target).parent().parent().find('td:nth(2)').find('input').is(':checked') ? 1 : 0;
+	  var admin = $(e.target).parent().parent().find('td:nth(3)').find('input').is(':checked') ? 1 : 0;
 	  if (email == '') { BootstrapDialog.show({message: 'The email field cannot be empty.'}); return; }
 	  console.log('updating user: ' + email + ', admin: ' + admin)
       $.ajax
