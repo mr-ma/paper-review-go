@@ -2,6 +2,7 @@ package data
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	//overriding MySqlDriver
 	_ "../mysql"
 	"../model"
@@ -30,6 +31,7 @@ type PaperReviewDriver interface {
 	GetResearchStats(researchID int64) (s []model.Stats, err error)
 	GetApprovedPapers(researchID int64, threshold int) ([]model.Article, error)
 	GetApprovedPapersWithDetails(researchID int64, threshold int) ([]model.ArticleMapping, error)
+	DeleteArticleVotes([]model.Article) (model.Result, error)
 }
 
 
@@ -551,4 +553,20 @@ having a.ResearchId = ? and sum(case when votes.Vote_State = 1 then 1 else 0 end
 	}
 
 	return articleMappings, err
+}
+
+func (d MySQLDriver) DeleteArticleVotes(articles []model.Article) (result model.Result, err error) {
+	db, err := d.OpenDB()
+	defer db.Close()
+	checkErr(err)
+	articleIDString := ""
+	for _, elem := range articles {
+		if articleIDString != "" {
+			articleIDString += ","
+		}
+		articleIDString += strconv.Itoa(elem.ID)
+	}
+	db.Exec("DELETE FROM votes WHERE ArticleId IN (" + articleIDString + ");")
+	result.Success = true
+	return result, err
 }

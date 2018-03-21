@@ -126,7 +126,7 @@
         <div class="row">
             <div class="col-xs-5">
                 <label for="multiselect"></label>
-                <select name="from[]" id="multiselect" class="multiselect" class="form-control" size="15" multiple="multiple"></select>
+                <select name="from[]" id="multiselect" class="multiselect form-control" size="15" multiple="multiple"></select>
             </div>
             <div class="col-xs-2">
             <button type="button" id="multiselect_right_All_1" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>
@@ -136,7 +136,7 @@
             </div>
             <div class="col-xs-5">
               <label for="multiselect_to"></label>
-              <select name="to[]" id="multiselect_to" class="multiselect_to" class="form-control" size="15" multiple="multiple"></select>
+              <select name="to[]" id="multiselect_to" class="multiselect_to form-control" size="15" multiple="multiple"></select>
             </div>
         </div>
         <div style="margin-top:20px;">
@@ -171,7 +171,10 @@
   var DYNAMIC_ARRAY = [];
 
   const DEFAULT_TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
   var TAXONOMY_ID;
+
+  const DEFAULT_DIMENSION_NAME = 'Interdimensional view';
 
   var currentHash = '';
 
@@ -312,8 +315,6 @@
       }
     ];
 
-  const INTER_DIMENSIONAL_VIEW = 'Interdimensional view';
-
   var cy;
   var isInterDimensional = true;
   var displayedDimension;
@@ -337,7 +338,7 @@
       return;
     }
     var dimension = displayedDimension;
-    if (displayedDimension == 'Interdimensional view') var saveURL = 'saveMajorPositions';
+    if (displayedDimension == DEFAULT_DIMENSION_NAME) var saveURL = 'saveMajorPositions';
     else var saveURL = 'savePositions';
     var positions = [];
     cy.$('.parent,.child').forEach ( function ( node ) {
@@ -450,34 +451,32 @@
         $('#dimension-modal').modal('hide');
         return;
       }
-      var dimensionObj = cy.$('[id="' + dimension + '"]');
-      if (!dimensionObj || dimensionObj.length == 0) {
-        handleErrorHelper('Invalid dimension selected.');
-        return;
-      }
+      var dimensionObj = cy.$('.dimension[id="' + dimension + '"],.interdimensional[id="' + dimension + '"]');
       if (!admin) {
         $('#dimensionModalButton').prop('disabled', false);
         $('#dimension-modal').modal('hide');
-        cy.$('[id="' + attribute + '"]').move({parent: dimension});
+        if (!!dimensionObj && dimensionObj.length > 0) cy.$('[id="' + attribute + '"]').move({parent: dimension});
+        else cy.remove(cy.$('[id="' + attribute + '"]'));
       } else {
         $.ajax
           ({
-              type: "POST",
-              url: 'changeDimension',
-              dataType: 'json',
-              contentType:'application/json',
-              async: true,
-              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute, dimension: dimension}),
-              success: function ( result ) {
-                if (!result || !result.success) {
-                  handleErrorHelper('Cannot change dimension for attribute "' + attribute + '".');
-                  $('#dimensionModalButton').prop('disabled', false);
-                  return;
-                }
+            type: "POST",
+            url: 'changeDimension',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute, dimension: dimension}),
+            success: function ( result ) {
+              if (!result || !result.success) {
+                handleErrorHelper('Cannot change dimension for attribute "' + attribute + '".');
                 $('#dimensionModalButton').prop('disabled', false);
-                $('#dimension-modal').modal('hide');
-                cy.$('[id="' + attribute + '"]').move({parent: dimension});
+                return;
               }
+              $('#dimensionModalButton').prop('disabled', false);
+              $('#dimension-modal').modal('hide');
+              if (!!dimensionObj && dimensionObj.length > 0) cy.$('[id="' + attribute + '"]').move({parent: dimension});
+              else cy.remove(cy.$('[id="' + attribute + '"]'));
+            }
           });
         }
     });
@@ -492,8 +491,8 @@
       handleErrorHelper('Cannot read major attribute of "' + text + '".');
       return;
     }
-    if (dimension == 'Interdimensional view') {
-      handleErrorHelper('Cannot switch to/from major on the "Interdimensional view".');
+    if (dimension == DEFAULT_DIMENSION_NAME) {
+      handleErrorHelper('Cannot switch to/from major on the "' + DEFAULT_DIMENSION_NAME + '".');
       return;
     }
     function callback () {
@@ -592,6 +591,7 @@
       evt.preventDefault();
       $('#defaultModalButton').prop('disabled', true);
       var dimensionName = $('#defaultModalText').val();
+      if (!!dimensionName && dimensionName.split(' view').length <= 1) dimensionName += ' view';
       if (dimensionName == '' || cy.$('[id="' + dimensionName + '"]').length > 0) {
         handleErrorHelper('This dimension name already exists in this domain.');
         $('#defaultModalButton').prop('disabled', false);
@@ -601,7 +601,7 @@
       function callback () {
         var position = ele.position();
         DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].push(dimensionName);
-        cy.add({data: { id: dimensionName, table: 'dimension' }, classes: 'dimension', position: {x: position.x + ele.width(), y: position.y + ele.height()} });
+        cy.add({data: { id: dimensionName, table: 'dimension', parent: DEFAULT_DIMENSION_NAME }, classes: 'dimension', position: {x: position.x + ele.width(), y: position.y + ele.height()} });
         $('#defaultModalButton').prop('disabled', false);
         $('#default-modal').modal('hide');
       }
@@ -633,6 +633,7 @@
   function removeNodes ( cy, selecteds ) {
     console.time('RemoveNodes');
     var promises = [];
+    selecteds = selecteds.filter( function ( entry ) { return entry.data('table') == 'attribute' || entry.data('table') == 'dimension'; });
     selecteds.forEach ( function ( selected ) {
       var removePromise = new Promise ( function ( resolve, reject ) {
         var selectedID = selected.id();
@@ -652,7 +653,7 @@
                 console.timeEnd('RemoveNodes');
                 if (!result || !result.success) {
                   if (selectedTable == 'dimension') handleErrorHelper('Error occurred while deleting dimension: "' + selectedID + '". Dimensions must be empty before they can be deleted.');
-                  else handleErrorHelper('Error occurred while deleting attribute: "' + selectedID + '".');
+                  else handleErrorHelper('Error occurred while deleting node: "' + selectedID + '".');
                   return;
                 }
                 resolve();
@@ -665,18 +666,19 @@
     Promise.all(promises)
       .then ( function ( results ) {
         console.log('Removed ' + results.length + ' attribute' + (results.length > 1 ? 's' : '') + ' successfully.');
-        selecteds.filter( function ( entry ) { return entry.data('table') == 'attribute' || entry.data('table') == 'dimension'; }).forEach ( function ( selected ) {
-          if (entry.data('table') == 'dimension' && !!DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS]) {
+        selecteds.forEach ( function ( selected ) {
+          if (selected.data('table') == 'dimension' && !!DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS]) {
             for ( var i = 0; i < DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].length; i++ ) {
               var dimensionEntry = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS][i];
-              if (dimensionEntry.text == selectedID) DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].unshift(dimensionEntry);
+              if (dimensionEntry.text == selected.id()) DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS].unshift(dimensionEntry);
             }
+          } else if (selected.data('table') == 'attribute') {
+            var api = selected.qtip('api');
+            api.destroy();
+            api.disable();
           }
-          var api = selected.qtip('api');
-          api.destroy();
-          api.disable();
           cy.remove(selected);
-        });
+        })
       }).catch ( function ( err ) {
         handleErrorHelper(err);
       });
@@ -980,14 +982,15 @@
     var selected = selecteds[0];
     cy.elements().trigger('qtiphide');
     $('#defaultModalTitle').html('Remove item');
-    $('#defaultModalLabel').html('Type the name of the item to delete it. (attributeSrc_attributeDest for edges):');
+    $('#defaultModalLabel').html('Type the name of the item to delete it:');
     $('#defaultModalText').val('');
     $('#defaultModalForm').unbind().on('submit', function ( evt ) {
       evt.preventDefault();
       $('#defaultModalButton').prop('disabled', true);
-      var deleteConfirmation = $('#defaultModalText').val();
-      if (deleteConfirmation.toLowerCase().trim() != (selected.data('id')).toLowerCase().trim()) {
-        handleErrorHelper('Type the name of the item to delete it. (attributeSrc_attributeDest for edges).');
+      var deleteConfirmation = $('#defaultModalText').val().toLowerCase().trim();
+      var selectedID = selected.id().toLowerCase();
+      if ((deleteConfirmation != selectedID.trim()) && (deleteConfirmation != selectedID.split(' view').shift().trim())) {
+        handleErrorHelper('Type the name of the item to delete it.');
         $('#defaultModalButton').prop('disabled', false);
         return;
       }
@@ -1023,7 +1026,7 @@
               dataType: 'json',
               contentType:'application/json',
               async: true,
-              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: annotation}),
+              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? DEFAULT_DIMENSION_NAME : dimensions[0].text), text: annotation}),
               success: function ( result ) {
                 if (!result || !result.success) {
                    handleErrorHelper('Cannot update edge annotation.');
@@ -1162,15 +1165,15 @@
     var interDimensionalPosition = {x: $(window).width() / 2, y: $(window).height() / 2};
     if (!useCY) {
       dimensions.forEach ( function ( dimension ) {
-        if (dimension.text == INTER_DIMENSIONAL_VIEW) {
+        if (dimension.text == DEFAULT_DIMENSION_NAME) {
           var classText = 'interdimensional';
           var position = interDimensionalPosition;
         } else var classText = 'dimension';
         if (!!position) {
-          if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText, position: position});
+          if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: DEFAULT_DIMENSION_NAME }, classes: classText, position: position});
           else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText, position: position }); // , style: { events: 'no' }
         } else {
-          if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: INTER_DIMENSIONAL_VIEW }, classes: classText});
+          if (isInterDimensional) items.push({data: { id: dimension.text, table: 'dimension', parent: DEFAULT_DIMENSION_NAME }, classes: classText});
           else items.push({data: { id: dimension.text, table: 'dimension' }, classes: classText }); // , style: { events: 'no' }
         }
       });
@@ -1192,7 +1195,7 @@
         }
       });
       relations.forEach ( function ( relation ) {
-        var relationObj = { data: { id: relation.attributeSrc + '_' + relation.attributeDest, source: relation.attributeSrc, target: relation.attributeDest, annotation: !!relation.annotation ? relation.annotation : '', dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), relation: relation.relation }, classes: relation.relation };
+        var relationObj = { data: { id: relation.attributeSrc + '_' + relation.attributeDest, source: relation.attributeSrc, target: relation.attributeDest, annotation: !!relation.annotation ? relation.annotation : '', dimension: (isInterDimensional ? DEFAULT_DIMENSION_NAME : dimensions[0].text), relation: relation.relation }, classes: relation.relation };
         var points = [];
         if (!!relation.edgeBendPoints) {
           var edgeBendPoints = relation.edgeBendPoints != '' ? relation.edgeBendPoints.split(';') : [];
@@ -1349,7 +1352,7 @@
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
-                  data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: relationType.text}),
+                  data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? DEFAULT_DIMENSION_NAME : dimensions[0].text), text: relationType.text}),
                   success: function ( result ) {
                     if (!result || !result.success) {
                       handleErrorHelper('Cannot update taxonomy relation type.');
@@ -1410,7 +1413,7 @@
         enabled: true
       });
     }
-    dimensionCommands.push({
+    var addMajorNodeCommand = {
       fillColor: 'rgba(200, 200, 200, 0.75)',
       content: 'Add major node',
       title: 'Add major node',
@@ -1419,9 +1422,10 @@
         addNode(cy, ele, e, true);
       },
       enabled: true
-    });
+    };
+    dimensionCommands.push(addMajorNodeCommand);
     if (isInterDimensional) {
-      dimensionCommands.push({
+      var addDimensionCommand = {
         fillColor: 'rgba(200, 200, 200, 0.75)',
         content: 'Add dimension',
         title: 'Add dimension',
@@ -1430,7 +1434,29 @@
           addDimension(cy, ele, e, true);
         },
         enabled: true
-      });
+      };
+      dimensionCommands.push(addDimensionCommand);
+      var interdimensionalCommands = [];
+      interdimensionalCommands.push(addMajorNodeCommand);
+      interdimensionalCommands.push(addDimensionCommand);
+      cxtmenus.push(cy.cxtmenu({
+        menuRadius: 100,
+        selector: '.interdimensional',
+        commands: interdimensionalCommands,
+        fillColor: 'rgba(0, 0, 0, 0.75)',
+        activeFillColor: 'rgba(92, 194, 237, 0.75)',
+        activePadding: 20,
+        indicatorSize: 24,
+        separatorWidth: 3,
+        spotlightPadding: 4,
+        minSpotlightRadius: 24,
+        maxSpotlightRadius: 38,
+        openMenuEvents: 'cxttapstart',
+        itemColor: 'white',
+        itemTextShadowColor: 'black',
+        zIndex: 9999,
+        atMouse: true
+      }));
     }
     cxtmenus.push(cy.cxtmenu({
       menuRadius: 100,
@@ -1537,7 +1563,7 @@
               dataType: 'json',
               contentType:'application/json',
               async: true,
-              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceNode.id(), attributeDest: targetNode.id(), dimension: (isInterDimensional ? 'Interdimensional view' : dimensions[0].text), text: 'Depends'}),
+              data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceNode.id(), attributeDest: targetNode.id(), dimension: (isInterDimensional ? DEFAULT_DIMENSION_NAME : dimensions[0].text), text: 'Depends'}),
               success: function ( result ) {
                 console.timeEnd('AddEdge');
                 if (!result || !result.success) {
@@ -1583,17 +1609,18 @@
       });
       cy.destroy();
       if (isInterDimensional) var dimText = node.id();
-      else var dimText = 'Interdimensional view';
+      else var dimText = DEFAULT_DIMENSION_NAME;
       displayedDimension = dimText;
       var hash = window.location.hash;
       // prevent page reload on hash change
       if (hash.split('#').length > 1) currentHash = hash.split('_').shift() + '_' + dimText;
       else currentHash = '#' + DEFAULT_TAXONOMY_ID + '_' + dimText;
       window.location.hash = currentHash;
-      showDimension(dimText);
+      //showDimension(dimText);
+      loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
     }
     function collapseDimension () {
-      displayedDimension = 'Interdimensional view';
+      displayedDimension = DEFAULT_DIMENSION_NAME;
       var hash = window.location.hash;
       // prevent page reload on hash change
       if (hash.split('#').length > 1) currentHash = hash.split('_').shift() + '_' + displayedDimension;
@@ -1770,18 +1797,23 @@
               success: function ( taxonomy ) {
                 if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
                   TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                  loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                  window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                  //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
                   return;
                 } else {
                   var id = taxonomy.response[0].id - 0;
                   console.log("taxonomy id: ", id)
                   if (!isNaN(id)) TAXONOMY_ID = id;
-                  else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                  else {
+                    TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                    window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                  }
                 }
                 loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
               }, failure: function () {
                 TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
               }
           });
         } else {
@@ -1790,7 +1822,8 @@
         }
       } else {
         TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-        loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+        //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+        window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
       }
     }
 

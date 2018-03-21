@@ -94,6 +94,7 @@ ALTER TABLE paper ADD COLUMN keywords varchar(500) DEFAULT "";
 ALTER TABLE paper DROP INDEX id_paper_UNIQUE;
 ALTER TABLE paper DROP INDEX paper_id_paper;
 ALTER TABLE paper ADD UNIQUE KEY paper_id_UNIQUE (id_taxonomy, id_paper);
+ALTER TABLE paper ADD UNIQUE KEY paper_citation_UNIQUE (id_taxonomy, citation);
 
 /* change primary key */
 ALTER TABLE paper MODIFY id_paper int(11) UNSIGNED NOT NULL, DROP PRIMARY KEY, ADD PRIMARY KEY (id_taxonomy, id_paper);
@@ -109,8 +110,8 @@ ALTER TABLE attribute CHANGE COLUMN id_taxonomy id_taxonomy INT(11) UNSIGNED NOT
 ALTER TABLE dimension ADD COLUMN id_taxonomy INT(11) UNSIGNED DEFAULT 1;
 ALTER TABLE dimension CHANGE COLUMN id_taxonomy id_taxonomy INT(11) UNSIGNED NOT NULL;
 
-ALTER TABLE attribute ADD UNIQUE KEY attribute_text_UNIQUE (text, id_taxonomy);
-ALTER TABLE dimension ADD UNIQUE KEY dimension_text_UNIQUE (text, id_taxonomy);
+ALTER TABLE attribute ADD UNIQUE KEY attribute_text_UNIQUE (id_taxonomy, text);
+ALTER TABLE dimension ADD UNIQUE KEY dimension_text_UNIQUE (id_taxonomy, text);
 
 /* change primary key */
 ALTER TABLE mapping MODIFY id_mapping int(10) UNSIGNED NOT NULL, DROP PRIMARY KEY, ADD PRIMARY KEY (id_paper, id_attribute);
@@ -146,6 +147,9 @@ ALTER TABLE mapping ADD CONSTRAINT mapping_id_paper_foreign FOREIGN KEY (id_pape
 
 ALTER TABLE attribute ADD CONSTRAINT attribute_id_taxonomy_foreign FOREIGN KEY (id_taxonomy) REFERENCES taxonomy (id_taxonomy) ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE dimension ADD CONSTRAINT dimension_id_taxonomy_foreign FOREIGN KEY (id_taxonomy) REFERENCES taxonomy (id_taxonomy) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+ALTER TABLE vote_tags ADD CONSTRAINT vote_tags_TagId_foreign FOREIGN KEY (Tag_Id) REFERENCES tags (TagId) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE vote_tags ADD CONSTRAINT vote_tags_VoteId_foreign FOREIGN KEY (VoteId) REFERENCES votes (VoteId) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 SET FOREIGN_KEY_CHECKS = 1;
 

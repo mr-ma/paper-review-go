@@ -5,7 +5,7 @@
     var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
     var relationTypes = DYNAMIC_ARRAY[STATIC_INDEX_RELATIONTYPES];
     var citationCounts = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNTS];
-    if (dimension == 'Interdimensional view') {
+    if (dimension == DEFAULT_DIMENSION_NAME) {
       var interDimensional = true;
       var attributes = DYNAMIC_ARRAY[STATIC_INDEX_MAJORATTRIBUTES];
       var relations = DYNAMIC_ARRAY[STATIC_INDEX_INTERDIMENSIONALRELATIONS];
@@ -23,7 +23,6 @@
       var relations = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS][index];
       dimensions = [{text: dimension}];
     }
-    console.log("dimensions: ", dimensions)
     if (!!useCY) {
       DYNAMIC_ARRAY[STATIC_INDEX_CY] = JSON.parse(STATIC_CY);
       createJSON(true, !!dimensions ? dimensions : [], interDimensional, !!attributes ? attributes : [], !!relations ? relations : [], !!relationTypes ? relationTypes : [], !!citationCounts ? citationCounts : []);
@@ -206,7 +205,7 @@
               } else DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
             });
             if (foundDimension) displayedDimension = dimensionHashText;
-            else displayedDimension = 'Interdimensional view';
+            else displayedDimension = DEFAULT_DIMENSION_NAME;
             showDimension(displayedDimension, useCY);
           }).catch ( function ( err ) {
             console.log('Error loading data from DB: ', err);
@@ -234,7 +233,7 @@
             if (dimensions[i].text == dimensionHashText) foundDimension = true;
           }
           if (foundDimension) displayedDimension = dimensionHashText;
-          else displayedDimension = 'Interdimensional view';
+          else displayedDimension = DEFAULT_DIMENSION_NAME;
           showDimension(displayedDimension, useCY);
         } catch ( err ) {
           console.log('Error parsing STATIC data: ', err);

@@ -26,6 +26,7 @@
 	
 <script>
 	  const DEFAULT_TAXONOMY_ID = 1;
+	  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
 	  var TAXONOMY_ID;
 	  //var APIURL = location.protocol + '//' + location.hostname+':8000/';
 	  var APIURL = '';
@@ -72,7 +73,7 @@ function initResearchOptions () {
 	    var name =element.getAttribute("name");
 	   var id = element.getAttribute("id");
 	   var researchId= getSelectedResearch();
-	   var url = "./review?name="+name+"&id="+id+"&researchID="+researchId;
+	   var url = "./review?name="+name+"&id="+id+"&researchID="+researchId + window.location.hash;
 	   console.log(url);
 		window.location.replace(url);
 	  }

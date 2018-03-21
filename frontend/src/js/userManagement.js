@@ -14,6 +14,11 @@ function validateEmail(email) {
       evt.preventDefault();
       var taxonomy = $('#addTaxonomyModalText1').val();
       var dimension = $('#addTaxonomyModalText2').val();
+      if (taxonomy.trim() == '' || dimension.trim() == '') {
+        handleError('Please enter a taxonomy and dimension name.');
+        return;
+      }
+      if (dimension.split(' view').length <= 1) dimension += ' view';
       $('#addTaxonomyModalButton').prop('disabled', true);
       $.ajax
         ({
@@ -267,16 +272,21 @@ function validateEmail(email) {
               if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
                 TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
                 //window.location.href = url.shift();
+                window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
                 resolve();
                 return;
               } else {
                 var id = taxonomy.response[0].id - 0;
                 if (!isNaN(id)) TAXONOMY_ID = id;
-                else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                else {
+                  TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                  window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                }
               }
               resolve();
             }, failure: function () {
               TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+              window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
               resolve();
             }
         });

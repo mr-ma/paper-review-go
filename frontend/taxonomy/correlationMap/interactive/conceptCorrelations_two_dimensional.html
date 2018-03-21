@@ -594,10 +594,10 @@ function doParse(input) {
     <div class="col-sm-2">
       <div class="parentSelectContainer" style="margin-left:20px;margin-top:50px;">
           <form style="width:165px;">
-            <label for="parents1">x property: </label>
+            <label for="parents1">x-axis: </label>
             <select class="form-control parentSelect" id="parents2" hidden>
             </select>
-            <label for="parents2">y property: </label>
+            <label for="parents2">y-axis: </label>
             <select class="form-control parentSelect" id="parents1" hidden>
             </select>
           </form>
@@ -634,6 +634,7 @@ function doParse(input) {
   var DYNAMIC_ARRAY = [];
 
   const DEFAULT_TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
   var TAXONOMY_ID;
 
   const KMEANS_CLUSTERS = 7;
@@ -1117,7 +1118,10 @@ function doParse(input) {
         nodesX = attributesX.response,
         m = attributesX.response.length;
 
-    if (n == 0 || m == 0) return;
+    if (n == 0 || m == 0) {
+      buildingMatrix = false;
+      return;
+    }
 
     // build basic matrix structure
     nodesY.forEach ( function (node, i) {
@@ -1506,11 +1510,13 @@ function doParse(input) {
         var newText = $('#renameModalText').val();
         if (!!newText) {
           if (isColumn) {
+            nodesX[d[0].x-1].citation = newText;
             if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
               that.attr('data-fulltext', newText)
               that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
             } else that.text(newText);
           } else {
+            nodesY[d[0].y-1].citation = newText;
             if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
               that.attr('data-fulltext', newText)
               that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
@@ -1698,16 +1704,18 @@ function doParse(input) {
           break;
         default:
       }
+      console.log("newY: ", newNodesY, "newX: ", newNodesX, nodesY, dimension)
       if (newNodesY.length > 0 && newNodesX.length > 0) buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
     }
 
     // show or hide child nodes
-    function filterChildAttributes ( elm, parent, show ) {
+    function filterChildAttributes ( elm, parent, show, callback ) {
       var newNodesY = [];
       var newNodesX = [];
      switch (elm) {
        case 'row':
-         var nodes = show ? nodesOriginalY : nodesY;
+         //var nodes = show ? nodesOriginalY : nodesY;
+         var nodes = nodesY;
          nodes.forEach ( function ( node ) {
             if (show) {
               if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesY.push(node);
@@ -1718,7 +1726,8 @@ function doParse(input) {
          newNodesX = nodesX;
          break;
        case 'column':
-         var nodes = show ? nodesOriginalX : nodesX;
+         //var nodes = show ? nodesOriginalX : nodesX;
+         var nodes = nodesX;
          nodes.forEach ( function ( node ) {
             if (show) {
               if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesX.push(node);
@@ -1730,7 +1739,10 @@ function doParse(input) {
          break;
        default:
      }
-     if (newNodesY.length > 0 && newNodesX.length > 0) buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
+     if (newNodesY.length > 0 && newNodesX.length > 0) {
+      buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
+      if (!!callback) callback(true);
+     } else if (!!callback) callback(false);
     }
 
     // delete paper
@@ -1739,7 +1751,9 @@ function doParse(input) {
       var citation = that.attr('data-originalText');
       if (!citation || citation == '') return;
       if (!admin) {
-        filterChildAttributes('column', citation, false);
+        filterChildAttributes('column', citation, false, function ( result ) {
+          if (!result) window.location.reload(false);
+        });
         return;
       }
       BootstrapDialog.confirm('Delete "' + citation + '" from the DB?', function ( result ) {
@@ -1757,7 +1771,9 @@ function doParse(input) {
                 handleError('Cannot delete citation: ' + citation);
                 return;
               }
-              filterChildAttributes('column', citation, false);
+              filterChildAttributes('column', citation, false, function ( result ) {
+                if (!result) window.location.reload(false);
+              });
             }
         });
       });
@@ -1779,8 +1795,8 @@ function doParse(input) {
           switch (elmClass) {
             case 'rowText': filterChildAttributes('row', text, false); break;
             case 'columnText': filterChildAttributes('column', text, false); break;
-            case 'rowDimensionText': filterDimension('row', text + ' view', false); break;
-            case 'columnDimensionText': filterDimension('column', text + ' view', false); break;
+            case 'rowDimensionText': filterDimension('row', text, false); break;
+            case 'columnDimensionText': filterDimension('column', text, false); break;
             case 'rowParentText': filterChildAttributes('row', text, false); break;
             case 'columnParentText': filterChildAttributes('column', text, false); break;
             default:
@@ -1821,6 +1837,7 @@ function doParse(input) {
       title: 'Show other dimensions',
       action: function(elm, d, i) {
         filterDimension('row', '', true);
+        selectize1.setValue('', true);
       },
       disabled: false
     }];
@@ -1828,6 +1845,7 @@ function doParse(input) {
       title: 'Show other dimensions',
       action: function(elm, d, i) {
         filterDimension('column', '', true);
+        selectize2.setValue('', true);
       },
       disabled: false
     }];
@@ -2131,7 +2149,8 @@ function doParse(input) {
               if (nodesY[i].parents.length < parentsLength) parentsLength = nodesY[i].parents.length;
               lastParentsY = nodesY[i].parents;
               shownTextsY = lastParentsY;
-              if (!hasParentsY) return -margin.left + 10;
+              if (!hasParentsY && !hasDimensionsY) return -margin.left + 10;
+              else if (!hasParentsY) return -margin.left + treeDepthY*widthPerParentCell + (treeDepthY == 0 ? 10 : 0);
               parentsLength++;
               var factor = Math.max(1, parentsLength);
               if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
@@ -2261,7 +2280,7 @@ function doParse(input) {
             lastTextRef = $(this);
             counter = 0;
             lastDimension = value;
-            return value.split(' ').shift();
+            return value;
           });
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
           if (counter <= 1) {
@@ -2332,7 +2351,7 @@ function doParse(input) {
           if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
           if (j > treeDepthY) {
             var text = d3.select(this).text().trim();
-            d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return nodesY[d[0].y-1].dimension == text + ' view'; });
+            d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return nodesY[d[0].y-1].dimension == text; });
           } else d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].y == p[0].y) || (i <= j && !!nodesY[d[0].y-1].indices && nodesY[d[0].y-1].indices[j-1] == p[0].y); });
         })
         .on("mouseout", mouseout)
@@ -2346,15 +2365,16 @@ function doParse(input) {
           if (text.split('...').length > 1) {
             if (!fullText) return;
             text = fullText;
-          } else if (i >= treeDepthY && hasDimensionsY) text += ' view';
+          }
           if (i >= treeDepthY && hasDimensionsY) isDimension = true;
           if (false && !IS_STATIC) {
             if (!selectize1) return;
             if (parents.indexOf(text) < 0) return;
-            selectize1.setValue(text, false);
+            selectize1.setValue(text, true);
           } else {
             if (isDimension) filterDimension('row', text, true);
             else filterChildAttributes('row', text, true);
+            selectize1.setValue(text, true);
           }
         });
         row.selectAll('.rowParentText').on("contextmenu", d3.contextMenu(menu));
@@ -2530,7 +2550,8 @@ function doParse(input) {
               if (nodesX[i].parents.length < parentsLength) parentsLength = nodesX[i].parents.length;
               lastParentsX = nodesX[i].parents;
               shownTextsX = lastParentsX;
-              if (!hasParentsX) return margin.top - 10;
+              if (!hasParentsX && !hasDimensionsX) return margin.top - 10;
+              else if (!hasParentsX) return margin.top - treeDepthX*heightPerParentCell - (treeDepthX == 0 ? 10 : 0);
               parentsLength++;
               var factor = Math.max(1, parentsLength);
               if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
@@ -2663,7 +2684,7 @@ function doParse(input) {
             lastTextRef = $(this);
             counter = 0;
             lastDimension = value;
-            return value.split(' ').shift();
+            return value;
           });
         if (!!lastTextRef && !!lastDimension && lastDimension != '') {
           if (counter <= 1) {
@@ -2734,7 +2755,7 @@ function doParse(input) {
           if (!fullText) fullText = -1;
           if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
           if (j > treeDepthX) {
-            d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return nodesX[d[0].x-1].dimension == text + ' view'; });
+            d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return nodesX[d[0].x-1].dimension == text; });
           } else d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesX[d[0].x-1].indices && nodesX[d[0].x-1].indices[j-1] == p[0].x); });
         })
         .on("mouseout", mouseout)
@@ -2748,15 +2769,16 @@ function doParse(input) {
           if (text.split('...').length > 1) {
             if (!fullText) return;
             text = fullText;
-          } else if (i >= treeDepthX && hasDimensionsX) text += ' view';
+          }
           if (i >= treeDepthX && hasDimensionsX) isDimension = true;
           if (false && !IS_STATIC) {
             if (!selectize2) return;
             if (parents.indexOf(text) < 0) return;
-            selectize2.setValue(text, false);
+            selectize2.setValue(text, true);
           } else {
             if (isDimension) filterDimension('column', text, true);
             else filterChildAttributes('column', text, true);
+            selectize2.setValue(text, true);
           }
         });
         column.selectAll('.columnParentText').on("contextmenu", d3.contextMenu(menu));
@@ -2886,9 +2908,9 @@ function doParse(input) {
       d3.selectAll(".row").selectAll(".rowText,.rowParentText").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesY[p.y-1].indices && nodesY[p.y-1].indices.length > (i-1) && nodesY[p.y-1].indices[i-1] == d[0].y); });
       var dimensionY = nodesY[p.y-1].dimension;
       var dimensionX = nodesX[p.x].dimension;
-      if (!!dimensionY && dimensionY != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionY; });
+      if (!!dimensionY && dimensionY != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() == dimensionY; });
       d3.selectAll(".column").selectAll(".columnText,.columnParentText").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesX[p.x].indices && nodesX[p.x].indices.length > (i-1) && nodesX[p.x].indices[i-1] == d[0].x); });
-      if (!!dimensionX && dimensionX != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() + ' view' == dimensionX; });
+      if (!!dimensionX && dimensionX != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() == dimensionX; });
       console.log('value: ' + matrixY[p.y-1][p.x].z + ', src: ' + nodesY[p.y-1].text + ', dest: ' + nodesX[p.x].text);
     }
 
@@ -2986,12 +3008,12 @@ function doParse(input) {
       var width = svg.attr('width');
       var height = svg.attr('height');
       svgString2Image( svgString, width*3, height*3, 'png', function ( dataBlob, filesize ) {
-        saveAs( dataBlob, 'CorrelationMatrix.png' );
+        saveAs( dataBlob, 'CorrelationMatrix2D.png' );
       });     
     });
     // export HTML to "static" HTML file that is independant of outside sources (like the database)
     $('#exportHTML').unbind().click ( function () {
-      exportHTML('CorrelationMatrix.html');
+      exportHTML('CorrelationMatrix2D.html');
     });
     // export correlation array to JSON file
     $('#exportJSON').unbind().click ( function () {
@@ -3176,7 +3198,7 @@ function doParse(input) {
                       });
                     }
                   }
-                  correlations.push({text1: dataArray[j].texts[0], text2: fileName, value: (showOccurrences ? value : (value >= minImportOccurrences ? 1 : 0)), occurrences: {data: similarity.occurrences, total: similarity.value}});
+                  correlations.push({text1: dataArray[j].texts[0], text2: fileName, value: (showOccurrences ? (value >= minImportOccurrences ? value : 0) : (value >= minImportOccurrences ? 1 : 0)), occurrences: {data: similarity.occurrences, total: similarity.value}});
                 }
                 if (fileIndex > currentFileIndex) {
                   currentFileIndex = fileIndex;
@@ -3409,22 +3431,42 @@ function renderMatrixHelper () {
     switch(parent1) {
       case 'All attributes': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttribute'; break;
       case 'All citations': ajaxTypeY = 'POST'; attributeUrlY = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent1; break;
-      default: ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent1; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent1; }
+      default:
+        if (!!parent1 && parent1.split(' view').length > 1) {
+          ajaxTypeY = 'POST'; attributeUrlY = 'leafAttributesPerDimension'; requestY.dimension = parent1;
+        } else {
+          ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = 'allChildrenLeafAttributes'; requestY.parent = parent1; } else { attributeUrlY = 'attributeDetails'; requestY.text = parent1; }
+        }
     }
     switch(parent2) {
       case 'All attributes': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttribute'; break;
       case 'All citations': ajaxTypeX = 'POST'; attributeUrlX = 'citation'; correlationURL = (dataTypeIsReferenceCount ? 'attributeCoverageWithReferenceCounts' : 'attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = 'citationDetails'; break;
-      case 'Attack view': case 'Defense view': case 'System view': ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent2; break;
-      default: ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent2; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent2; }
+      default:
+        if (!!parent2 && parent2.split(' view').length > 1) {
+          ajaxTypeX = 'POST'; attributeUrlX = 'leafAttributesPerDimension'; requestX.dimension = parent2;
+        } else {
+          ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = 'allChildrenLeafAttributes'; requestX.parent = parent2; } else { attributeUrlX = 'attributeDetails'; requestX.text = parent2; }
+        }
     }
     var options = {ajaxTypeY: ajaxTypeY, ajaxTypeX: ajaxTypeX, attributeUrlY: attributeUrlY, attributeUrlX: attributeUrlX, requestY: requestY, requestX: requestX};
-   if (onClickURL == 'citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE], options, -1, onClickURL, showMatrix);
-   else loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS], options, -1, onClickURL, showMatrix);
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var coverageURL = correlationURLObj.coverageURL;
+    var maxValue = correlationURLObj.maxValue;
+    function callback () {
+      if (onClickURL == 'citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE], options, -1, onClickURL, showMatrix);
+      else loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS], options, -1, onClickURL, showMatrix);
+    }
+    if (!IS_STATIC) {
+      loadCorrelationData(correlationURL, coverageURL, maxValue, function () {
+        callback();
+      });
+    } else callback();
 }
 
 function renderMatrix () {
-  if (!IS_STATIC && !buildingMatrix && (!!totalNumberOfCitations || !!maxReferenceCount)) renderMatrixHelper();
+  //  && (!!totalNumberOfCitations || !!maxReferenceCount)
+  if (!IS_STATIC && !buildingMatrix) renderMatrixHelper();
 }
 
 // get correlation options depending on user selection
@@ -3462,8 +3504,9 @@ function initFields ( citations, citationCount, dimensions, allAttributes, corre
   parents.push('All attributes');
   parents.push('All citations');
   dimensions.response.forEach ( function ( dimension ) {
-    $('#parents1, #parents2').append('<option>' + dimension.text + '</option>');
-    parents.push(dimension.text);
+    var dimensionText = (!!dimension.text && dimension.text.split(' view').length <= 1) ? (dimension.text + ' view') : dimension.text;
+    $('#parents1, #parents2').append('<option>' + dimensionText + '</option>');
+    parents.push(dimensionText);
   });
   allAttributes.response.forEach ( function ( attribute ) {
     $('#parents1, #parents2').append('<option>' + attribute.text + '</option>');

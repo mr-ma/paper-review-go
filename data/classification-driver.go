@@ -4,7 +4,6 @@ import (
 	"strings"
 	"../gabs"
 	"sort"
-	"fmt"
 	"math/rand"
 	//overriding MySqlDriver
 	_ "../mysql"
@@ -235,9 +234,10 @@ func (d MySQLDriver) ExportCorrelations(filterAttributes []model.Attribute,
 	dbRef, err := d.OpenDB()
 	defer dbRef.Close()
 	checkErr(err)
+	taxonomyIdStr := strconv.Itoa(int(taxonomyId))
 	//prepare list of attribute ids for the where clause
 	queryStr := ""
-	parameters := []interface{}{taxonomyId}
+	parameters := []interface{}{taxonomyIdStr}
 	for _, attribute := range filterAttributes {
 		queryStr+=" and atts REGEXP ?"
 		parameters = append(parameters,attribute.Text)
@@ -246,9 +246,6 @@ func (d MySQLDriver) ExportCorrelations(filterAttributes []model.Attribute,
 	queryStr = `select id_paper, citation, bib,leaf_atts
 		from paper_merged_attributes
 		where id_taxonomy=?`+queryStr
-	fmt.Println(queryStr)
-	fmt.Println(parameters...)
-	fmt.Println(len(parameters))
 	db, stmt, err := d.Query(queryStr)
 	defer stmt.Close()
 	defer db.Close()
@@ -346,6 +343,9 @@ func (d MySQLDriver) AddTaxonomy(taxonomy string, dimension string) (result mode
 	dbRef, err := d.OpenDB()
 	defer dbRef.Close()
 	checkErr(err)
+	if !strings.Contains(dimension, " view") {
+		dimension += " view"
+	}
 	db, stmt, err := d.Query("select count(id_taxonomy) as taxonomyCount from taxonomy where text = ?;")
 	defer stmt.Close()
 	defer db.Close()
@@ -639,12 +639,13 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 				savedPapers = append(savedPapers, a)
 			}
 			if elem.OccurrenceCount <= 0 {
-				dbRef.Exec("DELETE FROM mapping WHERE id_paper = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", paperIDStr, elem.Attribute, taxonomyIdStr)
+				dbRef.Exec("DELETE FROM mapping WHERE id_paper = (SELECT DISTINCT id_paper FROM paper WHERE id_taxonomy = ? AND citation = ?) AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", taxonomyIdStr, elem.Citation, elem.Attribute, taxonomyIdStr)
 			} else {
 				occurrenceCountStr := strconv.Itoa(elem.OccurrenceCount)
-				dbRef.Exec("REPLACE INTO mapping (id_paper, id_attribute, occurrenceCount) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), ?);", paperIDStr, elem.Attribute, taxonomyIdStr, occurrenceCountStr)
+				dbRef.Exec("REPLACE INTO mapping (id_paper, id_attribute, occurrenceCount) VALUES ((SELECT DISTINCT id_paper FROM paper WHERE id_taxonomy = ? AND citation = ?), (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), ?);", taxonomyIdStr, elem.Citation, elem.Attribute, taxonomyIdStr, occurrenceCountStr)
 			}
 		}
+		d.UpdateRelationshipTables(taxonomyId)
 		result.Success = true
 		return result, err
 		}
@@ -1432,6 +1433,9 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
 		checkErr(err)
+		if !strings.Contains(dimension, " view") {
+			dimension += " view"
+		}
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
 		db, stmt, err := d.Query("SELECT count(id_dimension) FROM dimension WHERE text = ? AND id_taxonomy = ?;")
 		defer stmt.Close()
@@ -1457,8 +1461,8 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		dbRef.Exec("UPDATE taxonomy_dimension SET id_dimension = (SELECT DISTINCT id_dimension FROM dimension WHERE text = ?) WHERE id_taxonomy = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ?);", dimension, taxonomyIdStr, attribute)
-		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND (id_src_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ?) OR id_dest_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ?));", taxonomyIdStr, attribute, attribute)
+		dbRef.Exec("UPDATE taxonomy_dimension SET id_dimension = (SELECT DISTINCT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?) WHERE id_taxonomy = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", dimension, taxonomyIdStr, taxonomyIdStr, attribute, taxonomyIdStr)
+		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND (id_src_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) OR id_dest_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute, taxonomyIdStr, attribute, taxonomyIdStr)
 		result.Success = true
 		return result, err
 		}
@@ -1832,6 +1836,9 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 				dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND text = ?));", paperIDStr, taxonomyIdStr, elem.Attribute)
 			}
 		}
+		go func () {
+			d.UpdateRelationshipTables(taxonomyId)
+		}()
 		result.Success = true
 		return result, err
 	}

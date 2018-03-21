@@ -78,3 +78,7 @@ type ReviewListRequest struct {
 	ResearchID int64 `json:"research_id"`
 	Threshold int `json:"threshold"`
 }
+
+type DeleteArticleVotesRequest struct {
+	Articles []Article `json:"articles"`
+}

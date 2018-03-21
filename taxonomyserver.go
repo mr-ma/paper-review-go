@@ -372,6 +372,9 @@ func main() {
 	mux.HandleFunc("POST", "/saveReviewMappings", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, saveReviewMappingsHandler)
 	})
+	mux.HandleFunc("POST", "/deleteArticleVotes", func(w http.ResponseWriter, r *http.Request) {
+		checkAdmin(w, r, deleteArticleVotesHandler)
+	})
 
 	mux.HandleFunc("GET", "/review", func(w http.ResponseWriter, r *http.Request) {
 		p := loadPage("frontend/src/review.html")
@@ -2283,6 +2286,29 @@ func saveReviewMappingsHandler(w http.ResponseWriter, r *http.Request) {
     }
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.SaveReviewMappings(saveReviewMappingsRequest.TaxonomyID, saveReviewMappingsRequest.Attributes, saveReviewMappingsRequest.Mappings)
+	checkErr(err)
+	output, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
+
+func deleteArticleVotesHandler(w http.ResponseWriter, r *http.Request) {
+    var deleteArticleVotesRequest model.DeleteArticleVotesRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&deleteArticleVotesRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.DeleteArticleVotes(deleteArticleVotesRequest.Articles)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {

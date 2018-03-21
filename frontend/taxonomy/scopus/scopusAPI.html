@@ -10,9 +10,9 @@
     <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
     <script src="bootstrap-dialog.min.js"></script>
 
-    <link href="main.css" type="text/css" rel="stylesheet"/>
-
     <script src="bluebird.min.js"></script>
+    <link href="main.css" type="text/css" rel="stylesheet">
+    <script src="userManagement.js"></script>
     <script src="error.js"></script>
 
 <script>
@@ -23,6 +23,8 @@
 
 </head>
 <body>
+  <div class="navbar"></div>
+  <div class="modals"></div>
   <div style="margin:20px;">
     <input type="button" id="importCitationCounts" value="Import citation counts">
   </div>
@@ -30,82 +32,133 @@
 
   // used to look up publication details on scopus like reference counts
 
-  $(document).ready( function () {
+  var IS_STATIC = false;
+
+  const DEFAULT_TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+  var TAXONOMY_ID;
+
+  function initPage () {
     const API_KEY_LOCAL = 'c4ddcf695994bcc8b4a1c6d4a593a974';
     const API_KEY = '90c6191fcbabf8d9969eb9c750cc898e';
     $('#importCitationCounts').click ( function () {
       console.log('Importing...');
-      $.get('citation', function ( citations ) {
-        if (!citations || !citations.response) {
-          handleError('Cannot get citations from DB.');
-          return;
-        }
-        var promises = [];
-        citations.response.forEach ( function ( citation ) {
-          if (!!citation.bib) {
-            try {
-              var bibObj = JSON.parse(citation.bib);
-              if (!!bibObj.title) {
-                var getScopusDataPromise = new Promise ( function ( resolve, reject ) {
-                  $.ajax
-                    ({
-                      type: "GET",
-                      url: 'https://api.elsevier.com/content/search/scopus?query=TITLE(' + bibObj.title.replace(/\s/g, '+') + ')&content=core',
-                      contentType:'application/json',
-                      async: true,
-                      headers: {'Accept':'application/json', 'X-ELS-APIKey': API_KEY_LOCAL},
-                      success: function ( result ) {
-                        if (!result || !result['search-results'] || !result['search-results'].entry) return;
-                        var entry = result['search-results'].entry;
-                        for ( var i = 0; i < entry.length; i++ ) {
-                          if (!!entry[i]['dc:title'] && (entry[i]['dc:title'].split(bibObj.title).length > 1 || bibObj.title.split(entry[i]['dc:title']).length > 1)) {
-                            var referenceCount = entry[i]['citedby-count'] - 0;
-                            if (!isNaN(referenceCount) && referenceCount >= 0) resolve({citation: citation.citation, referenceCount: referenceCount, success: true});
-                            break;
-                          }
-                        }
-                        resolve({citation: citation.citation, title: bibObj.title, success: false});
-                      },
-                      error: function () {
-                        resolve({citation: citation.citation, title: bibObj.title, success: false});
-                      }
-                    });
-                  });
-                  promises.push(getScopusDataPromise);
-                }
-              } catch ( err ) {
-                console.log('Error occurred parsing bib of citation: ' + citation.citation);
-              }
+      $.ajax
+        ({
+          type: "POST",
+          url: 'citation',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+          success: function ( citations ) {
+            if (!citations) {
+              reject('Cannot get citations from DB.');
+              return;
             }
-          });
-          Promise.all(promises)
-            .then ( function ( results ) {
-              var counter = 0;
-              var updateArray = [];
-              results.forEach ( function ( result ) {
-                if (!!result.success) {
-                  counter++;
-                  updateArray.push({citation: result.citation, referenceCount: result.referenceCount});
+            if (!citations.response) citations.response = [];
+            var promises = [];
+            citations.response.forEach ( function ( citation ) {
+              if (!!citation.bib) {
+                try {
+                  var bibObj = JSON.parse(citation.bib);
+                  //var bibObj = {title: citation.citation};
+                  if (!!bibObj.title) {
+                    console.log("title: " + bibObj.title)
+                    var getScopusDataPromise = new Promise ( function ( resolve, reject ) {
+                      $.ajax
+                        ({
+                          type: "GET",
+                          url: 'https://api.elsevier.com/content/search/scopus?query=TITLE(' + bibObj.title.replace(/\s/g, '+') + ')&content=core',
+                          contentType:'application/json',
+                          async: true,
+                          headers: {'Accept':'application/json', 'X-ELS-APIKey': API_KEY_LOCAL},
+                          success: function ( result ) {
+                            if (!result || !result['search-results'] || !result['search-results'].entry) {
+                              resolve({citation: citation.citation, title: bibObj.title, success: false});
+                              return;
+                            }
+                            var entry = result['search-results'].entry;
+                            for ( var i = 0; i < entry.length; i++ ) {
+                              if (!!entry[i]['dc:title'] && (entry[i]['dc:title'].split(bibObj.title).length > 1 || bibObj.title.split(entry[i]['dc:title']).length > 1)) {
+                                var referenceCount = entry[i]['citedby-count'] - 0;
+                                if (!isNaN(referenceCount) && referenceCount >= 0) resolve({citation: citation.citation, referenceCount: referenceCount, success: true});
+                                return;
+                              }
+                            }
+                            resolve({citation: citation.citation, title: bibObj.title, success: false});
+                          },
+                          error: function () {
+                            resolve({citation: citation.citation, title: bibObj.title, success: false});
+                          }
+                        });
+                      });
+                      promises.push(getScopusDataPromise);
+                    }
+                  } catch ( err ) {
+                    console.log('Error occurred parsing bib of citation: ' + citation.citation);
+                  }
                 }
               });
-              console.log('success for ' + counter + ' elements, promise len: ' + promises.length);
-              $.ajax
-                ({
-                    type: "POST",
-                    url: 'updateCitationReferenceCounts',
-                    dataType: 'json',
-                    contentType:'application/json',
-                    async: true,
-                    data: JSON.stringify({referenceCounts: updateArray}),
-                    success: function ( result ) {
-                      if (!result || !result.response || !result.response.success) handleError('Citation reference count update failed.');
-                      else console.log('Citation reference counts have been updated successfully.');
+              Promise.all(promises)
+                .then ( function ( results ) {
+                  var counter = 0;
+                  var updateArray = [];
+                  results.forEach ( function ( result ) {
+                    if (!!result.success) {
+                      counter++;
+                      updateArray.push({citation: result.citation, referenceCount: result.referenceCount});
                     }
+                  });
+                  console.log('success for ' + counter + ' elements, promise len: ' + promises.length);
+                  if (updateArray.length > 0) {
+                    $.ajax
+                      ({
+                        type: "POST",
+                        url: 'updateCitationReferenceCounts',
+                        dataType: 'json',
+                        contentType:'application/json',
+                        async: true,
+                        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, referenceCounts: updateArray}),
+                        success: function ( result ) {
+                          if (!result || !result.success) handleError('Citation reference count update failed.');
+                          else console.log('Citation reference counts have been updated successfully.');
+                        }
+                      });
+                  }
+                }).catch ( function ( citation ) {
+                  handleError('Scopus API request failed for citation: "' + citation.citation + '" with title: "' + citation.title + '".');
                 });
-            }).catch ( function ( citation ) {
-              handleError('Scopus API request failed for citation: "' + citation.citation + '" with title: "' + citation.title + '".');
+              }
             });
-        });
+          });
+  }
+
+  $(document).ready( function () {
+    window.onhashchange = function () {
+      var hash = window.location.hash;
+      console.log("hash changed to: " + hash);
+      window.location.reload(false);
+    };
+
+    $(this).on('contextmenu', function ( e ) {
+      e.preventDefault();
+    });
+    if (!!IS_STATIC) {
+      loadBanner('STATIC');
+      initPage();
+      return;
+    }
+    var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+      initUserManagement(resolve, reject);
+    }).then ( function ( user ) {
+      if (!!user && user.admin == 1) {
+      }
+      initPage();
+    }).catch ( function ( err ) {
+      console.log('Error loading user: ', err);
+      handleError(err);
+      initPage();
     });
   });
 </script>

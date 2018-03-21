@@ -23,6 +23,7 @@
 
 		<script>
 		const DEFAULT_TAXONOMY_ID = 1;
+		const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
 		var TAXONOMY_ID;
 
 		var r_id ;
@@ -104,6 +105,7 @@ $("input:checkbox").each(function(){
 var newTag = $("#newTag").val();
 
 	if( $.trim(newTag).length>0 ) {// new tag
+	newTag = newTag.replace(/,(\s+)/g, ',').replace(/(\s+),/g, ',');
 	var array = newTag.split(",");
 	for (i=0;i<array.length;i++){
        tags.push({

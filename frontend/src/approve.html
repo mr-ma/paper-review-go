@@ -28,6 +28,7 @@
 
 		<script>
 		const DEFAULT_TAXONOMY_ID = 1;
+		const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
 		var TAXONOMY_ID;
 
 		const DEFAULT_THRESHOLD = 1;
@@ -244,6 +245,35 @@ function saveReviewMappings() {
     });
 }
 
+function deleteArticleVotes () {
+	if (!admin) return;
+	var articles = [];
+	$('#reviewTable').bootstrapTable('getSelections').forEach ( function ( entry ) {
+		articles.push({id: entry.id});
+	});
+	BootstrapDialog.confirm("Delete votes for " + articles.length + " article" + (articles.length != 1 ? "s" : "") + "?", function ( result ) {
+		if (!result) return;
+		$.ajax
+		  ({
+		    type: "POST",
+		    url: 'deleteArticleVotes',
+		    dataType: 'json',
+		    contentType:'application/json',
+		    async: true,
+		    data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, articles: articles}),
+		    success: function ( result ) {
+		      if (!result || !result.success) {
+		        handleError('Cannot delete article votes for this taxonomy from the database.');
+		        return;
+		      }
+		      window.location.reload(false);
+		    }, failure: function () {
+		    	handleError('Cannot connect to the database server.');
+		    }
+		});
+	});
+}
+
 function urlParam(name){
 
 	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -263,6 +293,9 @@ function urlParam(name){
 	    if (!!user && user.admin == 1) {
 			$( "#saveReviewMappings" ).unbind().click(function() {
 				saveReviewMappings();
+			});
+			$( "#deleteArticleVotes" ).unbind().click(function() {
+				deleteArticleVotes();
 			});
 	    }
 		$( "#refreshList" ).unbind().click(function() {
@@ -309,6 +342,9 @@ function urlParam(name){
 		<div class="col-md-8">
 			<button type="button"  id="saveReviewMappings" class="btn btn-success">
 				Save Mappings To DB
+			</button>
+			<button type="button"  id="deleteArticleVotes" class="btn btn-danger">
+				Delete Votes From DB
 			</button>
 		</div>
 

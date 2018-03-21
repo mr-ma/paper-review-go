@@ -1,7 +1,10 @@
 // functions used to convert a HTML file to a "static" version that is independent from outside sources (like the database)
 // variables are being converted to strings via JSON.stringify and put as strings into the HTML file
 function exportHTML ( fileName ) {
-  if (IS_STATIC) return;
+  if (IS_STATIC) {
+    handleError('Cannot export a HTML file, that is already "static", to "static" HTML.');
+    return;
+  }
   const DELIMITER = '<!-- main script end -->';
   var html = document.documentElement.outerHTML;
   var docType = new XMLSerializer().serializeToString(document.doctype);

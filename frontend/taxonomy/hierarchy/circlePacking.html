@@ -113,9 +113,12 @@
   var DYNAMIC_ARRAY = [];
 
   const DEFAULT_TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
   var TAXONOMY_ID;
 
-  const MIN_SIZE_VALUE = 1;
+  const DEFAULT_DIMENSION_NAME = 'Interdimensional view';
+
+  const MIN_SIZE_VALUE = 0.1;
 
   const ATTRIBUTE_URL = 'attribute';
   const CITATION_COUNTS_URL = 'citationCounts';
@@ -496,6 +499,7 @@
 
   // create JSON object used for the creation of the  d3 circle packing visualization
   function createJSON ( useCY, dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
+    if (!attributes || attributes.length == 0) return;
     isInterDimensional = interDimensional;
     var useReferenceCount = $('#dataType').val() == 'referenceCount';
 
@@ -574,18 +578,23 @@
               success: function ( taxonomy ) {
                 if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
                   TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                  loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                  //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                  window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
                   return;
                 } else {
                   var id = taxonomy.response[0].id - 0;
                   console.log("taxonomy id: ", id)
                   if (!isNaN(id)) TAXONOMY_ID = id;
-                  else TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                  else {
+                    TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                    window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                  }
                 }
                 loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
               }, failure: function () {
                 TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
               }
           });
         } else {
@@ -594,7 +603,8 @@
         }
       } else {
         TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-        loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+        //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+        window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
       }
     }
 
