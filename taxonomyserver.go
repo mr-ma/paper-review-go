@@ -131,6 +131,7 @@ func main() {
 	mux.Handle("POST", "/attributeCoverage", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageHandler), "getAttributeCoverageHandler", nil)))
 	mux.Handle("POST", "/attributeCoverageWithOccurrenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithOccurrenceCountsHandler), "getAttributeCoverageWithOccurrenceCountsHandler", nil)))
 	mux.Handle("POST", "/attributeCoverageWithReferenceCounts", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributeCoverageWithReferenceCountsHandler), "getAttributeCoverageWithReferenceCountsHandler", nil)))
+	mux.Handle("POST", "/attributesByName", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributesByNameHandler), "getAttributesByNameHandler", nil)))
 	mux.Handle("POST", "/kMeans", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getKMeansHandler), "getKMeansHandler", nil)))
 
 	// taxonomyserver end
@@ -1953,6 +1954,14 @@ func getForkAttributeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("content-type", "application/json")
 	w.Write(output)
+}
+func getAttributesByNameHandler(u *url.URL, h http.Header, attributesByNameRequest *model.AttributesByNameRequest) (int, http.Header, *MyResponse, error) {
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	attributes, err := driver.GetAttributesByName(
+		attributesByNameRequest.TaxonomyID, attributesByNameRequest.Texts)
+	checkErr(err)
+	return http.StatusOK, nil,
+		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getAttributeCoverageHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
 	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)

@@ -201,6 +201,11 @@ type SharedPapersRequest struct {
   Text3 string `json:"text3"`
 }
 
+type AttributesByNameRequest struct {
+  TaxonomyID int64 `json:"taxonomy_id"`
+  Texts []string `json:"texts"`
+}
+
 type AttributeDetailsRequest struct {
   TaxonomyID int64 `json:"taxonomy_id"`
   Text string `json:"text"`

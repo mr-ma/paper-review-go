@@ -71,6 +71,7 @@ type ClassificationDriver interface {
 	GetSharedPapersIncludingChildren3D(int64, string, string, string) ([]model.Paper, error)
 	GetAttributeDetails(int64, string) ([]model.Attribute, error)
 	GetCitationDetails(int64, string, string) ([]model.Paper, error)
+	GetAttributesByName(int64, []string) ([]model.Attribute, error)
 	GetAttributeCoverage(int64) ([]model.AttributeCoverage, error)
 	GetAttributeCoverageWithOcurrenceCounts(int64) ([]model.AttributeCoverage, error)
 	GetAttributeCoverageWithReferenceCounts(int64) ([]model.AttributeCoverage, error)
@@ -978,6 +979,25 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		return papers, err
 		}
 
+	func (d MySQLDriver) GetAttributesByName(taxonomyId int64, texts []string) (attributes []model.Attribute, err error){
+		dbRef, err := d.OpenDB()
+		defer dbRef.Close()
+		checkErr(err)
+		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+		db, stmt, err := d.Query("SELECT DISTINCT attribute.id_attribute, attribute.text, dimension.text AS dimensionText FROM attribute INNER JOIN taxonomy_dimension ON (attribute.id_attribute = taxonomy_dimension.id_attribute) INNER JOIN dimension ON (taxonomy_dimension.id_dimension = dimension.id_dimension AND dimension.id_taxonomy = ?) WHERE attribute.id_taxonomy = ? AND attribute.text IN (\"" + strings.Join(texts[:],"\",\"") + "\");")
+		defer stmt.Close()
+		defer db.Close()
+		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr)
+		checkErr(err)
+		for rows.Next() {
+			a := model.Attribute{}
+			rows.Scan(&a.ID,&a.Text,&a.Dimension)
+			attributes = append(attributes, a)
+		}
+		defer rows.Close()
+		return attributes, err
+		}
+
 	func (d MySQLDriver) GetAttributeCoverage(taxonomyId int64) (attributeCoverage []model.AttributeCoverage, err error){
 		dbRef, err := d.OpenDB()
 		defer dbRef.Close()
@@ -1468,6 +1488,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
 		dbRef.Exec("UPDATE taxonomy_dimension SET id_dimension = (SELECT DISTINCT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?) WHERE id_taxonomy = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", dimension, taxonomyIdStr, taxonomyIdStr, attribute, taxonomyIdStr)
 		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND (id_src_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) OR id_dest_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute, taxonomyIdStr, attribute, taxonomyIdStr)
+		d.UpdateRelationshipTables(taxonomyId)
 		result.Success = true
 		return result, err
 		}
