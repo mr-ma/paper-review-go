@@ -272,7 +272,8 @@ function validateEmail(email) {
               if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
                 TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
                 //window.location.href = url.shift();
-                window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                currentHash = '#' + DEFAULT_TAXONOMY_NAME;
+                window.location.hash = currentHash;
                 resolve();
                 return;
               } else {
@@ -280,13 +281,15 @@ function validateEmail(email) {
                 if (!isNaN(id)) TAXONOMY_ID = id;
                 else {
                   TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                  window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                  currentHash = '#' + DEFAULT_TAXONOMY_NAME;
+                  window.location.hash = currentHash;
                 }
               }
               resolve();
             }, failure: function () {
               TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-              window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+              currentHash = '#' + DEFAULT_TAXONOMY_NAME;
+              window.location.hash = currentHash;
               resolve();
             }
         });

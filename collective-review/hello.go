@@ -7,7 +7,7 @@ import (
 
 	"../data"
 	"../model"
-	"../go-tigertonic"
+	"github.com/rcrowley/go-tigertonic"
 )
 
 //MyRequest standard request

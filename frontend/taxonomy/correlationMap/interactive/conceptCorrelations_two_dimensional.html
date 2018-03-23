@@ -635,6 +635,7 @@ function doParse(input) {
 
   const DEFAULT_TAXONOMY_ID = 1;
   const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+  var currentHash = '';
   var TAXONOMY_ID;
 
   const KMEANS_CLUSTERS = 7;
@@ -1714,8 +1715,7 @@ function doParse(input) {
       var newNodesX = [];
      switch (elm) {
        case 'row':
-         //var nodes = show ? nodesOriginalY : nodesY;
-         var nodes = nodesY;
+         var nodes = show ? nodesOriginalY : nodesY;
          nodes.forEach ( function ( node ) {
             if (show) {
               if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesY.push(node);
@@ -1726,8 +1726,7 @@ function doParse(input) {
          newNodesX = nodesX;
          break;
        case 'column':
-         //var nodes = show ? nodesOriginalX : nodesX;
-         var nodes = nodesX;
+         var nodes = show ? nodesOriginalX : nodesX;
          nodes.forEach ( function ( node ) {
             if (show) {
               if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesX.push(node);
@@ -3466,7 +3465,8 @@ function renderMatrixHelper () {
 
 function renderMatrix () {
   //  && (!!totalNumberOfCitations || !!maxReferenceCount)
-  if (!IS_STATIC && !buildingMatrix) renderMatrixHelper();
+  if (!buildingMatrix) buildingMatrix = false;
+  if (!IS_STATIC) renderMatrixHelper();
 }
 
 // get correlation options depending on user selection
@@ -3827,8 +3827,8 @@ function initPage () {
 $(document).ready( function () {
   window.onhashchange = function () {
     var hash = window.location.hash;
-    console.log("hash changed to: " + hash);
-    window.location.reload(false);
+    // prevent page reload when a compound node is being expanded or collapsed
+    if (unescape(hash) != unescape(currentHash)) window.location.reload(false);
   };
 
   $(this).on('contextmenu', function ( e ) {

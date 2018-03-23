@@ -172,11 +172,10 @@
 
   const DEFAULT_TAXONOMY_ID = 1;
   const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+  var currentHash = '';
   var TAXONOMY_ID;
 
   const DEFAULT_DIMENSION_NAME = 'Interdimensional view';
-
-  var currentHash = '';
 
   const ATTRIBUTE_URL = 'majorAttributes';
   const CITATION_COUNTS_URL = 'citationCountsIncludingChildren';
@@ -388,7 +387,7 @@
       evt.preventDefault();
       $('#defaultModalButton').prop('disabled', true);
       var newAttributeName = $('#defaultModalText').val();
-      if (newAttributeName == '' || cy.$('[id="' + newAttributeName + '"]').length > 0) {
+      if (newAttributeName == '' || cy.$('node[id="' + newAttributeName + '"]').length > 0) {
         handleErrorHelper('This attribute name already exists in this domain.');
         $('#defaultModalButton').prop('disabled', false);
         return;
@@ -1355,7 +1354,7 @@
                   data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributeSrc: sourceID, attributeDest: targetID, dimension: (isInterDimensional ? DEFAULT_DIMENSION_NAME : dimensions[0].text), text: relationType.text}),
                   success: function ( result ) {
                     if (!result || !result.success) {
-                      handleErrorHelper('Cannot update taxonomy relation type.');
+                      handleErrorHelper('Cannot update the type of this taxonomy relation to the specified type. Circles in the hierarchical structure of a taxonomy and relations, that would result in a duplicate "parent-child" relationship, are not allowed.');
                       return;
                     }
                     callback();
@@ -1553,6 +1552,11 @@
       function callback () {
         console.log('Added taxonomy relation successfully, source: ' + sourceID + ', target: ' + targetID + '.');
       }
+      function failureCallback () {
+        addedEles.forEach ( function ( entry ) {
+          cy.remove(entry);
+        });
+      }
       if (!admin) callback();
       else {
         console.time('AddEdge');
@@ -1567,7 +1571,8 @@
               success: function ( result ) {
                 console.timeEnd('AddEdge');
                 if (!result || !result.success) {
-                  handleErrorHelper('Cannot add taxonomy relation.');
+                  handleErrorHelper('Cannot add this taxonomy relation. Circles in the hierarchical structure of a taxonomy and relations, that would result in a duplicate "parent-child" relationship, are not allowed.');
+                  failureCallback();
                   return;
                 }
                 callback();
@@ -1797,7 +1802,8 @@
               success: function ( taxonomy ) {
                 if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
                   TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                  window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                  currentHash = '#' + DEFAULT_TAXONOMY_NAME;
+                  window.location.hash = currentHash;
                   //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
                   return;
                 } else {
@@ -1806,14 +1812,16 @@
                   if (!isNaN(id)) TAXONOMY_ID = id;
                   else {
                     TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-                    window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                    currentHash = '#' + DEFAULT_TAXONOMY_NAME;
+                    window.location.hash = currentHash;
                   }
                 }
                 loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
               }, failure: function () {
                 TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
                 //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
-                window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                currentHash = '#' + DEFAULT_TAXONOMY_NAME;
+                window.location.hash = currentHash;
               }
           });
         } else {
@@ -1823,7 +1831,8 @@
       } else {
         TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
         //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
-        window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+        currentHash = '#' + DEFAULT_TAXONOMY_NAME;
+        window.location.hash = currentHash;
       }
     }
 

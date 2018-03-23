@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
     "mime/multipart"
 	"net/http"
@@ -20,9 +19,8 @@ import (
 
 	"./data"
 	"./model"
-	"./go-tigertonic"
-	"./scs"
-	"./pdf"
+	"github.com/rcrowley/go-tigertonic"
+	"github.com/alexedwards/scs"
 )
 
 //MyRequest standard request
@@ -782,9 +780,6 @@ func main() {
 		}
 		w.Write([]byte("PNG Generated"))
 	})
-	mux.HandleFunc("POST", "/upload", func(w http.ResponseWriter, r *http.Request) {
-		UploadFile(w, r)
-	})
 
 	server := tigertonic.NewServer(*listen, tigertonic.Logged(sessionManager.Use(mux), nil)) // context.ClearHandler(mux), to avoid memory leaks
 	go func() {
@@ -808,79 +803,6 @@ func checkErr(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func parsePDF(path string) (string, error) {
-	r, err := pdf.Open(path)
-	if err != nil {
-		return "", err
-	}
-	var buf bytes.Buffer
-	buf.ReadFrom(r.GetPlainText())
-	return buf.String(), nil
-}
-
-func deleteFile(path string) (error) {
-	var err = os.Remove(path)
-	return err
-}
-
-func UploadHandler(w http.ResponseWriter, r *http.Request) {  
-      var (  
-           status int  
-           err  error  
-      )  
-      defer func() {  
-           if nil != err {  
-                http.Error(w, err.Error(), status)  
-           }  
-      }()  
-      if err = r.ParseMultipartForm(32 << 20); nil != err {  
-           status = http.StatusInternalServerError  
-           return  
-      }
-      paths := []string{}
-      for _, fheaders := range r.MultipartForm.File {
-           for _, hdr := range fheaders {
-           		path := "./files/" + hdr.Filename
-                var infile multipart.File  
-                if infile, err = hdr.Open(); nil != err {  
-                     status = http.StatusInternalServerError  
-                     return  
-                }  
-                var outfile *os.File  
-                if outfile, err = os.Create(path); nil != err {  
-                     status = http.StatusInternalServerError  
-                     return  
-                }   
-                var written int64  
-                if written, err = io.Copy(outfile, infile); nil != err {  
-                     status = http.StatusInternalServerError  
-                     return  
-                }
-                fmt.Println("written: " + strconv.Itoa(int(written)))
-				text, err := parsePDF(path)
-				if err == nil {
-					fmt.Println("parsed file: " + strconv.Itoa(len(text)))
-				} else {
-					fmt.Println("parse file Error")
-				}
-				defer infile.Close()
-				defer outfile.Close()
-				paths = append(paths, path)
-           }
-        }
-        for _, elem := range paths {
-			err = deleteFile(elem)
-			if err != nil {
-				fmt.Println("deleting file failed.")
-			}
-        }
- } 
-
-func UploadFile(w http.ResponseWriter, r *http.Request) {
-		UploadHandler(w, r)
-		jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
 }
 
 func saveFile(w http.ResponseWriter, file multipart.File, handle *multipart.FileHeader) {

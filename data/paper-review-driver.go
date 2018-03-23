@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	//overriding MySqlDriver
-	_ "../mysql"
+	_ "github.com/go-sql-driver/mysql"
 	"../model"
 )
 
