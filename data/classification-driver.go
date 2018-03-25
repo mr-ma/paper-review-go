@@ -290,7 +290,7 @@ func (d MySQLDriver) GetTaxonomyID(text string) (taxonomies []model.Taxonomy,
 	dbRef, err := d.OpenDB()
 	defer dbRef.Close()
 	checkErr(err)
-	db, stmt, err := d.Query("select id_taxonomy from taxonomy where text = ?;")
+	db, stmt, err := d.Query("select id_taxonomy from taxonomy where BINARY text = ?;")
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(text)
@@ -348,7 +348,7 @@ func (d MySQLDriver) AddTaxonomy(taxonomy string, dimension string) (result mode
 	if !strings.Contains(dimension, " view") {
 		dimension += " view"
 	}
-	db, stmt, err := d.Query("select count(id_taxonomy) as taxonomyCount from taxonomy where text = ?;")
+	db, stmt, err := d.Query("select count(id_taxonomy) as taxonomyCount from taxonomy where BINARY text = ?;")
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(taxonomy)
@@ -364,8 +364,8 @@ func (d MySQLDriver) AddTaxonomy(taxonomy string, dimension string) (result mode
 		return result, err
 	}
 	dbRef.Exec("INSERT IGNORE INTO taxonomy (text) VALUES (?);", taxonomy);
-	dbRef.Exec("INSERT IGNORE INTO dimension (id_taxonomy, text) VALUES ((SELECT DISTINCT id_taxonomy FROM taxonomy WHERE text = ?), \"Interdimensional view\");", taxonomy)
-	dbRef.Exec("INSERT IGNORE INTO dimension (id_taxonomy, text) VALUES ((SELECT DISTINCT id_taxonomy FROM taxonomy WHERE text = ?), ?);", taxonomy, dimension)
+	dbRef.Exec("INSERT IGNORE INTO dimension (id_taxonomy, text) VALUES ((SELECT DISTINCT id_taxonomy FROM taxonomy WHERE BINARY text = ?), \"Interdimensional view\");", taxonomy)
+	dbRef.Exec("INSERT IGNORE INTO dimension (id_taxonomy, text) VALUES ((SELECT DISTINCT id_taxonomy FROM taxonomy WHERE BINARY text = ?), ?);", taxonomy, dimension)
 	result.Success = true
 	return result, err
 	}
@@ -527,7 +527,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range referenceCounts {
     		referenceCountStr := strconv.Itoa(elem.ReferenceCount)
-			dbRef.Exec("update paper set referenceCount = ? where id_taxonomy = ? and citation = ?;", referenceCountStr, taxonomyIdStr, elem.Citation);
+			dbRef.Exec("update paper set referenceCount = ? where id_taxonomy = ? and BINARY citation = ?;", referenceCountStr, taxonomyIdStr, elem.Citation);
 		}
 		result.Success = true
 		return result, err
@@ -539,7 +539,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		majorStr := strconv.Itoa(major)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-    	dbRef.Exec("update attribute set major = ? where text = ? and id_taxonomy = ?;", majorStr, text, taxonomyIdStr)
+    	dbRef.Exec("update attribute set major = ? where BINARY text = ? and id_taxonomy = ?;", majorStr, text, taxonomyIdStr)
 		result.Success = true
 		return result, err
 		}
@@ -549,7 +549,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT DISTINCT id_attribute FROM attribute WHERE text = ? and id_taxonomy = ?;")
+		db, stmt, err := d.Query("SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? and id_taxonomy = ?;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(attribute, taxonomyIdStr)
@@ -636,19 +636,19 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 					dbRef.Exec("INSERT IGNORE INTO paper (id_taxonomy, id_paper, citation, bib, referenceCount, author, keywords) VALUES (?, ?, ?, ?, ?, ?, ?);", taxonomyIdStr, paperIDStr, elem.Citation, bibTex, referenceCountStr, elem.Author, elem.Keywords)
 				} else {
 					if elem.Bib != "empty" {
-						dbRef.Exec("UPDATE paper SET citation = ?, bib = ?, referenceCount = ?, author = ?, keywords = ? WHERE id_taxonomy = ? AND id_paper = ?;", elem.Citation, elem.Bib, referenceCountStr, elem.Author, elem.Keywords, taxonomyIdStr, paperIDStr)
+						dbRef.Exec("UPDATE paper SET BINARY citation = ?, bib = ?, referenceCount = ?, author = ?, keywords = ? WHERE id_taxonomy = ? AND id_paper = ?;", elem.Citation, elem.Bib, referenceCountStr, elem.Author, elem.Keywords, taxonomyIdStr, paperIDStr)
 					} else {
-						dbRef.Exec("UPDATE paper SET citation = ?, referenceCount = ?, author = ?, keywords = ?) WHERE id_taxonomy = ? AND id_paper = ?;", elem.Citation, referenceCountStr, elem.Author, elem.Keywords, taxonomyIdStr, paperIDStr)
+						dbRef.Exec("UPDATE paper SET BINARY citation = ?, referenceCount = ?, author = ?, keywords = ?) WHERE id_taxonomy = ? AND id_paper = ?;", elem.Citation, referenceCountStr, elem.Author, elem.Keywords, taxonomyIdStr, paperIDStr)
 					}
 				}
 				a := model.Paper{ID: paperID}
 				savedPapers = append(savedPapers, a)
 			}
 			if elem.OccurrenceCount <= 0 {
-				dbRef.Exec("DELETE FROM mapping WHERE id_paper = (SELECT DISTINCT id_paper FROM paper WHERE id_taxonomy = ? AND citation = ?) AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", taxonomyIdStr, elem.Citation, elem.Attribute, taxonomyIdStr)
+				dbRef.Exec("DELETE FROM mapping WHERE id_paper = (SELECT DISTINCT id_paper FROM paper WHERE id_taxonomy = ? AND BINARY citation = ?) AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", taxonomyIdStr, elem.Citation, elem.Attribute, taxonomyIdStr)
 			} else {
 				occurrenceCountStr := strconv.Itoa(elem.OccurrenceCount)
-				dbRef.Exec("REPLACE INTO mapping (id_paper, id_attribute, occurrenceCount) VALUES ((SELECT DISTINCT id_paper FROM paper WHERE id_taxonomy = ? AND citation = ?), (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), ?);", taxonomyIdStr, elem.Citation, elem.Attribute, taxonomyIdStr, occurrenceCountStr)
+				dbRef.Exec("REPLACE INTO mapping (id_paper, id_attribute, occurrenceCount) VALUES ((SELECT DISTINCT id_paper FROM paper WHERE id_taxonomy = ? AND BINARY citation = ?), (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), ?);", taxonomyIdStr, elem.Citation, elem.Attribute, taxonomyIdStr, occurrenceCountStr)
 			}
 		}
 		d.UpdateRelationshipTables(taxonomyId)
@@ -965,7 +965,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct id_paper, citation, bib, referenceCount from paper where id_taxonomy = ? and (citation = ? or citation = ?) order by id_paper;")
+		db, stmt, err := d.Query("select distinct id_paper, citation, bib, referenceCount from paper where id_taxonomy = ? and (citation = ? or BINARY citation = ?) order by id_paper;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(taxonomyIdStr, text1, text2)
@@ -1061,7 +1061,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attribute.text as attr, relation.text as relationText from taxonomy_relation inner join attribute on (taxonomy_relation.id_src_attribute = (select distinct id_attribute from attribute where text = ? and attribute.id_taxonomy = ?) and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = ? and dimension.id_taxonomy = ?) and taxonomy_relation.id_dest_attribute = attribute.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation);")
+		db, stmt, err := d.Query("select distinct attribute.text as attr, relation.text as relationText from taxonomy_relation inner join attribute on (taxonomy_relation.id_src_attribute = (select distinct id_attribute from attribute where BINARY text = ? and attribute.id_taxonomy = ?) and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where BINARY text = ? and dimension.id_taxonomy = ?) and taxonomy_relation.id_dest_attribute = attribute.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation);")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(attribute, taxonomyIdStr, dimension, taxonomyIdStr)
@@ -1080,7 +1080,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attribute.text as attr, relation.text as relationText from taxonomy_relation inner join attribute on (taxonomy_relation.id_dest_attribute = (select distinct id_attribute from attribute where text = ? and attribute.id_taxonomy = ?) and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = ? and dimension.id_taxonomy = ?) and taxonomy_relation.id_src_attribute = attribute.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation);")
+		db, stmt, err := d.Query("select distinct attribute.text as attr, relation.text as relationText from taxonomy_relation inner join attribute on (taxonomy_relation.id_dest_attribute = (select distinct id_attribute from attribute where BINARY text = ? and attribute.id_taxonomy = ?) and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where BINARY text = ? and dimension.id_taxonomy = ?) and taxonomy_relation.id_src_attribute = attribute.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation);")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(attribute, taxonomyIdStr, dimension, taxonomyIdStr)
@@ -1137,7 +1137,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		destAttributeIdStr := strconv.Itoa(cluster.ID)
-		db, stmt, err := d.Query("select distinct attribute.id_attribute, attribute.text from attribute inner join taxonomy_relation on (attribute.id_taxonomy = ? and taxonomy_relation.id_dest_attribute = ? and attribute.id_attribute = taxonomy_relation.id_src_attribute and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = ? and dimension.id_taxonomy = ?));")
+		db, stmt, err := d.Query("select distinct attribute.id_attribute, attribute.text from attribute inner join taxonomy_relation on (attribute.id_taxonomy = ? and taxonomy_relation.id_dest_attribute = ? and attribute.id_attribute = taxonomy_relation.id_src_attribute and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where BINARY text = ? and dimension.id_taxonomy = ?));")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(taxonomyIdStr, destAttributeIdStr, dimension, taxonomyIdStr)
@@ -1172,7 +1172,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
 		// Get root attributes
-		db, stmt, err := d.Query("select distinct attr.id_attribute, attr.text from (select distinct attribute.id_attribute, attribute.text from attribute inner join taxonomy_dimension on (attribute.id_taxonomy = ? and attribute.id_attribute = taxonomy_dimension.id_attribute) inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension and dimension.text = ? and dimension.id_taxonomy = ?)) as attr left outer join taxonomy_relation on (attr.id_attribute = taxonomy_relation.id_src_attribute and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = ? and dimension.id_taxonomy = ?)) where taxonomy_relation.id_taxonomy_relation is null;")
+		db, stmt, err := d.Query("select distinct attr.id_attribute, attr.text from (select distinct attribute.id_attribute, attribute.text from attribute inner join taxonomy_dimension on (attribute.id_taxonomy = ? and attribute.id_attribute = taxonomy_dimension.id_attribute) inner join dimension on (taxonomy_dimension.id_dimension = dimension.id_dimension and dimension.text = ? and dimension.id_taxonomy = ?)) as attr left outer join taxonomy_relation on (attr.id_attribute = taxonomy_relation.id_src_attribute and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where BINARY text = ? and dimension.id_taxonomy = ?)) where taxonomy_relation.id_taxonomy_relation is null;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(taxonomyIdStr, dimension, taxonomyIdStr, dimension, taxonomyIdStr)
@@ -1288,7 +1288,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attribute1.text as attributeSrc, attribute2.text as attributeDest, relation.text as relation, (case when taxonomy_relation.edgeBendPoints IS NOT NULL then taxonomy_relation.edgeBendPoints else \"\" end), annotation.annotation from attribute as attribute1 inner join taxonomy_relation on (attribute1.id_taxonomy = ? and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = ? and dimension.id_taxonomy = ?) and attribute1.id_attribute = taxonomy_relation.id_src_attribute) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and taxonomy_relation.id_dest_attribute = attribute2.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation) inner join taxonomy_dimension as dimension1 on (attribute1.id_attribute = dimension1.id_attribute) inner join taxonomy_dimension as dimension2 on (attribute2.id_attribute = dimension2.id_attribute) inner join dimension as dim1 on (dimension1.id_dimension = dim1.id_dimension and dim1.text = ? and dim1.id_taxonomy = ?) inner join dimension as dim2 on (dimension2.id_dimension = dim2.id_dimension and dim2.text = ? and dim2.id_taxonomy = ?) left outer join taxonomy_relation_annotation as annotation on (taxonomy_relation.id_taxonomy_relation = annotation.id_taxonomy_relation);")
+		db, stmt, err := d.Query("select distinct attribute1.text as attributeSrc, attribute2.text as attributeDest, relation.text as relation, (case when taxonomy_relation.edgeBendPoints IS NOT NULL then taxonomy_relation.edgeBendPoints else \"\" end), annotation.annotation from attribute as attribute1 inner join taxonomy_relation on (attribute1.id_taxonomy = ? and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where BINARY text = ? and dimension.id_taxonomy = ?) and attribute1.id_attribute = taxonomy_relation.id_src_attribute) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and taxonomy_relation.id_dest_attribute = attribute2.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation) inner join taxonomy_dimension as dimension1 on (attribute1.id_attribute = dimension1.id_attribute) inner join taxonomy_dimension as dimension2 on (attribute2.id_attribute = dimension2.id_attribute) inner join dimension as dim1 on (dimension1.id_dimension = dim1.id_dimension and dim1.text = ? and dim1.id_taxonomy = ?) inner join dimension as dim2 on (dimension2.id_dimension = dim2.id_dimension and dim2.text = ? and dim2.id_taxonomy = ?) left outer join taxonomy_relation_annotation as annotation on (taxonomy_relation.id_taxonomy_relation = annotation.id_taxonomy_relation);")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(taxonomyIdStr, dimension, taxonomyIdStr, taxonomyIdStr, dimension, taxonomyIdStr, dimension, taxonomyIdStr)
@@ -1307,7 +1307,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("select distinct attribute1.text as attributeSrc, attribute2.text as attributeDest, relation.text as relation, (case when taxonomy_relation.edgeBendPoints IS NOT NULL then taxonomy_relation.edgeBendPoints else \"\" end), annotation.annotation from attribute as attribute1 inner join taxonomy_relation on (attribute1.id_taxonomy = ? and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where text = \"Interdimensional view\" and dimension.id_taxonomy = ?) and attribute1.id_attribute = taxonomy_relation.id_src_attribute) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and taxonomy_relation.id_dest_attribute = attribute2.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation) left outer join taxonomy_relation_annotation as annotation on (taxonomy_relation.id_taxonomy_relation = annotation.id_taxonomy_relation);")
+		db, stmt, err := d.Query("select distinct attribute1.text as attributeSrc, attribute2.text as attributeDest, relation.text as relation, (case when taxonomy_relation.edgeBendPoints IS NOT NULL then taxonomy_relation.edgeBendPoints else \"\" end), annotation.annotation from attribute as attribute1 inner join taxonomy_relation on (attribute1.id_taxonomy = ? and taxonomy_relation.id_dimension = (select distinct id_dimension from dimension where BINARY text = \"Interdimensional view\" and dimension.id_taxonomy = ?) and attribute1.id_attribute = taxonomy_relation.id_src_attribute) inner join attribute as attribute2 on (attribute2.id_taxonomy = ? and taxonomy_relation.id_dest_attribute = attribute2.id_attribute) inner join relation on (taxonomy_relation.id_relation = relation.id_relation) left outer join taxonomy_relation_annotation as annotation on (taxonomy_relation.id_taxonomy_relation = annotation.id_taxonomy_relation);")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(taxonomyIdStr, taxonomyIdStr, taxonomyIdStr)
@@ -1327,7 +1327,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set x = ?, y = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr)
+			dbRef.Exec("update " + elem.Table + " set x = ?, y = ? where BINARY text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err
@@ -1339,7 +1339,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set xMajor = ?, yMajor = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr)
+			dbRef.Exec("update " + elem.Table + " set xMajor = ?, yMajor = ? where BINARY text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err
@@ -1351,7 +1351,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set x3D = ?, y3D = ?, z3D = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr)
+			dbRef.Exec("update " + elem.Table + " set x3D = ?, y3D = ?, z3D = ? where BINARY text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err
@@ -1363,7 +1363,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
     	for _, elem := range positions {
-			dbRef.Exec("update " + elem.Table + " set xMajor3D = ?, yMajor3D = ?, zMajor3D = ? where text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr)
+			dbRef.Exec("update " + elem.Table + " set xMajor3D = ?, yMajor3D = ?, zMajor3D = ? where BINARY text = ? and id_taxonomy = ?;", elem.X, elem.Y, elem.Z, elem.ID, taxonomyIdStr)
 		}
 		result.Success = true
 		return result, err
@@ -1374,7 +1374,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		dbRef.Exec("update taxonomy_relation set edgeBendPoints = ? where id_taxonomy = ? and id_src_attribute = (select distinct id_attribute from attribute where text = ? and id_taxonomy = ?) and id_dest_attribute = (select distinct id_attribute from attribute where text = ? and id_taxonomy = ?) and id_dimension = (select distinct id_dimension from dimension where text = ? and id_taxonomy = ?);", edgeBendPoints, taxonomyIdStr, attributeSrc, taxonomyIdStr, attributeDest, taxonomyIdStr, dimension, taxonomyIdStr)
+		dbRef.Exec("update taxonomy_relation set edgeBendPoints = ? where id_taxonomy = ? and id_src_attribute = (select distinct id_attribute from attribute where BINARY text = ? and id_taxonomy = ?) and id_dest_attribute = (select distinct id_attribute from attribute where BINARY text = ? and id_taxonomy = ?) and id_dimension = (select distinct id_dimension from dimension where BINARY text = ? and id_taxonomy = ?);", edgeBendPoints, taxonomyIdStr, attributeSrc, taxonomyIdStr, attributeDest, taxonomyIdStr, dimension, taxonomyIdStr)
 		result.Success = true
 		return result, err
 		}
@@ -1432,7 +1432,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(attribute.Text, taxonomyIdStr)
@@ -1448,7 +1448,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		}
 		majorStr := strconv.Itoa(int(attribute.Major))
 		dbRef.Exec("INSERT IGNORE INTO attribute (id_taxonomy, text, x, y, xMajor, yMajor, major) VALUES (?, ?, ?, ?, ?, ?, ?);", taxonomyIdStr, attribute.Text, attribute.X, attribute.Y, attribute.XMajor, attribute.YMajor, majorStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute.Text, taxonomyIdStr, attribute.Dimension, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute.Text, taxonomyIdStr, attribute.Dimension, taxonomyIdStr)
 		d.UpdateRelationshipTables(taxonomyId)
 		result.Success = true
 		return result, err
@@ -1462,7 +1462,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			dimension += " view"
 		}
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT count(id_dimension) FROM dimension WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err := d.Query("SELECT count(id_dimension) FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(dimension, taxonomyIdStr)
@@ -1486,8 +1486,8 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		dbRef.Exec("UPDATE taxonomy_dimension SET id_dimension = (SELECT DISTINCT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?) WHERE id_taxonomy = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", dimension, taxonomyIdStr, taxonomyIdStr, attribute, taxonomyIdStr)
-		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND (id_src_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) OR id_dest_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute, taxonomyIdStr, attribute, taxonomyIdStr)
+		dbRef.Exec("UPDATE taxonomy_dimension SET id_dimension = (SELECT DISTINCT id_dimension FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?) WHERE id_taxonomy = ? AND id_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", dimension, taxonomyIdStr, taxonomyIdStr, attribute, taxonomyIdStr)
+		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND (id_src_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) OR id_dest_attribute = (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute, taxonomyIdStr, attribute, taxonomyIdStr)
 		d.UpdateRelationshipTables(taxonomyId)
 		result.Success = true
 		return result, err
@@ -1512,7 +1512,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			result.Success = false
 			return result, err
 		}
-		dbRef.Exec("UPDATE attribute SET text = ? WHERE text = ? AND id_taxonomy = ?;", newName, previousName, taxonomyIdStr)
+		dbRef.Exec("UPDATE attribute SET BINARY text = ? WHERE BINARY text = ? AND id_taxonomy = ?;", newName, previousName, taxonomyIdStr)
 		d.UpdateRelationshipTables(taxonomyId)
 		result.Success = true
 		return result, err
@@ -1523,7 +1523,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		dbRef.Exec("UPDATE attribute SET synonyms = ? WHERE text = ? AND id_taxonomy = ?;", synonyms, attribute, taxonomyIdStr)
+		dbRef.Exec("UPDATE attribute SET synonyms = ? WHERE BINARY text = ? AND id_taxonomy = ?;", synonyms, attribute, taxonomyIdStr)
 		result.Success = true
 		return result, err
 		}		
@@ -1533,7 +1533,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT count(id_dimension) FROM dimension WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err := d.Query("SELECT count(id_dimension) FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(newName, taxonomyIdStr)
@@ -1547,7 +1547,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			result.Success = false
 			return result, err
 		}
-		dbRef.Exec("UPDATE dimension SET text = ? WHERE text = ? AND id_taxonomy = ?;", newName, previousName, taxonomyIdStr)
+		dbRef.Exec("UPDATE dimension SET BINARY text = ? WHERE BINARY text = ? AND id_taxonomy = ?;", newName, previousName, taxonomyIdStr)
 		result.Success = true
 		return result, err
 		}
@@ -1557,7 +1557,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?;")
 		defer stmt.Close()
 		defer db.Close()
 		rows, err := stmt.Query(attribute1.Text + ":" + attribute2.Text, taxonomyIdStr)
@@ -1572,14 +1572,14 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			return result, err
 		}
 		dbRef.Exec("INSERT IGNORE INTO attribute (id_taxonomy, text, x, y, xMajor, yMajor, major) SELECT attribute.id_taxonomy, ? as newName, attribute.x, attribute.y, attribute.xMajor, attribute.yMajor, attribute.major FROM attribute WHERE attribute.text = ? AND attribute.id_taxonomy = ?;", attribute1.Text + ":" + attribute2.Text, attribute1.Text, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Dimension, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), id_dest_attribute, id_relation, id_dimension FROM taxonomy_relation WHERE id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Text, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), id_dest_attribute, id_relation, id_dimension FROM taxonomy_relation WHERE id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute2.Text, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, id_src_attribute, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), id_relation, id_dimension FROM taxonomy_relation WHERE id_dest_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Text, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, id_src_attribute, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), id_relation, id_dimension FROM taxonomy_relation WHERE id_dest_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute2.Text, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) SELECT id_paper, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) FROM mapping WHERE id_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Text, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) SELECT id_paper, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) FROM mapping WHERE id_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute2.Text, taxonomyIdStr)
-		dbRef.Exec("DELETE FROM attribute WHERE id_taxonomy = ? AND (text = ? OR text = ?);", taxonomyIdStr, attribute1.Text, attribute2.Text)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Dimension, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), id_dest_attribute, id_relation, id_dimension FROM taxonomy_relation WHERE id_src_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Text, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), id_dest_attribute, id_relation, id_dimension FROM taxonomy_relation WHERE id_src_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute2.Text, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, id_src_attribute, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), id_relation, id_dimension FROM taxonomy_relation WHERE id_dest_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Text, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) SELECT id_taxonomy, id_src_attribute, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), id_relation, id_dimension FROM taxonomy_relation WHERE id_dest_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute2.Text, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) SELECT id_paper, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) FROM mapping WHERE id_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute1.Text, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) SELECT id_paper, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) FROM mapping WHERE id_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", attribute1.Text + ":" + attribute2.Text, taxonomyIdStr, attribute2.Text, taxonomyIdStr)
+		dbRef.Exec("DELETE FROM attribute WHERE id_taxonomy = ? AND (text = ? OR BINARY text = ?);", taxonomyIdStr, attribute1.Text, attribute2.Text)
 		d.UpdateRelationshipTables(taxonomyId)
 		result.Success = true
 		return result, err
@@ -1597,7 +1597,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		var newAttributeName2 string
 		for ok := true; ok; ok = (input != 2) {
 			newAttributeName = attribute + ":" + strconv.Itoa(counter)
-			db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE text = ? AND id_taxonomy = ?;")
+			db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?;")
 			rows, err := stmt.Query(newAttributeName, taxonomyIdStr)
 			stmt.Close()
 			db.Close()
@@ -1616,7 +1616,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		}
 		for ok := true; ok; ok = (input2 != 2) {
 			newAttributeName2 = attribute + ":" + strconv.Itoa(counter)
-			db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE text = ? AND id_taxonomy = ?;")
+			db, stmt, err := d.Query("SELECT count(id_attribute) FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?;")
 			rows, err := stmt.Query(newAttributeName, taxonomyIdStr)
 			stmt.Close()
 			db.Close()
@@ -1634,28 +1634,28 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			counter++
 		}
 		dbRef.Exec("INSERT IGNORE INTO attribute (id_taxonomy, text, x, y, xMajor, yMajor, major) SELECT attribute.id_taxonomy, ? as newName, attribute.x, attribute.y, attribute.xMajor, attribute.yMajor, attribute.major FROM attribute WHERE attribute.text = ? AND attribute.id_taxonomy = ?;", newAttributeName, attribute, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension from dimension where text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName, taxonomyIdStr, dimension, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension from dimension where BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName, taxonomyIdStr, dimension, taxonomyIdStr)
 		dbRef.Exec("INSERT IGNORE INTO attribute (id_taxonomy, text, x, y, xMajor, yMajor, major) SELECT attribute.id_taxonomy, ? as newName, attribute.x + 150, attribute.y, attribute.xMajor + 150, attribute.yMajor, attribute.major FROM attribute WHERE attribute.text = ? AND attribute.id_taxonomy = ?;", newAttributeName2, attribute, taxonomyIdStr)
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension from dimension where text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName2, taxonomyIdStr, dimension, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), (SELECT DISTINCT id_dimension from dimension where BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName2, taxonomyIdStr, dimension, taxonomyIdStr)
 	    for _, parent := range parents1 {
-	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where text = ?), (select distinct id_dimension from dimension where text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName, taxonomyIdStr, parent.Text, taxonomyIdStr, parent.Relation, dimension, taxonomyIdStr)
+	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where BINARY text = ?), (select distinct id_dimension from dimension where BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName, taxonomyIdStr, parent.Text, taxonomyIdStr, parent.Relation, dimension, taxonomyIdStr)
 	    }
 	    for _, parent := range parents2 {
-	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where text = ?), (select distinct id_dimension from dimension where text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName2, taxonomyIdStr, parent.Text, taxonomyIdStr, parent.Relation, dimension, taxonomyIdStr)
+	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where BINARY text = ?), (select distinct id_dimension from dimension where BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName2, taxonomyIdStr, parent.Text, taxonomyIdStr, parent.Relation, dimension, taxonomyIdStr)
 	    }
 	    for _, child := range children1 {
-	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_dest_attribute, id_src_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where text = ?), (select distinct id_dimension from dimension where text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName, taxonomyIdStr, child.Text, taxonomyIdStr, child.Relation, dimension, taxonomyIdStr)
+	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_dest_attribute, id_src_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where BINARY text = ?), (select distinct id_dimension from dimension where BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName, taxonomyIdStr, child.Text, taxonomyIdStr, child.Relation, dimension, taxonomyIdStr)
 	    }
 	    for _, child := range children2 {
-	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_dest_attribute, id_src_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where text = ?), (select distinct id_dimension from dimension where text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName2, taxonomyIdStr, child.Text, taxonomyIdStr, child.Relation, dimension, taxonomyIdStr)
+	        dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_dest_attribute, id_src_attribute, id_relation, id_dimension) VALUES (?, (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?), (select distinct id_relation from relation where BINARY text = ?), (select distinct id_dimension from dimension where BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, newAttributeName2, taxonomyIdStr, child.Text, taxonomyIdStr, child.Relation, dimension, taxonomyIdStr)
 	    }
 	    for _, citation := range citations1 {
-	        dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (?, (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?));", strconv.Itoa(int(citation.ID)), newAttributeName, taxonomyIdStr)
+	        dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (?, (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?));", strconv.Itoa(int(citation.ID)), newAttributeName, taxonomyIdStr)
 	    }
 	    for _, citation := range citations2 {
-	        dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (?, (select distinct id_attribute from attribute where text = ? AND id_taxonomy = ?));", strconv.Itoa(int(citation.ID)), newAttributeName2, taxonomyIdStr)
+	        dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES (?, (select distinct id_attribute from attribute where BINARY text = ? AND id_taxonomy = ?));", strconv.Itoa(int(citation.ID)), newAttributeName2, taxonomyIdStr)
 	    }
-		dbRef.Exec("DELETE FROM attribute WHERE text = ? AND id_taxonomy = ?;", attribute, taxonomyIdStr)
+		dbRef.Exec("DELETE FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?;", attribute, taxonomyIdStr)
 		d.UpdateRelationshipTables(taxonomyId)
 		result.Success = true
 		return result, err
@@ -1666,7 +1666,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(relation.TaxonomyID))
-		db, stmt, err := d.Query("SELECT id_relation FROM relation WHERE text = ?;")
+		db, stmt, err := d.Query("SELECT id_relation FROM relation WHERE BINARY text = ?;")
 		checkErr(err)
 		defer stmt.Close()
 		defer db.Close()
@@ -1684,7 +1684,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		if relationID < 3 {
 			return true
 		}
-		db, stmt, err = d.Query("SELECT parents FROM allparentsperattribute WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err = d.Query("SELECT parents FROM allparentsperattribute WHERE BINARY text = ? AND id_taxonomy = ?;")
 		checkErr(err)
 		defer stmt.Close()
 		defer db.Close()
@@ -1702,7 +1702,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 				return false
 			}
 		}
-		db, stmt, err = d.Query("SELECT parents FROM allparentsperattribute WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err = d.Query("SELECT parents FROM allparentsperattribute WHERE BINARY text = ? AND id_taxonomy = ?;")
 		checkErr(err)
 		defer stmt.Close()
 		defer db.Close()
@@ -1732,7 +1732,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			result.Success = false
 			return result, err
 		}
-		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (?, (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?), (SELECT id_relation FROM relation WHERE text = ?), (SELECT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?));", taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Relation, relation.Dimension, taxonomyIdStr)
+		dbRef.Exec("INSERT IGNORE INTO taxonomy_relation (id_taxonomy, id_src_attribute, id_dest_attribute, id_relation, id_dimension) VALUES (?, (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?), (SELECT id_relation FROM relation WHERE BINARY text = ?), (SELECT id_dimension FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?));", taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Relation, relation.Dimension, taxonomyIdStr)
 		d.UpdateRelationshipTables(relation.TaxonomyID)
 		result.Success = true
 		return result, err
@@ -1743,8 +1743,8 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(relation.TaxonomyID))
-		dbRef.Exec("DELETE FROM taxonomy_relation_annotation WHERE id_taxonomy_relation IN (SELECT id_taxonomy_relation FROM taxonomy_relation WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) AND id_relation = (SELECT id_relation FROM relation WHERE text = ?) AND id_dimension = (SELECT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?);", taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Relation, relation.Dimension, taxonomyIdStr)
-		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) AND id_relation = (SELECT id_relation FROM relation WHERE text = ?) AND id_dimension = (SELECT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?);", taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Relation, relation.Dimension, taxonomyIdStr)
+		dbRef.Exec("DELETE FROM taxonomy_relation_annotation WHERE id_taxonomy_relation IN (SELECT id_taxonomy_relation FROM taxonomy_relation WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) AND id_relation = (SELECT id_relation FROM relation WHERE BINARY text = ?) AND id_dimension = (SELECT id_dimension FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?);", taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Relation, relation.Dimension, taxonomyIdStr)
+		dbRef.Exec("DELETE FROM taxonomy_relation WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) AND id_relation = (SELECT id_relation FROM relation WHERE BINARY text = ?) AND id_dimension = (SELECT id_dimension FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?);", taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Relation, relation.Dimension, taxonomyIdStr)
 		d.UpdateRelationshipTables(relation.TaxonomyID)
 		result.Success = true
 		return result, err
@@ -1760,7 +1760,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			result.Success = false
 			return result, err
 		}
-		dbRef.Exec("UPDATE taxonomy_relation SET id_relation = (SELECT id_relation FROM relation WHERE text = ?) WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?);", relation.Relation, taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr) //  AND id_dimension = (SELECT id_dimension FROM dimension WHERE text = \"" + relation.Dimension + "\" AND id_taxonomy = " + taxonomyIdStr + ")
+		dbRef.Exec("UPDATE taxonomy_relation SET id_relation = (SELECT id_relation FROM relation WHERE BINARY text = ?) WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?);", relation.Relation, taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr) //  AND id_dimension = (SELECT id_dimension FROM dimension WHERE BINARY text = \"" + relation.Dimension + "\" AND id_taxonomy = " + taxonomyIdStr + ")
 		go func () {
 			d.UpdateRelationshipTables(relation.TaxonomyID)
 		}()
@@ -1773,7 +1773,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(relation.TaxonomyID))
-		dbRef.Exec("REPLACE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relation, annotation) VALUES (?, (SELECT DISTINCT id_taxonomy_relation FROM taxonomy_relation WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?)), ?);", taxonomyIdStr, taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Annotation) //  AND id_dimension = (SELECT id_dimension FROM dimension WHERE text = \"" + relation.Dimension + "\" AND id_taxonomy = " + taxonomyIdStr + ")
+		dbRef.Exec("REPLACE INTO taxonomy_relation_annotation (id_taxonomy, id_taxonomy_relation, annotation) VALUES (?, (SELECT DISTINCT id_taxonomy_relation FROM taxonomy_relation WHERE id_taxonomy = ? AND id_src_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?) AND id_dest_attribute = (SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?)), ?);", taxonomyIdStr, taxonomyIdStr, relation.AttributeSrc, taxonomyIdStr, relation.AttributeDest, taxonomyIdStr, relation.Annotation) //  AND id_dimension = (SELECT id_dimension FROM dimension WHERE BINARY text = \"" + relation.Dimension + "\" AND id_taxonomy = " + taxonomyIdStr + ")
 		result.Success = true
 		return result, err
 		}
@@ -1783,7 +1783,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		dbRef.Exec("DELETE FROM paper WHERE id_taxonomy = ? AND citation = ?;", taxonomyIdStr, paper.Citation)
+		dbRef.Exec("DELETE FROM paper WHERE id_taxonomy = ? AND BINARY citation = ?;", taxonomyIdStr, paper.Citation)
 		result.Success = true
 		return result, err
 		}
@@ -1793,7 +1793,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err := d.Query("SELECT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?;")
 		checkErr(err)
 		defer stmt.Close()
 		defer db.Close()
@@ -1823,7 +1823,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		defer dbRef.Close()
 		checkErr(err)
 		taxonomyIdStr := strconv.Itoa(int(taxonomyId))
-		db, stmt, err := d.Query("SELECT id_dimension FROM dimension WHERE text = ? AND id_taxonomy = ?;")
+		db, stmt, err := d.Query("SELECT id_dimension FROM dimension WHERE BINARY text = ? AND id_taxonomy = ?;")
 		checkErr(err)
 		defer stmt.Close()
 		defer db.Close()
@@ -1894,7 +1894,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 			    if dimension == "Interdimensional view" {
 			    	major = 1
 			    }
-				db, stmt, err := d.Query("SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND text = ?;")
+				db, stmt, err := d.Query("SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND BINARY text = ?;")
 				rows, err := stmt.Query(taxonomyIdStr, elem.Attribute)
 				checkErr(err)
 				stmt.Close()
@@ -1907,10 +1907,12 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 				rows.Close()
 				if (attributeID < 0) {
 					dbRef.Exec("INSERT IGNORE INTO attribute (id_taxonomy, text, major) VALUES (?, ?, ?);", taxonomyIdStr, elem.Attribute, major)
-					dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND text = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE id_taxonomy = ? AND text = ?));", taxonomyIdStr, taxonomyIdStr, elem.Attribute, taxonomyIdStr, dimension)
+					//d.Insert("attribute", "id_taxonomy=?,text=?,major=?", taxonomyIdStr, elem.Attribute, major)
+					dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND BINARY text = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE id_taxonomy = ? AND BINARY text = ?));", taxonomyIdStr, taxonomyIdStr, elem.Attribute, taxonomyIdStr, dimension)
 				}
-				dbRef.Exec("INSERT IGNORE INTO paper (id_taxonomy, citation, author, keywords, referenceCount) VALUES (?, ?, ?, ?, ?);", taxonomyIdStr, article.Title, article.Authors, article.Keywords, article.CitedBy) // bibTex
-				dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES ((SELECT DISTINCT id_paper FROM paper WHERE paper.citation = ? and paper.id_taxonomy = ?), (SELECT DISTINCT id_attribute FROM attribute WHERE text = ? AND id_taxonomy = ?));", article.Title, taxonomyIdStr, elem.Attribute, taxonomyIdStr)
+				//d.Insert("paper", "id_taxonomy=?,citation=?,author=?,keywords=?", taxonomyIdStr, article.Title, article.Authors, article.Keywords)
+				dbRef.Exec("INSERT IGNORE INTO paper (id_taxonomy, citation, author, keywords) VALUES (?, ?, ?, ?);", taxonomyIdStr, article.Title, article.Authors, article.Keywords) // bibTex
+				dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES ((SELECT DISTINCT id_paper FROM paper WHERE BINARY paper.citation = ? and paper.id_taxonomy = ?), (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?));", article.Title, taxonomyIdStr, elem.Attribute, taxonomyIdStr)
 			}
 		}
 		go func () {
@@ -1918,7 +1920,7 @@ func (d MySQLDriver) GetAllDimensions(taxonomyId int64) (dimensions []model.Dime
 		}()
 		result.Success = true
 		return result, err
-	}
+		}
 
 	func (d MySQLDriver) KMeans(taxonomyId int64, n int) (clusters []model.Cluster, err error){
 		dbRef, err := d.OpenDB()
