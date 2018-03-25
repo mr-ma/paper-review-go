@@ -329,7 +329,7 @@
   // save node positions to the database
   function savePositions ( cy, dimensions ) {
     if (!admin) {
-      handleErrorHelper('Cannot save node positions.');
+      handleErrorHelper('Requires edit permissions for this taxonomy.');
       return;
     }
     if (!displayedDimension) {
@@ -686,7 +686,7 @@
   // merge 2 nodes into 1 node
   function mergeNodes ( nodes ) {
     if (!admin) {
-      handleErrorHelper('Cannot merge nodes.');
+      handleErrorHelper('Requires edit permissions for this taxonomy.');
       return;
     }
     if (nodes.length != 2) {
@@ -839,7 +839,7 @@
   // update mappings between papers and a node
   function updateCitationMapping ( ele ) {
     if (!admin) {
-      handleErrorHelper('Cannot update citation mapping.');
+      handleErrorHelper('Requires edit permissions for this taxonomy.');
       return;
     }
     var text = ele.data('id');
@@ -897,7 +897,7 @@
   // fork 1 node into 2
   function forkNode ( node ) {
     if (!admin) {
-      handleErrorHelper('Cannot fork node.');
+      handleErrorHelper('Requires edit permissions for this taxonomy.');
       return;
     }
     var text = node.data('id');
@@ -1333,7 +1333,7 @@
         title: relationType.comment,
         select: function(ele){
           var relation = ele.data('relation');
-          if (!!relation && relation.split(relationType.text).length > 1) return;
+          if (relation == relationType.text) return;
           var sourceID = ele.data('source');
           var targetID = ele.data('target');
           function callback () {
@@ -1341,6 +1341,10 @@
             ele.classes(relationType.text);
             ele.data('relation', relationType.text);
             edgeBendEditingApi.initBendPoints(ele);
+          }
+          if (isInterDimensional && relationType.text != 'Depends' && relationType.text != 'DependsDirected') {
+            handleErrorHelper('On the interdimensional view, only relations of the type "Depends" and "DependsDirected" are allowed.');
+            return;
           }
           if (!admin) callback();
           else {
@@ -1673,7 +1677,7 @@
     // save edge bend points to the database
     $('#getEdges').unbind().click ( function () {
       if (!admin) {
-        handleErrorHelper('Cannot save node/edge positions.');
+        handleErrorHelper('Requires edit permissions for this taxonomy.');
         return;
       }
       if (!displayedDimension) {

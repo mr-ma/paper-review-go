@@ -278,7 +278,6 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 	function initUsers() {
 		$('#add').prop('disabled', false);
 		$.get("getUsers",function( data ) {
-			console.log(data)
 		 	if (!data) {
 		 		handleError('Cannot get users from DB.');
 		 		return;

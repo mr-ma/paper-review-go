@@ -145,14 +145,16 @@ function tableCallback ( attributes ) {
     });
     $('.selectDimension').each ( function ( index, entry ) {
     	var text = $(this).attr('id');
-    	if (!!text) text = text.split('selectDimension_').pop();
-    	for ( var i = 0; i < attributes.response.length; i++ ) {
-    		var attr = attributes.response[i];
-    		if (!!attr.text && !!attr.dimension && attr.text == text) {
-    			$(this).val(attr.dimension);
-    			break;
-    		}
-    	}
+    	if (!!text) {
+    		text = text.split('selectDimension_').pop();
+	    	for ( var i = 0; i < attributes.response.length; i++ ) {
+	    		var attr = attributes.response[i];
+	    		if (!!attr.text && !!attr.dimension && attr.text == text) {
+	    			$(this).val(attr.dimension);
+	    			break;
+	    		}
+	    	}
+	    }
     });
 }
 
