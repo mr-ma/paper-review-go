@@ -270,6 +270,9 @@ func main() {
 	mux.HandleFunc("GET", "/getUsers", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getUsersHandler)
 	})
+	mux.HandleFunc("POST", "/query", func(w http.ResponseWriter, r *http.Request) {
+		checkAdmin(w, r, queryHandler)
+	})
 	mux.HandleFunc("POST", "/createUser", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, createUserHandler)
 	})
@@ -938,6 +941,30 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 		checkErr(err)
 	}
 	output, err := json.Marshal(user)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
+
+// sends a SQL query to the database
+func queryHandler(w http.ResponseWriter, r *http.Request) {
+    var queryRequest model.QueryRequest
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&queryRequest)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	result, err := driver.QueryDB(queryRequest.Query)
+	checkErr(err)
+	output, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

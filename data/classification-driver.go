@@ -13,6 +13,7 @@ import (
 type ClassificationDriver interface {
   DriverCore
   	Login(string, string) (model.LoginResult, error)
+  	QueryDB(string) (model.Result, error)
   	SaveUser(string, string) (model.Result, error)
   	CreateUser(string, string, int) (model.Result, error)
   	UpdateUser(string, int) (model.Result, error)
@@ -124,6 +125,23 @@ func (d MySQLDriver) Login(email string, password string) (result model.LoginRes
 		result.Success = false
 	}
 	defer rows.Close()
+	return result, err
+	}
+
+func (d MySQLDriver) QueryDB(query string) (result model.Result, err error){
+	dbRef, err := d.OpenDB()
+	defer dbRef.Close()
+	checkErr(err)
+	db, stmt, err := d.Query(query)
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query()
+	defer rows.Close()
+	if err != nil {
+		result.Success = false
+	} else {
+		result.Success = true
+	}
 	return result, err
 	}
 

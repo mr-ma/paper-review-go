@@ -352,6 +352,10 @@ type UserResult struct {
   Users []User `json:"users"`
 }
 
+type QueryRequest struct {
+  Query string `json:"query"`
+}
+
 type Cluster struct  {
   ID int `json:"id"`
   Papers []int `json:"papers"`
