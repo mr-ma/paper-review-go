@@ -1,5 +1,5 @@
 # Mannual execution steps:
-0. Clone felix branch
+0. Clone master branch
 1. Grab the latest database dump form paper-review-go/SQLSchema/dumps/
 2. Import the dump to mysql
 3. Get dependencies as mentioned in the Dockerfile:
