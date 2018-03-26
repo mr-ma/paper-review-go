@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"time"
 
-	"./data"
-	"./model"
+	"github.com/mr-ma/paper-review-go/data"
+	"github.com/mr-ma/paper-review-go/model"
 	"github.com/rcrowley/go-tigertonic"
 	"github.com/alexedwards/scs"
 )

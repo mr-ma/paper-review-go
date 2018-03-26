@@ -5,8 +5,8 @@ import (
 	"sort"
 	"math/rand"
 	//overriding MySqlDriver
-	_ "github.com/go-sql-driver/mysql"
-		"../model"
+	//"github.com/go-sql-driver/mysql"
+	"github.com/mr-ma/paper-review-go/model"
 	"github.com/Jeffail/gabs"
 )
 

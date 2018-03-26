@@ -5,7 +5,7 @@ import (
 	"strconv"
 	//overriding MySqlDriver
 	_ "github.com/go-sql-driver/mysql"
-	"../model"
+	"github.com/mr-ma/paper-review-go/model"
 )
 
 type PaperReviewDriver interface {
