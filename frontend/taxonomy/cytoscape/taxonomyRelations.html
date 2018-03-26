@@ -1834,9 +1834,9 @@
         }
       } else {
         TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
-        //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
         currentHash = '#' + DEFAULT_TAXONOMY_NAME;
         window.location.hash = currentHash;
+        loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
       }
     }
 

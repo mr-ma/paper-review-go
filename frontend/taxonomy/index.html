@@ -115,6 +115,7 @@ $(function() {
   initPage();
 });
 function dumpBibCitation(citation){
+  if (!citation) return "";
   cit = JSON.parse(citation)
   strBody=""
   for (var key in cit) {
@@ -143,8 +144,9 @@ function removeitem(that){
 }
 
 function formatAttributes(attributes){
+  if (!attributes) return "";
   var formattedAtts = "";
-  atts = attributes.split(',');
+  atts = attributes != "" ? attributes.split(',') : [];
   for (var att in atts){
     formattedAtts += "&nbsp;<kbd>"+atts[att]+"</kbd>&nbsp;";
   }

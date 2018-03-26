@@ -29,10 +29,7 @@
 	  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
 	  var currentHash = '';
 	  var TAXONOMY_ID;
-	  //var APIURL = location.protocol + '//' + location.hostname+':8000/';
-	  var APIURL = '';
 	  function onLoad() {
-		APIURL = location.protocol + '//' + location.hostname+':8001/';
 		PopulateResearchList( function () {
 			initResearchOptions();
 		});
@@ -44,8 +41,7 @@ function getSelectedResearch() {
 	  }
 
 function initResearchOptions () {
-	  var mitarbeiterAPI = APIURL+"user";
-	  $.getJSON( mitarbeiterAPI, {
+	  $.getJSON( "user", {
 	    format: "json"
 	  })
 	    .done(function( data ) {
@@ -83,9 +79,7 @@ function initResearchOptions () {
 }
 
  function PopulateResearchList( callback ) {
-   
-  var tagsAPI = APIURL+"research";
-  $.getJSON( tagsAPI, {
+  $.getJSON( "research", {
     format: "json"
   })
     .done(function( data ) {
@@ -107,9 +101,8 @@ function initResearchOptions () {
    }
    
     function PopulateStats() {
-   
-   var statAPI=  APIURL+"review/stats/"+getSelectedResearch();
-  $.getJSON( statAPI, {
+  
+  $.getJSON( "review/stats/"+getSelectedResearch(), {
     format: "json"
   })
     .done(function( data ) {

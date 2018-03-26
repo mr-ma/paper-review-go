@@ -33,10 +33,7 @@
 		var abstract;
 		var year;
 		var citedBy;
-		//var APIURL = location.protocol + '//' + location.hostname+':8000/';
-		var APIURL = '';
 	  function onLoad() {
-	  	APIURL = window.location.origin + '/';
 	  	getReview();
 	  	PopulateCheckBoxList();
 	  	PopulateStats();
@@ -47,9 +44,7 @@ function getReview() {
 var researchID = urlParam('researchID');
 var mitID =  urlParam('id');
 
-  var mitarbeiterAPI = APIURL+"review/"+researchID+"/"+mitID+"/1";
-  console.log("API: ", mitarbeiterAPI)
-  $.getJSON( mitarbeiterAPI, {
+  $.getJSON( "review/"+researchID+"/"+mitID+"/1", {
     format: "json"
   })
     .done(function( data ) {
@@ -125,14 +120,11 @@ var newTag = $("#newTag").val();
 
 
 	var requestJson = JSON.stringify(requestData);
-	//alert(requestJson);
-
-	var voteAPI = APIURL+"vote";
 
 
 $.ajax({
   type: "POST",
-  url: voteAPI,
+  url: "vote",
   data: requestJson,
   dataType: "json",
   contentType: "application/json; charset=utf-8",
@@ -173,9 +165,7 @@ function urlParam(name){
 
 
    function PopulateCheckBoxList() {
-
-  var tagsAPI = APIURL+"tag/"+urlParam('researchID');
-  $.getJSON( tagsAPI, {
+  $.getJSON( "tag/"+urlParam('researchID'), {
     format: "json"
   })
     .done(function( data ) {
@@ -216,14 +206,11 @@ function urlParam(name){
 
 
  function PopulateStats() {
-   
-   var statAPI=  APIURL+"review/stats/"+urlParam('researchID')+"/"+urlParam('id');
-  $.getJSON( statAPI, {
+  $.getJSON( "review/stats/"+urlParam('researchID')+"/"+urlParam('id'), {
     format: "json"
   })
     .done(function( data ) {
 	data = data.response;
-//	console.log(statAPI+'response contains: '+data["reviewed_articles"]);
 
 	var reviewedArticles = data.reviewed_articles;
 	var remainingArticles = data.remaining_articles;
