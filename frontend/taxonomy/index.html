@@ -14,6 +14,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.js"></script>
+
+  <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+  <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+  <link href="main.css" type="text/css" rel="stylesheet">
+  <script src="userManagement.js"></script>
+  <script src="error.js"></script>
 <style>
 .embed-responsive {
     position: relative;
@@ -31,7 +38,7 @@
 //         var $clone = $(this).closest('ul').clone();
 //         $clone.insertAfter($(this).closest('ul'));
 //         if(add==true){
-//             $clone.last('li').append('<a href="#" data-toggle="tooltip" title="remove this"><i class="icon-minus"></i></a>');
+//             $clone.last('li').append('<a href="javascript:void(0)" data-toggle="tooltip" title="remove this"><i class="icon-minus"></i></a>');
 //             add=false;
 //         }
 //     });
@@ -39,38 +46,73 @@
 //        $(this).closest('ul').remove();
 //     });
 // });
+  const DEFAULT_TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+  var currentHash = '';
+  var TAXONOMY_ID;
+
 $(function() {
-// configuration
-// button
-var add = $('#add-btn');
-// click event for button
-add.on('click', function(event) {
-  addDimension(event,this);
-});
+  function onLoad () {
+    // configuration
+    // button
+    var add = $('#add-btn');
+    // click event for button
+    add.on('click', function(event) {
+      addDimension(event,this);
+    });
 
+  $.ajax
+    ({
+        type: "POST",
+        //the url where you want to sent the userName and password to
+        url: 'attribute',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        //json object to sent to the authentication url
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+        success: function (data) {
+          if(data && data.response){
+              var result = data.response.map(function(a) {return a.text;});
+              $(".autocomplete").autocomplete({
+                source:result
+              });
+            }
+        }
+    });
 
-
-$.get('attribute', {}, function(data) {
-if(data && data.response){
-    var result = data.response.map(function(a) {return a.text;});
-    $(".autocomplete").autocomplete({
-      source:result
+    $('#dimension-input').bind("enterKey",function(e){
+       //do stuff here
+       addDimension();
+    });
+    $('#dimension-input').keyup(function(e){
+        if(e.keyCode == 13)
+        {
+            $(this).trigger("enterKey");
+        }
     });
   }
 
-});
+  function initPage () {
+    window.onhashchange = function () {
+      var hash = window.location.hash;
+      // prevent page reload when a compound node is being expanded or collapsed
+      if (unescape(hash) != unescape(currentHash)) window.location.reload(false);
+    };
 
-$('#dimension-input').bind("enterKey",function(e){
-   //do stuff here
-   addDimension();
-});
-$('#dimension-input').keyup(function(e){
-    if(e.keyCode == 13)
-    {
-        $(this).trigger("enterKey");
-    }
-});
-
+    var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+      initUserManagement(resolve, reject);
+    }).then ( function ( user ) {
+      if (!!user && user.admin == 1) {
+      }
+      onLoad();
+    }).catch ( function ( err ) {
+      console.log('Error loading user: ', err);
+      handleError(err);
+      onLoad();
+    });
+  }
+  initPage();
 });
 function dumpBibCitation(citation){
   cit = JSON.parse(citation)
@@ -92,7 +134,7 @@ function addDimension(e,d){
  var listContainer = $('#correlation-list');
  // add new list item
  listContainer.prepend('<li class="list-group-item"> ' + inputValue
- + '<a href="#"><span id="remove-btn" onclick="removeitem(this)" class="glyphicon glyphicon-minus pull-right"></span></a></li>');
+ + '<a href="javascript:void(0)"><span id="remove-btn" onclick="removeitem(this)" class="glyphicon glyphicon-minus pull-right"></span></a></li>');
  // clear value input
  $('#dimension-input').val('');
 }
@@ -110,20 +152,29 @@ function formatAttributes(attributes){
 }
 
 function downloadAllCitations(){
-  $.get('citation', {}, function(data) {
-    if(data && data.response){
-        var result = data.response.map(function(a) {return a.bib;});
-        $("<a />", {
-        "download": "citations.json",
-        "href" : "data:application/json," + encodeURIComponent(JSON.stringify(result))
-      }).appendTo("body")
-      .click(function() {
-         $(this).remove()
-      })[0].click()
-    }
-
-  });
-
+  $.ajax
+    ({
+        type: "POST",
+        //the url where you want to sent the userName and password to
+        url: 'citation',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        //json object to sent to the authentication url
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+        success: function (data) {
+          if(data && data.response){
+              var result = data.response.map(function(a) {return a.bib;});
+              $("<a />", {
+              "download": "citations.json",
+              "href" : "data:application/json," + encodeURIComponent(JSON.stringify(result))
+            }).appendTo("body")
+            .click(function() {
+               $(this).remove()
+            })[0].click()
+          }
+        }
+    });
 }
 var correlation_data = {}
 function FillUpTable(data){
@@ -168,7 +219,7 @@ function downloadCorrelation(el){
 function correlateReport(){
   var attributes = document.getElementsByClassName("list-group-item");
   var request = {};
-  request["taxonomy_id"] = 1;
+  request["taxonomy_id"] = TAXONOMY_ID;
   request["attributes"]= [];
   var hasAttribute=0;
   if (attributes){
@@ -194,15 +245,18 @@ function correlateReport(){
         success: function (data) {
           FillUpTable(data);
         }
-    })
+    });
 }
 </script>
 </head>
 <body>
 
+<div class="navbar"></div>
+<div class="modals"></div>
+
 <div class="container-fluid">
   <h3>Software integrity protection taxonomy correlation generator</h3>
-<a href="#" data-toggle="popover" title="Instructions:" data-content="Select two or more taxonomy dimensions to correlate them. This tool basically filters all the publications that fit in the requested dimensions. To start, type in (autocomplete will help you) your desired dimensions in 'Dimension to correlate:' input box and hit 'Add', or simply press Enter. At last, click on the 'Correlate' button; this will dump a list of corresponding publications.">Need help?</a>
+<a href="javascript:void(0)" data-toggle="popover" title="Instructions:" data-content="Select two or more taxonomy dimensions to correlate them. This tool basically filters all the publications that fit in the requested dimensions. To start, type in (autocomplete will help you) your desired dimensions in 'Dimension to correlate:' input box and hit 'Add', or simply press Enter. At last, click on the 'Correlate' button; this will dump a list of corresponding publications.">Need help?</a>
   <div class="row">
       <div class="col-md-4">
         <div class="thumbnail">
@@ -229,7 +283,7 @@ function correlateReport(){
             <a href="/pdf/system" target="_blank">
             <img src="/png/system.png" alt="System" style="width:100%">
             <div class="caption">
-              <p>System diemension.</p>
+              <p>System dimension.</p>
             </div>
           </a>
         </div>
@@ -239,7 +293,7 @@ function correlateReport(){
             <a href="/pdf/relations" target="_blank">
             <img src="/png/relations.png" alt="Relations" style="width:100%">
             <div class="caption">
-              <p>Relations among diemensions.</p>
+              <p>Relations among dimensions.</p>
             </div>
           </a>
         </div>
@@ -255,8 +309,8 @@ function correlateReport(){
 
   <ul id="correlation-list" class="list-group">
       <!-- <li>
-        <a href="#" data-toggle="tooltip" title="Add Another Rule"><i class="icon-plus"></i></a>
-        <a href="#" data-toggle="tooltip" title="Remove Rule"><i class="icon-minus"></i></a>
+        <a href="javascript:void(0)" data-toggle="tooltip" title="Add Another Rule"><i class="icon-plus"></i></a>
+        <a href="javascript:void(0)" data-toggle="tooltip" title="Remove Rule"><i class="icon-minus"></i></a>
       </li> -->
   </ul>
    <button type="button" onclick="correlateReport()" class="btn btn-primary">Correlate</button>

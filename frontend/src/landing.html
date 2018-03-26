@@ -5,25 +5,84 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Literture Review Tool</title>
+    <title>Literature Review Tool</title>
 
     <meta name="description" content="Source code generated using layoutit.com">
     <meta name="author" content="LayoutIt!">
 
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
 	
-	 <script src="js/jquery.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/scripts.js"></script>
+	<script src="jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <script src="scripts.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet">
+    <script src="bootstrap-dialog.min.js"></script>
+
+    <link href="main.css" type="text/css" rel="stylesheet">
+    <script src="userManagement.js"></script>
+    <script src="error.js"></script>
 	
 <script>
-		var APIURL = location.protocol + '//' + location.hostname+':8000/';
+	  const DEFAULT_TAXONOMY_ID = 1;
+	  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+	  var currentHash = '';
+	  var TAXONOMY_ID;
+	  //var APIURL = location.protocol + '//' + location.hostname+':8000/';
+	  var APIURL = '';
 	  function onLoad() {
-
-	  PopulateResearchList();
+		APIURL = location.protocol + '//' + location.hostname+':8001/';
+		PopulateResearchList( function () {
+			initResearchOptions();
+		});
 	  }
- function PopulateResearchList() {
+
+function getSelectedResearch() {
+
+	  return $( "#options" ).val();
+	  }
+
+function initResearchOptions () {
+	  var mitarbeiterAPI = APIURL+"user";
+	  $.getJSON( mitarbeiterAPI, {
+	    format: "json"
+	  })
+	    .done(function( data ) {
+	      if (!data) {
+	      	handleError('Cannot get user data from the database.');
+	      	return;
+	      }
+	      var users = [data];
+	      users.forEach ( function( item ) {
+				var id = item.id;
+				var name = item.name;
+			   $('#list').append('<div id="'+ id +'" class="list-group-item"><a href="#" name='+name+' id='+id+' class="list-group-item active">'+name +' <span id="stat_'+ id +'" class="badge">14</span> </a></div>')
+		  });
+		  PopulateStats();
+	    })
+		 
+		.fail(function( jqxhr, textStatus, error ) {
+	    var err = textStatus + ", " + error;
+	   alert( "Request Failed: " + err );
+	});
+	$links = document.getElementById("list");
+
+	$links.onclick=function(e){
+	  element = e.target;
+	  if(element.tagName="a" ){
+	    var name =element.getAttribute("name");
+	   var id = element.getAttribute("id");
+	   var researchId= getSelectedResearch();
+	   var url = "./review?name="+name+"&id="+id+"&researchID="+researchId + window.location.hash;
+	   console.log(url);
+		window.location.replace(url);
+	  }
+	  return false;
+	}
+}
+
+ function PopulateResearchList( callback ) {
    
   var tagsAPI = APIURL+"research";
   $.getJSON( tagsAPI, {
@@ -37,6 +96,7 @@
 	$.each(data, function() {
     options.append($("<option />").val(this.id).text(this.title));
 		});
+		callback();
     })
 	
 	.fail(function( jqxhr, textStatus, error ) {
@@ -74,11 +134,34 @@
 })
 	;
    }
-      window.onload = onLoad();       
+
+	function initPage () {
+	  window.onhashchange = function () {
+        var hash = window.location.hash;
+        // prevent page reload when a compound node is being expanded or collapsed
+        if (unescape(hash) != unescape(currentHash)) window.location.reload(false);
+	  };
+
+	  var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+	    initUserManagement(resolve, reject);
+	  }).then ( function ( user ) {
+	    if (!!user && user.admin == 1) {
+	    }
+	    onLoad();
+	  }).catch ( function ( err ) {
+	    console.log('Error loading user: ', err);
+	    handleError(err);
+	    onLoad();
+	  });
+	}
+      window.onload = initPage();
 </script>
 
   </head>
   <body>
+
+ 	<div class="navbar"></div>
+	<div class="modals"></div>
 
     <div class="container-fluid">
 	<div class="selectBox">
@@ -87,7 +170,7 @@
 	<div class="row">
 		<div class="col-md-6">
 			<div id="list" class="list-group">
-				 <span href="#" class="list-group-item active">List of Reviewers</span>
+				 <span href="#" class="list-group-item active">Reviewer Account:</span>
 
 			</div>
 		</div>
@@ -97,61 +180,5 @@
 
 
 </div>
-
-	
-	<script>
-	
-
-(function() {
-  var mitarbeiterAPI = APIURL+"mitarbeiter";
-  $.getJSON( mitarbeiterAPI, {
-    format: "json"
-  })
-    .done(function( data ) {
-	data = data.response;
-	console.log('response contains: '+data.length);
-
-	
-	
-      $.each( data, function( i, item ) {		
-			var id = item.id;
-			var name = item.name;
-		   $('#list').append('<div id="'+ id +'" class="list-group-item"><a href="#" name='+name+' id='+id+' class="list-group-item active">'+name +' <span id="stat_'+ id +'" class="badge">14</span> </a></div>')
-	  });
-	  PopulateStats();
-    })
-	 
-	.fail(function( jqxhr, textStatus, error ) {
-    var err = textStatus + ", " + error;
-   alert( "Request Failed: " + err );
-})
-	;
-
-
-	
-})();
-
-
-function getSelectedResearch() {
-
-	  return $( "#options" ).val();
-	  }
-
-$links = document.getElementById("list");
-
-$links.onclick=function(e){
-  element = e.target;
-  if(element.tagName="a" ){
-    var name =element.getAttribute("name");
-   var id = element.getAttribute("id");
-   var researchId= getSelectedResearch();
-   var url = "./review.html?name="+name+"&id="+id+"&researchID="+researchId;
-   console.log(url);
-	window.location.replace(url);
-  }
-  return false;
-}
-</script>
-
   </body>
 </html>

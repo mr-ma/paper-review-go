@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Approve Screen</title>
+
+
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+ 	<script src="jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <script src="scripts.js"></script>
+
+    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+	<link href="/bootstrap-table.css" rel="stylesheet" type="text/css"> 
+	<script src="/bootstrap-table.js"></script>
+
+    <script src="tables.js"></script>
+
+    <link href="main.css" type="text/css" rel="stylesheet">
+    <script src="userManagement.js"></script>
+    <script src="error.js"></script>
+
+		<script>
+		const DEFAULT_TAXONOMY_ID = 1;
+		const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+		var currentHash = '';
+		var TAXONOMY_ID;
+
+		const DEFAULT_THRESHOLD = 1;
+		const DEFAULT_RESEARCH_ID = 1;
+
+		const TABLE_FIELDS = [{
+			field: 'id',
+			title: 'Article ID'
+		},
+		{
+		  field: 'title',
+		  title: 'Title'
+		},
+		{
+		  field: 'authors',
+		  title: 'Authors'
+		},
+		{
+		  field: 'year',
+		  title: 'Year'
+		},
+		{
+		  field: 'tagList',
+		  title: 'Tags'
+		},
+		{
+		  field: 'approvedCount',
+		  title: 'Approved'
+		},
+		{
+		  field: 'rejectedCount',
+		  title: 'Rejected'
+		}];
+
+		//var APIURL = location.protocol + '//' + location.hostname+':8000/';
+		var APIURL = '';
+		var taxonomyDimensions = [];
+	  function onLoad() {
+	  	APIURL = window.location.origin + '/';
+	  	listReviews();
+	  }
+
+function listTags ( event, button ) {
+	if (!button) return;
+	var tagString = $(button).attr('data-field');
+	if (!tagString) return;
+	var tags = tagString != '' ? tagString.split(',') : [];
+
+    var tagTable = '<table class="table table-bordered"><thead><th>Word</th><th>#</th><th style="width:1%;"></th></thead><tbody>';
+    tags.forEach ( function ( tag ) {
+      tagTable += '<tr><td>' + tag + '</td><td>' + 1 + '</td><td style="cursor:pointer;text-align:center;"><span class="glyphicon glyphicon-remove" title="Remove"></span></td></tr>';
+    });
+    tagTable += '</tbody></table>';
+    BootstrapDialog.show({
+      title: '' + tags.length + ' tags',
+      message: tagTable,
+      onshown: function () {
+        $('.glyphicon-remove').unbind().on('click', function () {
+        	var thatRow = $(this).parentsUntil('tbody');
+        	var name = thatRow.find('td:first').text();
+			for ( var i = tags.length - 1; i >= 0; i-- ) {
+			    if (tags[i] === name) tags.splice(i, 1);
+			}
+        	$(button).attr('data-field', tags.join(','));
+        	thatRow.remove();
+        });
+      }
+    });
+}
+
+function listReviews () {
+	var threshold = $('#threshold').val() - 0;
+	if (isNaN(threshold)) threshold = DEFAULT_THRESHOLD;
+	var researchID = $('#researchID').val() - 0;
+	if (isNaN(researchID)) researchID = DEFAULT_RESEARCH_ID;
+    $.ajax
+      ({
+        type: "POST",
+        url: 'dimension',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+        success: function ( dimensions ) {
+        	if (!dimensions) {
+        	  handleError('Cannot get dimensions From DB.');
+        	  return;
+        	}
+        	if (!dimensions.response) dimensions.response = [];
+        	taxonomyDimensions = dimensions.response;
+		    $.ajax
+		      ({
+		        type: "POST",
+		        url: 'getReviewList',
+		        dataType: 'json',
+		        contentType:'application/json',
+		        async: true,
+		        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, 'research_id': researchID, threshold: threshold}),
+		        success: function ( reviews ) {
+		        	console.log("reviews: ", reviews)
+		          if (!reviews) reviews = [];
+		          showTable (reviews, 'reviewTable', true, false, [{name: 'tags', title: 'Tags', class: 'glyphicon-tags', 'data-field': 'tags', onClick: listTags}], TABLE_FIELDS, 50);
+		        }
+		    });
+		}
+	});
+}
+
+function tableCallback ( attributes ) {
+	if (!taxonomyDimensions) return;
+    taxonomyDimensions.forEach ( function ( dimension ) {
+    	$('.selectDimension').append('<option>' + dimension.text + '</option>');
+    });
+    $('.selectDimension').each ( function ( index, entry ) {
+    	var text = $(this).attr('id');
+    	if (!!text) {
+    		text = text.split('selectDimension_').pop();
+	    	for ( var i = 0; i < attributes.response.length; i++ ) {
+	    		var attr = attributes.response[i];
+	    		if (!!attr.text && !!attr.dimension && attr.text == text) {
+	    			$(this).val(attr.dimension);
+	    			break;
+	    		}
+	    	}
+	    }
+    });
+}
+
+function saveReviewMappings() {
+	if (!admin) return;
+	var reviewMappings = [];
+	$('#reviewTable').bootstrapTable('getSelections').forEach ( function ( entry ) {
+		var tagObj = $(entry.tags);
+		if (!!tagObj) {
+			var tagString = tagObj.attr('data-field');
+			if (!!tagString) {
+				var tags = tagString != '' ? tagString.split(',') : []; 
+				reviewMappings.push({id: entry.id, tags: tags});
+			}
+		}
+	});
+	var savedTags = [];
+	var savedTagObjects = [];
+	var conceptMappings = [];
+	reviewMappings.forEach ( function ( entry ) {
+		if (!!entry.tags) {
+			entry.tags.forEach ( function ( tag ) {
+				if (savedTags.indexOf(tag) < 0) {
+					savedTags.push(tag);
+					savedTagObjects.push({tag: tag, dimension: '', selectDimension: '<select id="selectDimension_' + tag + '" class="selectDimension" style="width:150px;"></select>'});
+				}
+				conceptMappings.push({attribute: tag, articleID: entry.id});
+			});
+		}
+	});
+	$.ajax
+	  ({
+	    type: "POST",
+	    url: 'attributesByName',
+	    dataType: 'json',
+	    contentType:'application/json',
+	    async: true,
+	    data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, texts: savedTags}),
+	    success: function ( attributes ) {
+	    	if (!attributes) attributes = {response: []};
+	    	else if (!attributes.response) attributes.response = [];
+			var tableContainers = '<div id="tableContainer"><div><p style="font-size:large"><b>Concepts</b></p></div><div id="conceptsTableContainer"></div><input type="button" class="btn btn-success" id="saveConceptMappings" style="margin-top:15px;" value="Save"></div>';
+		    var fields = [{
+		      field: 'tag',
+		      title: 'Concept'
+		    }, {
+		      field: 'selectDimension',
+		      title: 'Dimension'
+		    }];
+		    BootstrapDialog.show({
+		      title: 'Concepts',
+		      message: tableContainers,
+		      size : BootstrapDialog.SIZE_WIDE,
+		      closeable : true,
+		      onshown: function ( dialogRef ) {
+		        showTable(savedTagObjects, 'conceptsTableContainer', false, false, [], fields, 10, function () {
+		        	if (!taxonomyDimensions) {
+					    $.ajax
+					      ({
+					        type: "POST",
+					        url: 'dimension',
+					        dataType: 'json',
+					        contentType:'application/json',
+					        async: true,
+					        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID}),
+					        success: function ( dimensions ) {
+					        	if (!dimensions) {
+					        	  handleError('Cannot get dimensions From DB.');
+					        	  return;
+					        	}
+					        	if (!dimensions.response) dimensions.response = [];
+					        	taxonomyDimensions = dimensions.response;
+					        	tableCallback(attributes);
+					        }
+					    });
+		        	} else tableCallback(attributes);
+		        	$('#saveConceptMappings').unbind().click ( function () {
+		        		var attributes = [];
+		        		savedTags.forEach ( function ( tag ) {
+		        			var dimension = $('select[id="selectDimension_' + tag + '"]').val();
+		        			if (!dimension) dimension = '';
+		        			attributes.push({text: tag, dimension: dimension});
+		        		});
+					    $.ajax
+					      ({
+					        type: "POST",
+					        url: 'saveReviewMappings',
+					        dataType: 'json',
+					        contentType:'application/json',
+					        async: true,
+					        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attributes: attributes, mappings: conceptMappings}),
+					        success: function ( result ) {
+					          if (!result || !result.success) {
+					            handleError('Cannot save review mappings for this taxonomy to the database.');
+					            return;
+					          }
+					          dialogRef.close();
+					          BootstrapDialog.show({
+					            title: 'Success',
+					            message: 'Saved review mappings successfully.'
+					          });
+					        }, failure: function () {
+					        	handleError('Cannot connect to the database server.');
+					        }
+					    });
+		        	});
+		        });
+		      }
+		    });
+	    }
+	});
+}
+
+function deleteArticleVotes () {
+	if (!admin) return;
+	var articles = [];
+	$('#reviewTable').bootstrapTable('getSelections').forEach ( function ( entry ) {
+		articles.push({id: entry.id});
+	});
+	BootstrapDialog.confirm("Delete votes for " + articles.length + " article" + (articles.length != 1 ? "s" : "") + "?", function ( result ) {
+		if (!result) return;
+		$.ajax
+		  ({
+		    type: "POST",
+		    url: 'deleteArticleVotes',
+		    dataType: 'json',
+		    contentType:'application/json',
+		    async: true,
+		    data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, articles: articles}),
+		    success: function ( result ) {
+		      if (!result || !result.success) {
+		        handleError('Cannot delete article votes for this taxonomy from the database.');
+		        return;
+		      }
+		      window.location.reload(false);
+		    }, failure: function () {
+		    	handleError('Cannot connect to the database server.');
+		    }
+		});
+	});
+}
+
+function urlParam(name){
+
+	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	return results[1] || 0;
+        }
+
+	function initPage () {
+	  window.onhashchange = function () {
+        var hash = window.location.hash;
+        // prevent page reload when a compound node is being expanded or collapsed
+        if (unescape(hash) != unescape(currentHash)) window.location.reload(false);
+	  };
+	  
+	  var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+	    initUserManagement(resolve, reject);
+	  }).then ( function ( user ) {
+	    if (!!user && user.admin == 1) {
+			$( "#saveReviewMappings" ).unbind().click(function() {
+				saveReviewMappings();
+			});
+			$( "#deleteArticleVotes" ).unbind().click(function() {
+				deleteArticleVotes();
+			});
+	    }
+		$( "#refreshList" ).unbind().click(function() {
+			listReviews();
+		});
+	    onLoad();
+	  }).catch ( function ( err ) {
+	    console.log('Error loading user: ', err);
+	    handleError(err);
+	    onLoad();
+	  });
+	}
+
+  window.onload = initPage();
+	</script>
+  </head>
+
+  <body>
+
+  	<div class="navbar"></div>
+	<div class="modals"></div>
+
+    <div class="container-fluid">
+	<div class="row">
+		<div class="col-md-4">
+		  <h3>Approve Mappings</h3>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-4">
+		    <form>
+			  <label for="researchID">Research ID:</label><input type="text" class="form-control" id="researchID" style="margin-left:10px;width:50px;" value="1">
+			  <label for="threshold" style="margin-top:10px;">Threshold:</label><input type="text" class="form-control" id="threshold" style="margin-left:10px;width:50px;" value="1">
+			  <input type="button" class="btn btn-primary" id="refreshList" style="margin-top:10px;" value="Refresh">
+			</form>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<div id="reviewTableContainer"></div>
+		</div>
+	</div>
+	<div class="row" style="margin-top:20px;">
+		<div class="col-md-8">
+			<button type="button"  id="saveReviewMappings" class="btn btn-success">
+				Save Mappings To DB
+			</button>
+			<button type="button"  id="deleteArticleVotes" class="btn btn-danger">
+				Delete Votes From DB
+			</button>
+		</div>
+
+
+			</div>
+	</div>
+</div>
+  </body>
+</html>

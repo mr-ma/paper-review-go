@@ -7,6 +7,9 @@ ENV GOPATH=$HOME/work
 ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin
 
 RUN go get github.com/rcrowley/go-tigertonic
+RUN go get github.com/alexedwards/scs
+RUN go get github.com/Jeffail/gabs
+RUN go get github.com/stretchr/testify/assert
 RUN go get github.com/go-sql-driver/mysql
 RUN go get github.com/mr-ma/paper-review-go
 
@@ -15,7 +18,7 @@ RUN go get github.com/mr-ma/paper-review-go
 WORKDIR /$HOME/work/src/github
 RUN mkdir mr-ma
 WORKDIR /$HOME/work/src/mr-ma
-RUN git clone https://github.com/mr-ma/paper-review-go.git
+RUN git clone https://github.com/mr-ma/paper-review-go.git -b felix
 WORKDIR /$HOME/work/src/mr-ma/paper-review-go
 
 RUN go build
