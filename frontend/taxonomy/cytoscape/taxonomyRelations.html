@@ -521,18 +521,19 @@
 
   // add concept node
   function addNode ( cy, ele, e, major ) {
-    console.time('AddNode');
     cy.elements().trigger('qtiphide');
     $('#defaultModalTitle').html('Enter attribute name');
     $('#defaultModalLabel').html('Name:');
     $('#defaultModalText').val('');
     $('#defaultModalForm').unbind().on('submit', function ( evt ) {
+      console.time('AddNode');
       evt.preventDefault();
       $('#defaultModalButton').prop('disabled', true);
       var attributeName = $('#defaultModalText').val();
       if (attributeName == '' || cy.$('[id="' + attributeName + '"]').length > 0) {
         handleErrorHelper('This attribute name already exists in this domain.');
         $('#defaultModalButton').prop('disabled', false);
+        console.timeEnd('AddNode');
         return;
       }
       var request = {'taxonomy_id': TAXONOMY_ID, text: attributeName};
@@ -555,8 +556,11 @@
         $('#defaultModalButton').prop('disabled', false);
         $('#default-modal').modal('hide');
       }
-      if (!admin) callback();
-      else {
+      if (!admin) {
+        callback();
+        return;
+      }
+      // if (admin) {
         $.ajax
           ({
               type: "POST",
@@ -575,7 +579,7 @@
                 callback();
               }
           });
-        }
+        // }
     });
     $('#default-modal').modal('show');
   }
@@ -1222,7 +1226,7 @@
     };
     var cxtmenus = [];
     $('#cyContainer').html('<div id="cy" style="margin-top:50px;"></div>');
-    cy = cytoscape({  
+    cy = cytoscape({
       container: document.getElementById('cy'),
       elements: items,
       layout: {
@@ -1874,4 +1878,3 @@
 <!-- main script end -->
 </body>
 </html>
-
