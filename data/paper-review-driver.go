@@ -145,7 +145,7 @@ func (d MySQLDriver) SelectVote(id int64) (model.Vote, error) {
 		from Votes inner join articles a
 		on Votes.ArticleId = a.ArticleID inner join user m
 		on Votes.MitarbeiterId = m.id left outer join Vote_Tags vt
-		on Votes.VoteId =vt.VoteId left outer join Tags t
+		on Votes.VoteId =vt.VoteId left outer join tags t
 		on vt.Tag_Id = t.TagId where votes.VoteId=?`)
 	defer stmt.Close()
 	defer db.Close()
@@ -177,7 +177,7 @@ on Votes.ArticleId = a.ArticleID
 inner join user m
 on Votes.MitarbeiterId = m.id
 left outer join Vote_Tags vt on Votes.VoteId =vt.VoteId
-left outer join Tags t on vt.Tag_Id = t.TagId`)
+left outer join tags t on vt.Tag_Id = t.TagId`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query()
@@ -257,7 +257,7 @@ func (d MySQLDriver) SelectAllTags(researchID int64) (tags []model.Tag, err erro
 	db, err := d.OpenDB()
 	defer db.Close()
 	checkErr(err)
-	db, stmt, err := d.Query(`select TagId,Text,ResearchID from Tags where ResearchID=?`)
+	db, stmt, err := d.Query(`select TagId,Text,ResearchID from tags where ResearchID=?`)
 	defer stmt.Close()
 	defer db.Close()
 	rows, err := stmt.Query(researchID)
@@ -318,7 +318,7 @@ func (d MySQLDriver) ReviewPapers(researchID int64, mitarbeiterID int64) (articl
 a.Abstract,a.Journal,a.Authors,a.ResearchId,
 r.Questions,r.Review_Template
 
-from articles a inner join Research r on a.researchId =r.researchid and a.Enabled = 1
+from articles a inner join research r on a.researchId =r.researchid and a.Enabled = 1
 left outer join (select * from votes where MitarbeiterId =?) v on a.ArticleId = v.ArticleId
 where v.MitarbeiterId is null and a.researchId=?`)
 	defer stmt.Close()
@@ -346,7 +346,7 @@ func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limi
 	a.Abstract,a.Journal,a.Authors,a.ResearchId,
 	r.Questions,r.Review_Template
 
-	from articles a inner join Research r on a.researchId =r.researchid and a.Enabled = 1
+	from articles a inner join research r on a.researchId =r.researchid and a.Enabled = 1
 	left outer join (select * from votes where MitarbeiterId =?) v on a.ArticleId = v.ArticleId
 	where v.MitarbeiterId is null and a.researchId=?
 	limit ?`)
