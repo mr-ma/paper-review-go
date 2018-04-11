@@ -292,7 +292,7 @@ text.active {
           dataType: 'json',
           contentType:'application/json',
           async: true,
-          data: JSON.stringify({text1: text1, text2: text2}),
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text1: text1, text2: text2}),
           success: function ( citations ) {
             if (!citations) {
              handleError('Cannot get papers from DB.');

@@ -69,6 +69,7 @@
 
   // string comparison used in source code editors (e.g. Sublime Text)
   function occurrencesFuzzysort ( string, subStrings ) {
+    if (minSimilarity > 0) minSimilarity = FUZZY_SORT_MIN_SIMILARITY;
     var words = (!!string && string != '') ? string.replace(/([^\w\d\s]+)/g, '').replace(/\s(\s+)/g, ' ').split(/\s/) : [];
     var counter = 0;
     var occurrences = [];
@@ -77,7 +78,7 @@
         var entryPrepared = fuzzysort.prepare(entry)
         subStrings.forEach ( function ( subString ) {
           var value = fuzzysort.single(subString, entryPrepared);
-          if (!!value && value.score >= FUZZY_SORT_MIN_SIMILARITY) {
+          if (!!value && value.score >= minSimilarity) {
             counter++;
             var index = -1;
             for ( var i = 0; i < occurrences.length; i++ ) {

@@ -519,6 +519,108 @@
     }
   }
 
+  function testPerformanceAddNode ( nodeName, count, results, timeoutFactor, callback ) {
+    if (count <= 0) {
+      callback(results);
+      return;
+    }
+    if (!results) results = [];
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    request.x = '';
+    request.y = '';
+    request.xMajor = '';
+    request.yMajor = '';
+    request.major = 0;
+    request.dimension = 'Attack view';
+    var attributeName = 'Test' + nodeName;
+    request.text = attributeName + '_' + count;
+    var startTime = window.performance.now();
+    $.ajax
+      ({
+          type: "POST",
+          url: 'addAttribute',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify(request),
+          success: function ( result ) {
+            if (!result || !result.success) {
+              handleErrorHelper('Error occurred while adding node.');
+              return;
+            }
+            var endTime = window.performance.now();
+            results.push(endTime - startTime);
+            if (count <= 1) callback(results);
+            else {
+              setTimeout(function () {
+                testPerformanceAddNode(nodeName, count-1, results, timeoutFactor, callback);
+              }, timeoutFactor);
+            }
+          }
+      });
+  }
+
+  function testPerformanceRemoveNode ( nodeName, count, results, timeoutFactor, callback ) {
+    if (count <= 0) {
+      callback(results);
+      return;
+    }
+    if (!results) results = [];
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    var attributeName = 'Test' + nodeName;
+    request.text = attributeName + '_' + count;
+    var startTime = window.performance.now();
+    $.ajax
+      ({
+          type: "POST",
+          url: 'removeAttribute',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify(request),
+          success: function ( result ) {
+            if (!result || !result.success) {
+              handleErrorHelper('Error occurred while adding node.');
+              return;
+            }
+            var endTime = window.performance.now();
+            results.push(endTime - startTime);
+            if (count <= 1) callback(results);
+            else {
+              setTimeout(function () {
+                testPerformanceRemoveNode(nodeName, count-1, results, timeoutFactor, callback);
+              }, timeoutFactor);
+            }
+          }
+      });
+  }
+
+  function testPerformance ( funct, nodeName, count, timeoutFactor ) {
+    funct(nodeName, count, [], timeoutFactor, function ( results ) {
+      if (!results || results.length == 0) {
+        handleErrorHelper("Cannot calculate average performance.");
+        return;
+      }
+      results.sort( function ( a, b ) {
+        return a < b ? -1 : (a == b ? 0 : 1);
+      });
+      var lengthIsOdd = results.length % 2 == 1;
+      var median = 0;
+      var index = Math.floor(results.length / 2);
+      if (lengthIsOdd) median = results[index];
+      else median = (results[index-1] + results[index]) / 2;
+      var mean = 0;
+      var standardDeviation = 0;
+      for ( var i = 0; i < results.length; i++ ) {
+        mean += results[i];
+        standardDeviation += Math.pow(results[i] - median, 2);
+      }
+      mean /= results.length;
+      standardDeviation = Math.sqrt(standardDeviation / results.length);
+      console.log("median: " + median + ", mean: " + mean + ", deviation: " + standardDeviation);
+    });
+  }
+
   // add concept node
   function addNode ( cy, ele, e, major ) {
     cy.elements().trigger('qtiphide');

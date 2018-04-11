@@ -557,9 +557,9 @@ function doParse(input) {
               <li style="display:inline-block;"><h4>Paper Import</h4></li>
               <li style="display:inline-block;"><div style="padding:10px;"><label for="selectStringComparisonTechnique">String Comparison Technique: </label></div><div><select id="selectStringComparisonTechnique" style="width:100px;" title="String Comparison Technique">
                 <option title="Exact matching using regular expressions">Regex</option>
-                <option title="Dice's Coefficient calculates string similarity based on the number of bigrams two words have in common">Dice's Coefficient</option>
-                <option title="The Levenshtein distance is the minimal number of insertions, deletions and replacements needed for transforming one string into another one">Levenshtein</option>
-                <option title="SublimeText-like fuzzy search (https://github.com/farzher/fuzzysort)">Fuzzysort</option>
+                <option title="Dice's Coefficient calculates string similarity based on the number of bigrams two words have in common (value between 0 and 1)">Dice's Coefficient</option>
+                <option title="The Levenshtein distance is the minimal number of insertions, deletions and replacements needed for transforming one string into another one (value must be a natural number)">Levenshtein</option>
+                <option title="SublimeText-like fuzzy search (https://github.com/farzher/fuzzysort) (negative value, 0 standing for exact matching)">Fuzzysort</option>
               </select></div></li>
               <li style="display:inline-block;"><div style="padding:10px;"><label for="importMinSimilarity">Min Similarity: </label></div><div><input type="text" id="importMinSimilarity" value="" style="width:50px;" title="Min similarity"></div></li>
               <li style="display:inline-block;"><div style="padding:10px;"><div><label for="importMinOccurrences">Min Occurrences: </label></div><div><input type="text" id="importMinOccurrences" value="1" style="width:50px;" title="Min occurrences"></div></li>
