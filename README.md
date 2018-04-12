@@ -1,3 +1,16 @@
+# Dockerized approach
+- create a `.env` file in the root folder
+- set my sql root password variable in .env file
+  `ENV_MYSQL_ROOT_PASS=SECURE_PASSWORD`
+- run `docker-compose up`
+
+  This sets up nginx reverse proxy, runs an instance of go server, and a mysql instance (initialized with the db_schema.sql file) all in separated containers.
+- navigate to localhost:80, everything should work out of the box!
+- to modify the reverse proxy edit nginx config file in `nginx/config.d/nginx.config`
+
+
+
+
 # Mannual execution steps:
 0. Clone master branch
 1. Grab the latest database dump form paper-review-go/SQLSchema/dumps/
