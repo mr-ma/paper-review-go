@@ -19,14 +19,16 @@ type MySQLDriver struct {
 	username string
 	pass     string
 	database string
+	server   string
 }
-
 
 //OpenDB opens a db connection
 func (d MySQLDriver) OpenDB() (*sql.DB, error) {
-	db, err := sql.Open("mysql", d.username+":"+d.pass+"@/"+d.database)
+	a := d.username + ":" + d.pass + "@" + d.server + "/" + d.database
+	fmt.Println(a)
+	db, err := sql.Open("mysql", d.username+":"+d.pass+"@("+d.server+")/"+d.database)
 	if err != nil {
-		checkErr(err)// Just for example purpose. You should use proper error handling instead of panic
+		checkErr(err) // Just for example purpose. You should use proper error handling instead of panic
 	}
 	return db, err
 }
@@ -43,7 +45,6 @@ func (d MySQLDriver) Query(query string) (*sql.DB, *sql.Stmt, error) {
 	checkErr(err)
 	return db, stmtOut, err
 }
-
 
 //Insert general insert function
 func (d MySQLDriver) Insert(tableName string, columns string, values ...interface{}) (affected int64, id int64, err error) {

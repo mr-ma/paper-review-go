@@ -3,11 +3,12 @@ package data
 import (
 	"testing"
 
-	"github.com/mr-ma/paper-review-go/model"
+	"../model"
 	"github.com/stretchr/testify/assert"
 )
 
-var db = InitMySQLDriver("root","P$m7d2")
+var db = InitMySQLDriver("root", "P$m7d2")
+
 func TestInitMySQLDriver(t *testing.T) {
 	assert.NotNil(t, db)
 }

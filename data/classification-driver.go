@@ -8,8 +8,8 @@ import (
 	"strings"
 	//overriding MySqlDriver
 	//"github.com/go-sql-driver/mysql"
+	"../model"
 	"github.com/Jeffail/gabs"
-	"github.com/mr-ma/paper-review-go/model"
 )
 
 type ClassificationDriver interface {
@@ -104,8 +104,8 @@ type ClassificationDriver interface {
 }
 
 //InitMySQLDriver initialize a new my sql driver instance
-func InitClassificationDriver(user string, password string) ClassificationDriver {
-	return MySQLDriver{username: user, pass: password, database: "classification"}
+func InitClassificationDriver(user string, password string, server string) ClassificationDriver {
+	return MySQLDriver{username: user, pass: password, database: "classification", server: server}
 }
 
 func (d MySQLDriver) Login(email string, password string) (result model.LoginResult, err error) {

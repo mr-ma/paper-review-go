@@ -1,8 +1,0 @@
-#Build an image from the docker file
-docker build -t image-name .
-
-#Export port to the host (credits to https://github.com/wsargent/docker-cheat-sheet#exposing-ports)
-docker run -p 127.0.0.1:8001:8001 --name CONTAINER -t image-name
-
-#To expose the container's port on your localhost's port:
-iptables -t nat -A DOCKER -p tcp --dport <LOCALHOSTPORT> -j DNAT --to-destination <CONTAINERIP>:<PORT>

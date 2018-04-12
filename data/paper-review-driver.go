@@ -1,15 +1,16 @@
 package data
+
 import (
 	"errors"
 	"fmt"
 	"strconv"
 	//overriding MySqlDriver
+	"../model"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/mr-ma/paper-review-go/model"
 )
 
 type PaperReviewDriver interface {
-  DriverCore
+	DriverCore
 	InsertArticle(article model.Article, researchID int64) (int64, error)
 	InsertResearch(research model.Research) (int64, int64, error)
 	InsertTag(tag model.Tag) (affected int64, id int64, err error)
@@ -34,13 +35,10 @@ type PaperReviewDriver interface {
 	DeleteArticleVotes([]model.Article) (model.Result, error)
 }
 
-
 //InitMySQLDriver initialize a new my sql driver instance
 func InitPaperReviewDriver(user string, password string) PaperReviewDriver {
 	return MySQLDriver{username: user, pass: password, database: "classification"}
 }
-
-
 
 //SelectResearchWithArticles a research with it's associated articles
 func (d MySQLDriver) SelectResearchWithArticles(id int64) (r model.Research, err error) {
@@ -364,7 +362,6 @@ func (d MySQLDriver) ReviewNumPapers(researchID int64, mitarbeiterID int64, limi
 	}
 	return articleArray, r, err
 }
-
 
 //InsertArticle insert publication
 func (d MySQLDriver) InsertArticle(article model.Article, researchID int64) (int64, error) {

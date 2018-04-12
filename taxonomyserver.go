@@ -2,25 +2,25 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
-    "mime/multipart"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
-	"encoding/json"
-	"strconv"
 	"time"
 
-	"github.com/mr-ma/paper-review-go/data"
-	"github.com/mr-ma/paper-review-go/model"
-	"github.com/rcrowley/go-tigertonic"
+	"./data"
+	"./model"
 	"github.com/alexedwards/scs"
+	"github.com/rcrowley/go-tigertonic"
 )
 
 //MyRequest standard request
@@ -45,6 +45,7 @@ type fn func(http.ResponseWriter, *http.Request)
 var (
 	mysqlUser     = flag.String("mysqluser", "foo", "a mysql user")
 	mysqlPassword = flag.String("mysqlpass", "bar", "the mysql password")
+	mysqlServer   = flag.String("mysqlserver", "", "Mysql server address")
 	cert          = flag.String("cert", "", "certificate pathname")
 	key           = flag.String("key", "", "private key pathname")
 	config        = flag.String("config", "", "pathname of JSON configuration file")
@@ -52,12 +53,15 @@ var (
 )
 
 var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+var driver data.ClassificationDriver
 
 func main() {
-	sessionManager.Lifetime(time.Hour*24) // session data expires after 24 hours
-	sessionManager.Persist(true) // session data persists after the browser has been closed by the user
+	sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
+	sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
 	//sessionManager.Secure(true)
 	flag.Parse()
+
+	driver = data.InitClassificationDriver(*mysqlUser, *mysqlPassword, *mysqlServer)
 
 	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)
 
@@ -139,39 +143,39 @@ func main() {
 	// user and access management:
 
 	mux.HandleFunc("POST", "/login", func(w http.ResponseWriter, r *http.Request) {
-        var loginRequest model.LoginRequest
-        if r.Body == nil {
-            http.Error(w, "Please send a request body", 400)
-            return
-        }
-        err := json.NewDecoder(r.Body).Decode(&loginRequest)
-        if err != nil {
-            http.Error(w, err.Error(), 400)
-            return
-        }
-        if loginRequest.Password == "" {
-		    session := sessionManager.Load(r)
-		    var email string
-		    email, err := session.GetString("email")
-		    if err != nil {
-		        email = ""
-		    }
-		    var adminInt int
-		    admin, err := session.GetString("admin")
-		    if err != nil {
-		        adminInt = 0
-		    }
-		    adminInt, err = strconv.Atoi(admin)
-		    if err != nil {
-		        adminInt = 0
-		    }
-		    var taxonomies string
-		    taxonomies, err = session.GetString("taxonomies")
-		    if err != nil {
-		        taxonomies = ""
-		    }
-		    userResult := model.LoginResult{Success: true}
-		    userResult.User = model.User{Email: email, Admin: adminInt, Taxonomies: taxonomies}
+		var loginRequest model.LoginRequest
+		if r.Body == nil {
+			http.Error(w, "Please send a request body", 400)
+			return
+		}
+		err := json.NewDecoder(r.Body).Decode(&loginRequest)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		if loginRequest.Password == "" {
+			session := sessionManager.Load(r)
+			var email string
+			email, err := session.GetString("email")
+			if err != nil {
+				email = ""
+			}
+			var adminInt int
+			admin, err := session.GetString("admin")
+			if err != nil {
+				adminInt = 0
+			}
+			adminInt, err = strconv.Atoi(admin)
+			if err != nil {
+				adminInt = 0
+			}
+			var taxonomies string
+			taxonomies, err = session.GetString("taxonomies")
+			if err != nil {
+				taxonomies = ""
+			}
+			userResult := model.LoginResult{Success: true}
+			userResult.User = model.User{Email: email, Admin: adminInt, Taxonomies: taxonomies}
 			output, err := json.Marshal(userResult)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
@@ -180,24 +184,24 @@ func main() {
 			w.Header().Set("content-type", "application/json")
 			w.Write(output)
 			return
-        }
-		driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+		}
+		// //driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 		loginResult, err := driver.Login(loginRequest.Email, loginRequest.Password)
 		checkErr(err)
 		if loginResult.Success {
-		    session := sessionManager.Load(r)
-		    err := session.PutString(w, "email", loginResult.User.Email)
-		    if err != nil {
-		        http.Error(w, err.Error(), 500)
-		    }
-		    err = session.PutString(w, "admin", strconv.Itoa(loginResult.User.Admin))
-		    if err != nil {
-		        http.Error(w, err.Error(), 500)
-		    }
-		    err = session.PutString(w, "taxonomies", loginResult.User.Taxonomies)
-		    if err != nil {
-		        http.Error(w, err.Error(), 500)
-		    }
+			session := sessionManager.Load(r)
+			err := session.PutString(w, "email", loginResult.User.Email)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+			}
+			err = session.PutString(w, "admin", strconv.Itoa(loginResult.User.Admin))
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+			}
+			err = session.PutString(w, "taxonomies", loginResult.User.Taxonomies)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+			}
 		}
 		output, err := json.Marshal(loginResult)
 		if err != nil {
@@ -225,34 +229,34 @@ func main() {
 		w.Write(output)
 	})
 	mux.HandleFunc("POST", "/saveUser", func(w http.ResponseWriter, r *http.Request) {
-        var loginRequest model.LoginRequest
-        if r.Body == nil {
-            http.Error(w, "Please send a request body", 400)
-            return
-        }
-        err := json.NewDecoder(r.Body).Decode(&loginRequest)
-        if err != nil {
-            http.Error(w, err.Error(), 400)
-            return
-        }
-		driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+		var loginRequest model.LoginRequest
+		if r.Body == nil {
+			http.Error(w, "Please send a request body", 400)
+			return
+		}
+		err := json.NewDecoder(r.Body).Decode(&loginRequest)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		//driver = data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 		result, err := driver.SaveUser(loginRequest.Email, loginRequest.Password)
 		checkErr(err)
 		userResult := model.LoginResult{}
 		if result.Success {
 			userResult.Success = true
 			userResult.User = model.User{Email: loginRequest.Email, Admin: 0}
-		    session := sessionManager.Load(r)
-		    session.Clear(w)
-		    session.RenewToken(w)
-		    err := session.PutString(w, "email", loginRequest.Email)
-		    if err != nil {
-		        http.Error(w, err.Error(), 500)
-		    }
-		    err = session.PutString(w, "admin", "0")
-		    if err != nil {
-		        http.Error(w, err.Error(), 500)
-		    }
+			session := sessionManager.Load(r)
+			session.Clear(w)
+			session.RenewToken(w)
+			err := session.PutString(w, "email", loginRequest.Email)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+			}
+			err = session.PutString(w, "admin", "0")
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+			}
 		} else {
 			userResult.Success = false
 		}
@@ -699,7 +703,8 @@ func main() {
 	})
 
 	mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/index.html")
+		// p := loadPage("frontend/taxonomy/index.html")
+		p := loadPage("frontend/taxonomy/correlationMap/interactive/conceptCorrelations_two_dimensional.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/users", func(w http.ResponseWriter, r *http.Request) {
@@ -810,28 +815,28 @@ func checkErr(err error) {
 }
 
 func saveFile(w http.ResponseWriter, file multipart.File, handle *multipart.FileHeader) {
-    data, err := ioutil.ReadAll(file)
-    if err != nil {
-        fmt.Fprintf(w, "%v", err)
-        return
-    }
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+		return
+	}
 
-    err = ioutil.WriteFile("./files/"+handle.Filename, data, 0666)
-    if err != nil {
-        fmt.Fprintf(w, "%v", err)
-        return
-    }
-    jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
+	err = ioutil.WriteFile("./files/"+handle.Filename, data, 0666)
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+		return
+	}
+	jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
 }
 
 func jsonResponse(w http.ResponseWriter, code int, message string) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(code)
-    fmt.Fprint(w, message)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	fmt.Fprint(w, message)
 }
 
 // check if user is admin
-func checkAdmin (w http.ResponseWriter, r *http.Request, callback fn) {
+func checkAdmin(w http.ResponseWriter, r *http.Request, callback fn) {
 	session := sessionManager.Load(r)
 	var admin int
 	adminStr, err := session.GetString("admin")
@@ -858,12 +863,12 @@ func checkAdmin (w http.ResponseWriter, r *http.Request, callback fn) {
 }
 
 func contains(s []int, e int) bool {
-    for _, a := range s {
-        if a == e {
-            return true
-        }
-    }
-    return false
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 // check if user has edit permissions on a taxonomy with a specific ID
@@ -884,21 +889,21 @@ func checkTaxonomyPermissions(w http.ResponseWriter, r *http.Request, callback f
 		callback(w, r)
 		return
 	}
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    body, err := ioutil.ReadAll(r.Body)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
 	var objmap map[string]*json.RawMessage
 	err = json.Unmarshal(body, &objmap)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
 	var taxonomyId64 int64
 	err = json.Unmarshal(*objmap["taxonomy_id"], &taxonomyId64)
 	if err == nil {
@@ -936,7 +941,7 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	email, err := session.GetString("email")
 	user := model.User{}
 	if err == nil {
-		driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+		// driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 		user, err = driver.GetUser(email)
 		checkErr(err)
 	}
@@ -951,17 +956,17 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // sends a SQL query to the database
 func queryHandler(w http.ResponseWriter, r *http.Request) {
-    var queryRequest model.QueryRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&queryRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var queryRequest model.QueryRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&queryRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	// driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.QueryDB(queryRequest.Query)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -975,7 +980,7 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 
 // get list of users and their permissions
 func getUsersHandler(w http.ResponseWriter, r *http.Request) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	// driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	users, err := driver.GetUsers()
 	checkErr(err)
 	userResult := []model.User{}
@@ -993,17 +998,17 @@ func getUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 // add user
 func createUserHandler(w http.ResponseWriter, r *http.Request) {
-    var userRequest model.CreateUserRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&userRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var userRequest model.CreateUserRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&userRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.CreateUser(userRequest.Email, userRequest.Password, userRequest.Admin)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1017,17 +1022,17 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // update user permissions
 func updateUserHandler(w http.ResponseWriter, r *http.Request) {
-    var userRequest model.UpdateUserRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&userRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var userRequest model.UpdateUserRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&userRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateUser(userRequest.Email, userRequest.Admin)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1041,17 +1046,17 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // delete user
 func deleteUserHandler(w http.ResponseWriter, r *http.Request) {
-    var userRequest model.UserRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&userRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var userRequest model.UserRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&userRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.DeleteUser(userRequest.Email)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1064,14 +1069,14 @@ func deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTaxonomyHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	taxonomies, err := driver.GetAllTaxonomies()
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(taxonomies), taxonomies}, nil
 }
 
 func getTaxonomyIDHandler(u *url.URL, h http.Header, taxonomyIDRequest *model.TaxonomyIDRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	taxonomyID, err := driver.GetTaxonomyID(taxonomyIDRequest.Text)
 	checkErr(err)
 	return http.StatusOK, nil,
@@ -1080,17 +1085,17 @@ func getTaxonomyIDHandler(u *url.URL, h http.Header, taxonomyIDRequest *model.Ta
 
 // get taxonomy permissions
 func getTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
-    var userRequest model.UserRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&userRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var userRequest model.UserRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&userRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.GetTaxonomyPermissions(userRequest.Email)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1104,17 +1109,17 @@ func getTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
 
 // update taxonomy permissions
 func getUpdateTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
-    var taxonomyPermissionsRequest model.TaxonomyPermissionsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&taxonomyPermissionsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var taxonomyPermissionsRequest model.TaxonomyPermissionsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&taxonomyPermissionsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateTaxonomyPermissions(taxonomyPermissionsRequest.Email, taxonomyPermissionsRequest.Permissions)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1127,17 +1132,17 @@ func getUpdateTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func getAddTaxonomyHandler(w http.ResponseWriter, r *http.Request) {
-    var addTaxonomyRequest model.AddTaxonomyRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&addTaxonomyRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var addTaxonomyRequest model.AddTaxonomyRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&addTaxonomyRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.AddTaxonomy(addTaxonomyRequest.Taxonomy, addTaxonomyRequest.Dimension)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1150,17 +1155,17 @@ func getAddTaxonomyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRemoveTaxonomyHandler(w http.ResponseWriter, r *http.Request) {
-    var taxonomyRequest model.TaxonomyRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&taxonomyRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var taxonomyRequest model.TaxonomyRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&taxonomyRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.RemoveTaxonomy(taxonomyRequest.TaxonomyID)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1177,7 +1182,7 @@ func getCorrelationHandler(u *url.URL, h http.Header, correlationRequest *model.
 		return http.StatusNotAcceptable, nil,
 			&MyResponse{"0", 0, "I need some attributes to produce correlations"}, nil
 	}
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	papers, err := driver.ExportCorrelations(
 		correlationRequest.Attributes, correlationRequest.TaxonomyID)
 	checkErr(err)
@@ -1185,7 +1190,7 @@ func getCorrelationHandler(u *url.URL, h http.Header, correlationRequest *model.
 		&MyResponse{"0", len(papers), papers}, nil
 }
 func getAttributesPerDimensionHandler(u *url.URL, h http.Header, attributesPerDimensionRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetAttributesPerDimension(
 		attributesPerDimensionRequest.TaxonomyID, attributesPerDimensionRequest.Dimension)
 	checkErr(err)
@@ -1193,7 +1198,7 @@ func getAttributesPerDimensionHandler(u *url.URL, h http.Header, attributesPerDi
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getLeafAttributesPerDimensionHandler(u *url.URL, h http.Header, attributesPerDimensionRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetLeafAttributesPerDimension(
 		attributesPerDimensionRequest.TaxonomyID, attributesPerDimensionRequest.Dimension)
 	checkErr(err)
@@ -1201,7 +1206,7 @@ func getLeafAttributesPerDimensionHandler(u *url.URL, h http.Header, attributesP
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getAttributeClusterPerDimensionHandler(u *url.URL, h http.Header, attributeClusterPerDimensionRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	clusters, err := driver.GetAttributeClusterPerDimension(
 		attributeClusterPerDimensionRequest.TaxonomyID, attributeClusterPerDimensionRequest.Dimension)
 	checkErr(err)
@@ -1209,7 +1214,7 @@ func getAttributeClusterPerDimensionHandler(u *url.URL, h http.Header, attribute
 		&MyResponse{"0", len(clusters), clusters}, nil
 }
 func getAllChildrenAttributesHandler(u *url.URL, h http.Header, allChildrenAttributesRequest *model.AllChildrenAttributesRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetAllChildrenAttributes(
 		allChildrenAttributesRequest.TaxonomyID, allChildrenAttributesRequest.Parent)
 	checkErr(err)
@@ -1217,7 +1222,7 @@ func getAllChildrenAttributesHandler(u *url.URL, h http.Header, allChildrenAttri
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getAllChildrenLeafAttributesHandler(u *url.URL, h http.Header, allChildrenAttributesRequest *model.AllChildrenAttributesRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetAllChildrenLeafAttributes(
 		allChildrenAttributesRequest.TaxonomyID, allChildrenAttributesRequest.Parent)
 	checkErr(err)
@@ -1225,7 +1230,7 @@ func getAllChildrenLeafAttributesHandler(u *url.URL, h http.Header, allChildrenA
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getIntermediateAttributesHandler(u *url.URL, h http.Header, intermediateAttributesRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	intermediateAttributes, err := driver.GetIntermediateAttributes(
 		intermediateAttributesRequest.TaxonomyID, intermediateAttributesRequest.MinValue, intermediateAttributesRequest.MaxValue)
 	checkErr(err)
@@ -1233,7 +1238,7 @@ func getIntermediateAttributesHandler(u *url.URL, h http.Header, intermediateAtt
 		&MyResponse{"0", len(intermediateAttributes), intermediateAttributes}, nil
 }
 func getMajorAttributesHandler(u *url.URL, h http.Header, majorAttributesRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	majorAttributes, err := driver.GetMajorAttributes(
 		majorAttributesRequest.TaxonomyID)
 	checkErr(err)
@@ -1241,7 +1246,7 @@ func getMajorAttributesHandler(u *url.URL, h http.Header, majorAttributesRequest
 		&MyResponse{"0", len(majorAttributes), majorAttributes}, nil
 }
 func getAttributeRelationsHandler(u *url.URL, h http.Header, attributeRelationsRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeRelations, err := driver.GetAttributeRelationsPerDimension(
 		attributeRelationsRequest.TaxonomyID, attributeRelationsRequest.Dimension)
 	checkErr(err)
@@ -1249,7 +1254,7 @@ func getAttributeRelationsHandler(u *url.URL, h http.Header, attributeRelationsR
 		&MyResponse{"0", len(attributeRelations), attributeRelations}, nil
 }
 func getInterdimensionalRelationsHandler(u *url.URL, h http.Header, interdimensionalRelationsRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeRelations, err := driver.GetInterdimensionalRelations(
 		interdimensionalRelationsRequest.TaxonomyID)
 	checkErr(err)
@@ -1257,17 +1262,17 @@ func getInterdimensionalRelationsHandler(u *url.URL, h http.Header, interdimensi
 		&MyResponse{"0", len(attributeRelations), attributeRelations}, nil
 }
 func savePositionsHandler(w http.ResponseWriter, r *http.Request) {
-    var savePositionsRequest model.SavePositionsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var savePositionsRequest model.SavePositionsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.SavePositions(
 		savePositionsRequest.TaxonomyID, savePositionsRequest.Positions)
 	checkErr(err)
@@ -1280,17 +1285,17 @@ func savePositionsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func saveMajorPositionsHandler(w http.ResponseWriter, r *http.Request) {
-    var savePositionsRequest model.SavePositionsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var savePositionsRequest model.SavePositionsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.SaveMajorPositions(
 		savePositionsRequest.TaxonomyID, savePositionsRequest.Positions)
 	checkErr(err)
@@ -1303,17 +1308,17 @@ func saveMajorPositionsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func save3DPositionsHandler(w http.ResponseWriter, r *http.Request) {
-    var savePositionsRequest model.SavePositionsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var savePositionsRequest model.SavePositionsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.Save3DPositions(
 		savePositionsRequest.TaxonomyID, savePositionsRequest.Positions)
 	checkErr(err)
@@ -1326,17 +1331,17 @@ func save3DPositionsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func saveMajor3DPositionsHandler(w http.ResponseWriter, r *http.Request) {
-    var savePositionsRequest model.SavePositionsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var savePositionsRequest model.SavePositionsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&savePositionsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.SaveMajor3DPositions(
 		savePositionsRequest.TaxonomyID, savePositionsRequest.Positions)
 	checkErr(err)
@@ -1349,17 +1354,17 @@ func saveMajor3DPositionsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func saveEdgeBendPointsHandler(w http.ResponseWriter, r *http.Request) {
-    var saveEdgeBendPointsRequest model.SaveEdgeBendPointsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&saveEdgeBendPointsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var saveEdgeBendPointsRequest model.SaveEdgeBendPointsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&saveEdgeBendPointsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.SaveEdgeBendPoints(
 		saveEdgeBendPointsRequest.TaxonomyID, saveEdgeBendPointsRequest.AttributeSrc, saveEdgeBendPointsRequest.AttributeDest, saveEdgeBendPointsRequest.EdgeBendPoints, saveEdgeBendPointsRequest.Dimension)
 	checkErr(err)
@@ -1372,29 +1377,29 @@ func saveEdgeBendPointsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func getCitationsPerAttributeHandler(u *url.URL, h http.Header, citationsPerAttributeRequest *model.CitationsPerAttributeRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citations, err := driver.GetCitationsPerAttribute(citationsPerAttributeRequest.TaxonomyID, citationsPerAttributeRequest.Attribute)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citations), citations}, nil
 }
 func getCitationsPerAttributeIncludingChildrenHandler(u *url.URL, h http.Header, citationsPerAttributeRequest *model.CitationsPerAttributeRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citations, err := driver.GetCitationsPerAttributeIncludingChildren(citationsPerAttributeRequest.TaxonomyID, citationsPerAttributeRequest.Attribute)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citations), citations}, nil
 }
 func addAttributeHandler(w http.ResponseWriter, r *http.Request) {
-    var attributeRequest model.AttributeRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&attributeRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var attributeRequest model.AttributeRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&attributeRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attribute := model.Attribute{Text: attributeRequest.Text, X: attributeRequest.X, Y: attributeRequest.Y, XMajor: attributeRequest.XMajor, YMajor: attributeRequest.YMajor, Major: attributeRequest.Major, Dimension: attributeRequest.Dimension}
 	result, err := driver.AddAttribute(attributeRequest.TaxonomyID, attribute)
 	checkErr(err)
@@ -1407,17 +1412,17 @@ func addAttributeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func addDimensionHandler(w http.ResponseWriter, r *http.Request) {
-    var dimensionRequest model.DimensionRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&dimensionRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var dimensionRequest model.DimensionRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&dimensionRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.AddDimension(dimensionRequest.TaxonomyID, dimensionRequest.Text)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1429,17 +1434,17 @@ func addDimensionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func changeDimensionHandler(w http.ResponseWriter, r *http.Request) {
-    var changeDimensionRequest model.ChangeDimensionRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&changeDimensionRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var changeDimensionRequest model.ChangeDimensionRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&changeDimensionRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.ChangeDimension(changeDimensionRequest.TaxonomyID, changeDimensionRequest.Attribute, changeDimensionRequest.Dimension)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1451,17 +1456,17 @@ func changeDimensionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func deleteCitationHandler(w http.ResponseWriter, r *http.Request) {
-    var citationRequest model.CitationRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&citationRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var citationRequest model.CitationRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&citationRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citation := model.Paper{Citation: citationRequest.Citation}
 	result, err := driver.DeleteCitation(citationRequest.TaxonomyID, citation)
 	checkErr(err)
@@ -1474,17 +1479,17 @@ func deleteCitationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func removeAttributeHandler(w http.ResponseWriter, r *http.Request) {
-    var attributeRequest model.AttributeRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&attributeRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var attributeRequest model.AttributeRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&attributeRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attribute := model.Attribute{Text: attributeRequest.Text}
 	result, err := driver.RemoveAttribute(attributeRequest.TaxonomyID, attribute)
 	checkErr(err)
@@ -1497,17 +1502,17 @@ func removeAttributeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func removeDimensionHandler(w http.ResponseWriter, r *http.Request) {
-    var dimensionRequest model.AttributeRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&dimensionRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var dimensionRequest model.AttributeRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&dimensionRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	dimension := model.Dimension{Text: dimensionRequest.Text}
 	result, err := driver.RemoveDimension(dimensionRequest.TaxonomyID, dimension)
 	checkErr(err)
@@ -1520,17 +1525,17 @@ func removeDimensionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func renameAttributeHandler(w http.ResponseWriter, r *http.Request) {
-    var renameAttributeRequest model.RenameAttributeRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&renameAttributeRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var renameAttributeRequest model.RenameAttributeRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&renameAttributeRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.RenameAttribute(renameAttributeRequest.TaxonomyID, renameAttributeRequest.PreviousName, renameAttributeRequest.NewName)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1542,17 +1547,17 @@ func renameAttributeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func updateSynonymsHandler(w http.ResponseWriter, r *http.Request) {
-    var updateSynonymsRequest model.UpdateSynonymsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&updateSynonymsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var updateSynonymsRequest model.UpdateSynonymsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&updateSynonymsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateSynonyms(updateSynonymsRequest.TaxonomyID, updateSynonymsRequest.Attribute, updateSynonymsRequest.Synonyms)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1564,17 +1569,17 @@ func updateSynonymsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func renameDimensionHandler(w http.ResponseWriter, r *http.Request) {
-    var renameDimensionRequest model.RenameAttributeRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&renameDimensionRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var renameDimensionRequest model.RenameAttributeRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&renameDimensionRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.RenameDimension(renameDimensionRequest.TaxonomyID, renameDimensionRequest.PreviousName, renameDimensionRequest.NewName)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1586,17 +1591,17 @@ func renameDimensionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func addTaxonomyRelationHandler(w http.ResponseWriter, r *http.Request) {
-    var taxonomyRelationRequest model.AttributeRelationsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var taxonomyRelationRequest model.AttributeRelationsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	relation := model.AttributeRelation{TaxonomyID: taxonomyRelationRequest.TaxonomyID, AttributeSrc: taxonomyRelationRequest.AttributeSrc, AttributeDest: taxonomyRelationRequest.AttributeDest, Dimension: taxonomyRelationRequest.Dimension, Relation: taxonomyRelationRequest.Text}
 	result, err := driver.AddTaxonomyRelation(relation)
 	checkErr(err)
@@ -1609,17 +1614,17 @@ func addTaxonomyRelationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func removeTaxonomyRelationHandler(w http.ResponseWriter, r *http.Request) {
-    var taxonomyRelationRequest model.AttributeRelationsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var taxonomyRelationRequest model.AttributeRelationsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	relation := model.AttributeRelation{TaxonomyID: taxonomyRelationRequest.TaxonomyID, AttributeSrc: taxonomyRelationRequest.AttributeSrc, AttributeDest: taxonomyRelationRequest.AttributeDest, Dimension: taxonomyRelationRequest.Dimension, Relation: taxonomyRelationRequest.Text}
 	result, err := driver.RemoveTaxonomyRelation(relation)
 	checkErr(err)
@@ -1632,17 +1637,17 @@ func removeTaxonomyRelationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func updateTaxonomyRelationTypeHandler(w http.ResponseWriter, r *http.Request) {
-    var taxonomyRelationRequest model.AttributeRelationsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var taxonomyRelationRequest model.AttributeRelationsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	relation := model.AttributeRelation{TaxonomyID: taxonomyRelationRequest.TaxonomyID, AttributeSrc: taxonomyRelationRequest.AttributeSrc, AttributeDest: taxonomyRelationRequest.AttributeDest, Dimension: taxonomyRelationRequest.Dimension, Relation: taxonomyRelationRequest.Text}
 	result, err := driver.UpdateTaxonomyRelationType(relation)
 	checkErr(err)
@@ -1655,17 +1660,17 @@ func updateTaxonomyRelationTypeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func updateTaxonomyRelationAnnotationHandler(w http.ResponseWriter, r *http.Request) {
-    var taxonomyRelationRequest model.AttributeRelationsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var taxonomyRelationRequest model.AttributeRelationsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&taxonomyRelationRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	relation := model.AttributeRelation{TaxonomyID: taxonomyRelationRequest.TaxonomyID, AttributeSrc: taxonomyRelationRequest.AttributeSrc, AttributeDest: taxonomyRelationRequest.AttributeDest, Dimension: taxonomyRelationRequest.Dimension, Annotation: taxonomyRelationRequest.Text}
 	result, err := driver.UpdateTaxonomyRelationAnnotation(relation)
 	checkErr(err)
@@ -1678,7 +1683,7 @@ func updateTaxonomyRelationAnnotationHandler(w http.ResponseWriter, r *http.Requ
 	w.Write(output)
 }
 func getAttributesHandler(u *url.URL, h http.Header, attributesRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetAllAttributes(
 		attributesRequest.TaxonomyID)
 	checkErr(err)
@@ -1686,7 +1691,7 @@ func getAttributesHandler(u *url.URL, h http.Header, attributesRequest *model.Ta
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getLeafAttributesHandler(u *url.URL, h http.Header, attributesRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetLeafAttributes(
 		attributesRequest.TaxonomyID)
 	checkErr(err)
@@ -1694,7 +1699,7 @@ func getLeafAttributesHandler(u *url.URL, h http.Header, attributesRequest *mode
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getDimensionsHandler(u *url.URL, h http.Header, dimensionRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	dimensions, err := driver.GetAllDimensions(
 		dimensionRequest.TaxonomyID)
 	checkErr(err)
@@ -1702,20 +1707,20 @@ func getDimensionsHandler(u *url.URL, h http.Header, dimensionRequest *model.Tax
 		&MyResponse{"0", len(dimensions), dimensions}, nil
 }
 func getCitationsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citations, err := driver.GetAllCitations(taxonomyRequest.TaxonomyID)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citations), citations}, nil
 }
 func getCitationCountHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citationCount, err := driver.GetCitationCount(taxonomyRequest.TaxonomyID)
 	checkErr(err)
 	return http.StatusOK, nil,
 		&MyResponse{"0", len(citationCount), citationCount}, nil
 }
 func getCitationCountsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citationCounts, err := driver.GetCitationCounts(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1723,17 +1728,17 @@ func getCitationCountsHandler(u *url.URL, h http.Header, taxonomyRequest *model.
 		&MyResponse{"0", len(citationCounts), citationCounts}, nil
 }
 func getUpdateCitationReferenceCountsHandler(w http.ResponseWriter, r *http.Request) {
-    var updateReferenceCountsRequest model.UpdateReferenceCountsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&updateReferenceCountsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var updateReferenceCountsRequest model.UpdateReferenceCountsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&updateReferenceCountsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateCitationReferenceCounts(updateReferenceCountsRequest.TaxonomyID, updateReferenceCountsRequest.ReferenceCounts)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1745,7 +1750,7 @@ func getUpdateCitationReferenceCountsHandler(w http.ResponseWriter, r *http.Requ
 	w.Write(output)
 }
 func getCitationCountsIncludingChildrenHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citationCounts, err := driver.GetCitationCountsIncludingChildren(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1753,17 +1758,17 @@ func getCitationCountsIncludingChildrenHandler(u *url.URL, h http.Header, taxono
 		&MyResponse{"0", len(citationCounts), citationCounts}, nil
 }
 func getUpdateMajorHandler(w http.ResponseWriter, r *http.Request) {
-    var updateMajorRequest model.UpdateMajorRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&updateMajorRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var updateMajorRequest model.UpdateMajorRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&updateMajorRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateMajor(updateMajorRequest.TaxonomyID, updateMajorRequest.Text, updateMajorRequest.Major)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1775,17 +1780,17 @@ func getUpdateMajorHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func getUpdateCitationMappingHandler(w http.ResponseWriter, r *http.Request) {
-    var updateCitationMappingRequest model.UpdateCitationMappingRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&updateCitationMappingRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var updateCitationMappingRequest model.UpdateCitationMappingRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&updateCitationMappingRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateCitationMapping(updateCitationMappingRequest.TaxonomyID, updateCitationMappingRequest.Attribute, updateCitationMappingRequest.Citations)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1797,17 +1802,17 @@ func getUpdateCitationMappingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func getUpdateCitationMappingsHandler(w http.ResponseWriter, r *http.Request) {
-    var updateCitationMappingsRequest model.UpdateCitationMappingsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&updateCitationMappingsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var updateCitationMappingsRequest model.UpdateCitationMappingsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&updateCitationMappingsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.UpdateCitationMappings(updateCitationMappingsRequest.TaxonomyID, updateCitationMappingsRequest.Mappings)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1819,13 +1824,13 @@ func getUpdateCitationMappingsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func getRelationTypesHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	relationTypes, err := driver.GetRelationTypes()
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(relationTypes), relationTypes}, nil
 }
 func getConceptCorrelationsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetConceptRelations(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1833,7 +1838,7 @@ func getConceptCorrelationsHandler(u *url.URL, h http.Header, taxonomyRequest *m
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func getConceptCorrelations3DHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetConceptRelations3D(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1841,7 +1846,7 @@ func getConceptCorrelations3DHandler(u *url.URL, h http.Header, taxonomyRequest 
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func getConceptCorrelationsWithReferenceCountsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetConceptRelationsWithReferenceCounts(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1849,7 +1854,7 @@ func getConceptCorrelationsWithReferenceCountsHandler(u *url.URL, h http.Header,
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func getConceptCorrelationsWithReferenceCounts3DHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetConceptRelationsWithReferenceCounts3D(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1857,7 +1862,7 @@ func getConceptCorrelationsWithReferenceCounts3DHandler(u *url.URL, h http.Heade
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func getAllConceptCorrelationsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetAllConceptRelations(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1865,7 +1870,7 @@ func getAllConceptCorrelationsHandler(u *url.URL, h http.Header, taxonomyRequest
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func getAllConceptCorrelations3DHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetAllConceptRelations3D(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1873,7 +1878,7 @@ func getAllConceptCorrelations3DHandler(u *url.URL, h http.Header, taxonomyReque
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func getAllConceptCorrelationsWithReferenceCountsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetAllConceptRelationsWithReferenceCounts(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1881,7 +1886,7 @@ func getAllConceptCorrelationsWithReferenceCountsHandler(u *url.URL, h http.Head
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func getAllConceptCorrelationsWithReferenceCounts3DHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	conceptRelations, err := driver.GetAllConceptRelationsWithReferenceCounts3D(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1889,65 +1894,65 @@ func getAllConceptCorrelationsWithReferenceCounts3DHandler(u *url.URL, h http.He
 		&MyResponse{"0", len(conceptRelations), conceptRelations}, nil
 }
 func GetParentRelationsPerAttributeHandler(u *url.URL, h http.Header, attributeRelationsRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	relations, err := driver.GetParentRelationsPerAttribute(attributeRelationsRequest.TaxonomyID, attributeRelationsRequest.Text, attributeRelationsRequest.Dimension)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(relations), relations}, nil
 }
 func GetChildRelationsPerAttributeHandler(u *url.URL, h http.Header, attributeRelationsRequest *model.AttributeRelationsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	relations, err := driver.GetChildRelationsPerAttribute(attributeRelationsRequest.TaxonomyID, attributeRelationsRequest.Text, attributeRelationsRequest.Dimension)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(relations), relations}, nil
 }
 func getSharedPapersHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	papers, err := driver.GetSharedPapers(sharedPapersRequest.TaxonomyID, sharedPapersRequest.Text1, sharedPapersRequest.Text2)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
 }
 func getSharedPapers3DHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	papers, err := driver.GetSharedPapers3D(sharedPapersRequest.TaxonomyID, sharedPapersRequest.Text1, sharedPapersRequest.Text2, sharedPapersRequest.Text3)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
 }
 func getSharedPapersIncludingChildrenHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	papers, err := driver.GetSharedPapersIncludingChildren(sharedPapersRequest.TaxonomyID, sharedPapersRequest.Text1, sharedPapersRequest.Text2)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
 }
 func getSharedPapersIncludingChildren3DHandler(u *url.URL, h http.Header, sharedPapersRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	papers, err := driver.GetSharedPapersIncludingChildren3D(sharedPapersRequest.TaxonomyID, sharedPapersRequest.Text1, sharedPapersRequest.Text2, sharedPapersRequest.Text3)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(papers), papers}, nil
 }
 func getAttributeDetailsHandler(u *url.URL, h http.Header, attributeDetailsRequest *model.AttributeDetailsRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeDetails, err := driver.GetAttributeDetails(attributeDetailsRequest.TaxonomyID, attributeDetailsRequest.Text)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(attributeDetails), attributeDetails}, nil
 }
 func getCitationDetailsHandler(u *url.URL, h http.Header, citationDetailsRequest *model.SharedPapersRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	citationDetails, err := driver.GetCitationDetails(citationDetailsRequest.TaxonomyID, citationDetailsRequest.Text1, citationDetailsRequest.Text2)
 	checkErr(err)
 	return http.StatusOK, nil, &MyResponse{"0", len(citationDetails), citationDetails}, nil
 }
 func getMergeAttributesHandler(w http.ResponseWriter, r *http.Request) {
-    var mergeAttributesRequest model.MergeAttributesRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&mergeAttributesRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var mergeAttributesRequest model.MergeAttributesRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&mergeAttributesRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attribute1 := model.Attribute{Text: mergeAttributesRequest.Text1, Dimension: mergeAttributesRequest.Dimension1}
 	attribute2 := model.Attribute{Text: mergeAttributesRequest.Text2, Dimension: mergeAttributesRequest.Dimension2}
 	result, err := driver.MergeAttributes(mergeAttributesRequest.TaxonomyID, attribute1, attribute2)
@@ -1961,17 +1966,17 @@ func getMergeAttributesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func getForkAttributeHandler(w http.ResponseWriter, r *http.Request) {
-    var forkAttributeRequest model.ForkAttributeRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&forkAttributeRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var forkAttributeRequest model.ForkAttributeRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&forkAttributeRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.ForkAttribute(forkAttributeRequest.TaxonomyID, forkAttributeRequest.Text, forkAttributeRequest.Dimension, forkAttributeRequest.Parents1, forkAttributeRequest.Parents2, forkAttributeRequest.Children1, forkAttributeRequest.Children2, forkAttributeRequest.Citations1, forkAttributeRequest.Citations2)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -1983,7 +1988,7 @@ func getForkAttributeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 func getAttributesByNameHandler(u *url.URL, h http.Header, attributesByNameRequest *model.AttributesByNameRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributes, err := driver.GetAttributesByName(
 		attributesByNameRequest.TaxonomyID, attributesByNameRequest.Texts)
 	checkErr(err)
@@ -1991,7 +1996,7 @@ func getAttributesByNameHandler(u *url.URL, h http.Header, attributesByNameReque
 		&MyResponse{"0", len(attributes), attributes}, nil
 }
 func getAttributeCoverageHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeCoverage, err := driver.GetAttributeCoverage(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -1999,7 +2004,7 @@ func getAttributeCoverageHandler(u *url.URL, h http.Header, taxonomyRequest *mod
 		&MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
 }
 func getAttributeCoverageWithOccurrenceCountsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeCoverage, err := driver.GetAttributeCoverageWithOcurrenceCounts(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -2007,7 +2012,7 @@ func getAttributeCoverageWithOccurrenceCountsHandler(u *url.URL, h http.Header, 
 		&MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
 }
 func getAttributeCoverageWithReferenceCountsHandler(u *url.URL, h http.Header, taxonomyRequest *model.TaxonomyRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	attributeCoverage, err := driver.GetAttributeCoverageWithReferenceCounts(
 		taxonomyRequest.TaxonomyID)
 	checkErr(err)
@@ -2015,7 +2020,7 @@ func getAttributeCoverageWithReferenceCountsHandler(u *url.URL, h http.Header, t
 		&MyResponse{"0", len(attributeCoverage), attributeCoverage}, nil
 }
 func getKMeansHandler(u *url.URL, h http.Header, kMeansRequest *model.KMeansRequest) (int, http.Header, *MyResponse, error) {
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	clusters, err := driver.KMeans(
 		kMeansRequest.TaxonomyID, kMeansRequest.N)
 	checkErr(err)
@@ -2209,16 +2214,16 @@ func getReviewStatsHandler(u *url.URL, h http.Header, r *MyRequest) (int, http.H
 }
 
 func getReviewListHandler(w http.ResponseWriter, r *http.Request) {
-    var reviewListRequest model.ReviewListRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&reviewListRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
+	var reviewListRequest model.ReviewListRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&reviewListRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
 	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.GetApprovedPapersWithDetails(reviewListRequest.ResearchID, reviewListRequest.Threshold)
 	checkErr(err)
@@ -2232,17 +2237,17 @@ func getReviewListHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func saveReviewMappingsHandler(w http.ResponseWriter, r *http.Request) {
-    var saveReviewMappingsRequest model.SaveReviewMappingsRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&saveReviewMappingsRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
-	driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
+	var saveReviewMappingsRequest model.SaveReviewMappingsRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&saveReviewMappingsRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.SaveReviewMappings(saveReviewMappingsRequest.TaxonomyID, saveReviewMappingsRequest.Attributes, saveReviewMappingsRequest.Mappings)
 	checkErr(err)
 	output, err := json.Marshal(result)
@@ -2255,16 +2260,16 @@ func saveReviewMappingsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteArticleVotesHandler(w http.ResponseWriter, r *http.Request) {
-    var deleteArticleVotesRequest model.DeleteArticleVotesRequest
-    if r.Body == nil {
-        http.Error(w, "Please send a request body", 400)
-        return
-    }
-    err := json.NewDecoder(r.Body).Decode(&deleteArticleVotesRequest)
-    if err != nil {
-        http.Error(w, err.Error(), 400)
-        return
-    }
+	var deleteArticleVotesRequest model.DeleteArticleVotesRequest
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&deleteArticleVotesRequest)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
 	driver := data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword)
 	result, err := driver.DeleteArticleVotes(deleteArticleVotesRequest.Articles)
 	checkErr(err)

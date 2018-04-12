@@ -43,10 +43,10 @@ type ArticleMapping struct {
 	File                 string `json:"file"`
 	Source               string `json:"source"`
 	AssociatedResearchId int64  `json:"associated_research_id"`
-	TagIds string `json:"tagIDs"`
-	Tags string `json:"tags"`
-	ApprovedCount int `json:"approvedCount"`
-	RejectedCount int `json:"rejectedCount"`
+	TagIds               string `json:"tagIDs"`
+	Tags                 string `json:"tags"`
+	ApprovedCount        int    `json:"approvedCount"`
+	RejectedCount        int    `json:"rejectedCount"`
 }
 type Mitarbeiter struct {
 	ID       int    `json:"id"`
@@ -59,12 +59,12 @@ type Tag struct {
 	ResearchID int    `json:"research_id"`
 }
 type Vote struct {
-	ID                  int         `json:"id"`
-	State               VoteStatus  `json:"state"`
-	Voter               User `json:"voter"`
-	Tags                []Tag       `json:"tags"`
-	AssociatedArticleID int         `json:"associated_article_id"`
-	Review              string      `json:"review"`
+	ID                  int        `json:"id"`
+	State               VoteStatus `json:"state"`
+	Voter               User       `json:"voter"`
+	Tags                []Tag      `json:"tags"`
+	AssociatedArticleID int        `json:"associated_article_id"`
+	Review              string     `json:"review"`
 }
 
 //Stats enholds statistic info about reviews
@@ -76,7 +76,7 @@ type Stats struct {
 
 type ReviewListRequest struct {
 	ResearchID int64 `json:"research_id"`
-	Threshold int `json:"threshold"`
+	Threshold  int   `json:"threshold"`
 }
 
 type DeleteArticleVotesRequest struct {
