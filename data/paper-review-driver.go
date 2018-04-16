@@ -33,11 +33,12 @@ type PaperReviewDriver interface {
 	GetApprovedPapers(researchID int64, threshold int) ([]model.Article, error)
 	GetApprovedPapersWithDetails(researchID int64, threshold int) ([]model.ArticleMapping, error)
 	DeleteArticleVotes([]model.Article) (model.Result, error)
+	SaveReviewMappings(int64, []model.Attribute, []model.ReviewMapping) (model.Result, error)
 }
 
 //InitMySQLDriver initialize a new my sql driver instance
-func InitPaperReviewDriver(user string, password string) PaperReviewDriver {
-	return MySQLDriver{username: user, pass: password, database: "classification"}
+func InitPaperReviewDriver(user string, password string, server string) PaperReviewDriver {
+	return MySQLDriver{username: user, pass: password, database: "classification", server: server}
 }
 
 //SelectResearchWithArticles a research with it's associated articles
@@ -564,6 +565,69 @@ func (d MySQLDriver) DeleteArticleVotes(articles []model.Article) (result model.
 		articleIDString += strconv.Itoa(elem.ID)
 	}
 	db.Exec("DELETE FROM votes WHERE ArticleId IN (" + articleIDString + ");")
+	result.Success = true
+	return result, err
+}
+
+func (d MySQLDriver) SaveReviewMappings(taxonomyId int64, attributes []model.Attribute, mappings []model.ReviewMapping) (result model.Result, err error) {
+	dbRef, err := d.OpenDB()
+	defer dbRef.Close()
+	checkErr(err)
+	taxonomyIdStr := strconv.Itoa(int(taxonomyId))
+	for _, elem := range mappings {
+		db, stmt, err := d.Query("SELECT DISTINCT Title, year, Authors, Keywords, cited_by FROM articles WHERE ArticleId = ?;")
+		checkErr(err)
+		rows, err := stmt.Query(elem.ArticleID)
+		checkErr(err)
+		stmt.Close()
+		db.Close()
+		var article model.Article
+		foundArticle := false
+		for rows.Next() {
+			article = model.Article{}
+			rows.Scan(&article.Title, &article.Year, &article.Authors, &article.Keywords, &article.CitedBy)
+			foundArticle = true
+		}
+		rows.Close()
+		if foundArticle {
+			dimension := ""
+			for i := 0; i < len(attributes); i++ {
+				if attributes[i].Text == elem.Attribute {
+					dimension = attributes[i].Dimension
+					break
+				}
+			}
+			if len(dimension) == 0 {
+				dimension = "Interdimensional view"
+			}
+			major := 0
+			if dimension == "Interdimensional view" {
+				major = 1
+			}
+			db, stmt, err := d.Query("SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND BINARY text = ?;")
+			rows, err := stmt.Query(taxonomyIdStr, elem.Attribute)
+			checkErr(err)
+			stmt.Close()
+			db.Close()
+			var attributeID int
+			attributeID = -1
+			for rows.Next() {
+				rows.Scan(&attributeID)
+			}
+			rows.Close()
+			if attributeID < 0 {
+				dbRef.Exec("INSERT IGNORE INTO attribute (id_taxonomy, text, major) VALUES (?, ?, ?);", taxonomyIdStr, elem.Attribute, major)
+				//d.Insert("attribute", "id_taxonomy=?,text=?,major=?", taxonomyIdStr, elem.Attribute, major)
+				dbRef.Exec("INSERT IGNORE INTO taxonomy_dimension (id_taxonomy, id_attribute, id_dimension) VALUES (?, (SELECT DISTINCT id_attribute FROM attribute WHERE id_taxonomy = ? AND BINARY text = ?), (SELECT DISTINCT id_dimension FROM dimension WHERE id_taxonomy = ? AND BINARY text = ?));", taxonomyIdStr, taxonomyIdStr, elem.Attribute, taxonomyIdStr, dimension)
+			}
+			//d.Insert("paper", "id_taxonomy=?,citation=?,author=?,keywords=?", taxonomyIdStr, article.Title, article.Authors, article.Keywords)
+			dbRef.Exec("INSERT IGNORE INTO paper (id_taxonomy, citation, author, keywords) VALUES (?, ?, ?, ?);", taxonomyIdStr, article.Title, article.Authors, article.Keywords) // bibTex
+			dbRef.Exec("INSERT IGNORE INTO mapping (id_paper, id_attribute) VALUES ((SELECT DISTINCT id_paper FROM paper WHERE BINARY paper.citation = ? and paper.id_taxonomy = ?), (SELECT DISTINCT id_attribute FROM attribute WHERE BINARY text = ? AND id_taxonomy = ?));", article.Title, taxonomyIdStr, elem.Attribute, taxonomyIdStr)
+		}
+	}
+	go func() {
+		d.UpdateRelationshipTables(taxonomyId)
+	}()
 	result.Success = true
 	return result, err
 }
