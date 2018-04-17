@@ -2,18 +2,18 @@
 <html>
 <head>
     <title>Scopus Import</title>
-    <script src="jquery.min.js"></script>
+    <script src="/visualization/jquery.min.js"></script>
 
-    <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
-    <script src="bootstrap.min.js"></script>
+    <link href="/visualization/bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <script src="/visualization/bootstrap.min.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
-    <script src="bootstrap-dialog.min.js"></script>
+    <link href="/visualization/bootstrap-dialog.min.css" type="text/css" rel="stylesheet"/>
+    <script src="/visualization/bootstrap-dialog.min.js"></script>
 
-    <script src="bluebird.min.js"></script>
-    <link href="main.css" type="text/css" rel="stylesheet">
-    <script src="userManagement.js"></script>
-    <script src="error.js"></script>
+    <script src="/visualization/bluebird.min.js"></script>
+    <link href="/visualization/main.css" type="text/css" rel="stylesheet">
+    <script src="/usermanagement/userManagement.js"></script>
+    <script src="/visualization/error.js"></script>
 
 <script>
   function closeButton ( button ) {
@@ -47,7 +47,7 @@
       $.ajax
         ({
           type: "POST",
-          url: 'citation',
+          url: '/analysis/citation',
           dataType: 'json',
           contentType:'application/json',
           async: true,
@@ -116,7 +116,7 @@
                     $.ajax
                       ({
                         type: "POST",
-                        url: 'updateCitationReferenceCounts',
+                        url: '/taxonomybuilder/updateCitationReferenceCounts',
                         dataType: 'json',
                         contentType:'application/json',
                         async: true,

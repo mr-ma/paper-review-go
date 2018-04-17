@@ -2,57 +2,57 @@
 <html>
 <head>
     <title>Taxonomy Relations</title>
-    <script src="jquery.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src='cytoscape.min.js' data-web="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.8/cytoscape.min.js"></script>
+    <script src="/visualization/jquery.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src='/taxonomybuilder/cytoscape.min.js' data-web="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.2.8/cytoscape.min.js"></script>
 
-    <link href="bootstrap.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
-    <script src="bootstrap.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="/visualization/bootstrap.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="/visualization/bootstrap.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
-    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+    <link href="/visualization/bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="/visualization/bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
 
-    <script src='cytoscape-undo-redo.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-undo-redo/master/cytoscape-undo-redo.js"></script>
-    <script src='cytoscape-clipboard.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-clipboard/334db15f/cytoscape-clipboard.js"></script>
-    <script src='cytoscape-graphml.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-graphml/02681992/cytoscape-graphml.js"></script>
-    <script src='cytoscape-view-utilities.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-view-utilities/3844aa7d/cytoscape-view-utilities.js"></script>
+    <script src="/taxonomybuilder/cytoscape-undo-redo.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-undo-redo/master/cytoscape-undo-redo.js"></script>
+    <script src="/taxonomybuilder/cytoscape-clipboard.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-clipboard/334db15f/cytoscape-clipboard.js"></script>
+    <script src="/taxonomybuilder/cytoscape-graphml.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-graphml/02681992/cytoscape-graphml.js"></script>
+    <script src="/taxonomybuilder/cytoscape-view-utilities.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-view-utilities/3844aa7d/cytoscape-view-utilities.js"></script>
 
-    <link href="cytoscape-context-menus.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-context-menus/f9ec82cc/cytoscape-context-menus.css">
-    <script src='cytoscape-context-menus.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-context-menus/f9ec82cc/cytoscape-context-menus.js"></script>
-    <script src='cytoscape-cxtmenu.js' data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-cxtmenu/9b2eb1f6/cytoscape-cxtmenu.js"></script>
-    <script src='cytoscape-autopan-on-drag.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-autopan-on-drag/f165a0a7/cytoscape-autopan-on-drag.js"></script>
-    <script src='cytoscape-edge-bend-editing.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-edge-bend-editing/7ad9b679/cytoscape-edge-bend-editing.js"></script>
-    <script src='CytoscapeEdgeEditation.js' data-web="https://cdn.rawgit.com/frankiex/cytoscape.js-edge-editation/c2c72909/CytoscapeEdgeEditation.js"></script>
-    <script src='cytoscape-edgehandles.js' data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-edgehandles/601d4b04/cytoscape-edgehandles.js"></script>
-    <script src='cytoscape-expand-collapse.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-expand-collapse/f2aeb7f2/cytoscape-expand-collapse.js"></script>
+    <link href="/taxonomybuilder/cytoscape-context-menus.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-context-menus/f9ec82cc/cytoscape-context-menus.css">
+    <script src="/taxonomybuilder/cytoscape-context-menus.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-context-menus/f9ec82cc/cytoscape-context-menus.js"></script>
+    <script src="/taxonomybuilder/cytoscape-cxtmenu.js" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-cxtmenu/9b2eb1f6/cytoscape-cxtmenu.js"></script>
+    <script src="/taxonomybuilder/cytoscape-autopan-on-drag.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-autopan-on-drag/f165a0a7/cytoscape-autopan-on-drag.js"></script>
+    <script src="/taxonomybuilder/cytoscape-edge-bend-editing.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-edge-bend-editing/7ad9b679/cytoscape-edge-bend-editing.js"></script>
+    <script src="/taxonomybuilder/CytoscapeEdgeEditation.js" data-web="https://cdn.rawgit.com/frankiex/cytoscape.js-edge-editation/c2c72909/CytoscapeEdgeEditation.js"></script>
+    <script src="/taxonomybuilder/cytoscape-edgehandles.js" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-edgehandles/601d4b04/cytoscape-edgehandles.js"></script>
+    <script src="/taxonomybuilder/cytoscape-expand-collapse.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-expand-collapse/f2aeb7f2/cytoscape-expand-collapse.js"></script>
 
-    <link href="cytoscape.js-navigator.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-navigator/39424808/cytoscape.js-navigator.css">
-    <script src='cytoscape-navigator.js' data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-navigator/39424808/cytoscape-navigator.js"></script>
+    <link href="/taxonomybuilder/cytoscape.js-navigator.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-navigator/39424808/cytoscape.js-navigator.css">
+    <script src="/taxonomybuilder/cytoscape-navigator.js" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-navigator/39424808/cytoscape-navigator.js"></script>
 
-    <script src='konva.min.js' data-web="https://cdn.rawgit.com/konvajs/konva/8894d75a/konva.min.js"></script>
-    <script src='cytoscape-node-resize.js' data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-node-resize/02fb8e04/cytoscape-node-resize.js"></script>
+    <script src="/taxonomybuilder/konva.min.js" data-web="https://cdn.rawgit.com/konvajs/konva/8894d75a/konva.min.js"></script>
+    <script src="/taxonomybuilder/cytoscape-node-resize.js" data-web="https://cdn.rawgit.com/iVis-at-Bilkent/cytoscape.js-node-resize/02fb8e04/cytoscape-node-resize.js"></script>
 
-    <script src='cytoscape-noderesize.js' data-web="https://cdn.rawgit.com/jhonatandarosa/cytoscape.js-noderesize/fcfdda4c/cytoscape-noderesize.js"></script>
-    <link href="cytoscape.js-panzoom.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-panzoom/11f0f050/cytoscape.js-panzoom.css">
-    <script src='cytoscape-panzoom.js' data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-panzoom/11f0f050/cytoscape-panzoom.js"></script>
+    <script src="/taxonomybuilder/cytoscape-noderesize.js" data-web="https://cdn.rawgit.com/jhonatandarosa/cytoscape.js-noderesize/fcfdda4c/cytoscape-noderesize.js"></script>
+    <link href="/taxonomybuilder/cytoscape.js-panzoom.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-panzoom/11f0f050/cytoscape.js-panzoom.css">
+    <script src="/taxonomybuilder/cytoscape-panzoom.js" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-panzoom/11f0f050/cytoscape-panzoom.js"></script>
 
-    <link href="jquery.qtip.min.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/qTip2/qTip2/eeffdbaa/dist/jquery.qtip.min.css">
-    <script src='jquery.qtip.min.js' data-web="https://cdn.rawgit.com/qTip2/qTip2/eeffdbaa/dist/jquery.qtip.min.js"></script>
-    <script src='cytoscape-qtip.js' data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-qtip/02ebf16c/cytoscape-qtip.js"></script>
+    <link href="/taxonomybuilder/jquery.qtip.min.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/qTip2/qTip2/eeffdbaa/dist/jquery.qtip.min.css">
+    <script src="/taxonomybuilder/jquery.qtip.min.js" data-web="https://cdn.rawgit.com/qTip2/qTip2/eeffdbaa/dist/jquery.qtip.min.js"></script>
+    <script src="/taxonomybuilder/cytoscape-qtip.js" data-web="https://cdn.rawgit.com/cytoscape/cytoscape.js-qtip/02ebf16c/cytoscape-qtip.js"></script>
 
-    <script src='cytoscape-snap-to-grid.js' data-web="https://cdn.rawgit.com/guimeira/cytoscape-snap-to-grid/2c591548/cytoscape-snap-to-grid.js"></script>
+    <script src="/taxonomybuilder/cytoscape-snap-to-grid.js" data-web="https://cdn.rawgit.com/guimeira/cytoscape-snap-to-grid/2c591548/cytoscape-snap-to-grid.js"></script>
 
-    <script src="multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
+    <script src="/visualization/multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
 
-    <script src="bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
+    <script src="/visualization/bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
 
-    <script src="FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+    <script src="/visualization/FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
 
-    <script src="loadData.js"></script>
-    <script src="exportHTML.js"></script>
+    <script src="/analysis/loadData.js"></script>
+    <script src="/visualization/exportHTML.js"></script>
 
-    <link href="main.css" type="text/css" rel="stylesheet">
-    <script src="userManagement.js"></script>
-    <script src="error.js"></script>
+    <link href="/visualization/main.css" type="text/css" rel="stylesheet">
+    <script src="/usermanagement/userManagement.js"></script>
+    <script src="/visualization/error.js"></script>
 <style>
     #cy {
         width: 100%;
@@ -337,8 +337,8 @@
       return;
     }
     var dimension = displayedDimension;
-    if (displayedDimension == DEFAULT_DIMENSION_NAME) var saveURL = 'saveMajorPositions';
-    else var saveURL = 'savePositions';
+    if (displayedDimension == DEFAULT_DIMENSION_NAME) var saveURL = '/taxonomybuilder/saveMajorPositions';
+    else var saveURL = '/taxonomybuilder/savePositions';
     var positions = [];
     cy.$('.parent,.child').forEach ( function ( node ) {
       var table = node.data('table');
@@ -393,7 +393,7 @@
         return;
       }
       var previousName = ele.data('id');
-      var renameURL = (ele.data('table') == 'dimension') ? 'renameDimension' : 'renameAttribute';
+      var renameURL = (ele.data('table') == 'dimension') ? '/taxonomybuilder/renameDimension' : '/taxonomybuilder/renameAttribute';
       if (!admin) {
         $('#defaultModalButton').prop('disabled', false);
         $('#default-modal').modal('hide');
@@ -460,7 +460,7 @@
         $.ajax
           ({
             type: "POST",
-            url: 'changeDimension',
+            url: '/taxonomybuilder/changeDimension',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -503,7 +503,7 @@
       $.ajax
         ({
           type: "POST",
-          url: 'updateMajor',
+          url: '/taxonomybuilder/updateMajor',
           dataType: 'json',
           contentType:'application/json',
           async: true,
@@ -538,7 +538,7 @@
     $.ajax
       ({
           type: "POST",
-          url: 'addAttribute',
+          url: '/taxonomybuilder/addAttribute',
           dataType: 'json',
           contentType:'application/json',
           async: true,
@@ -573,7 +573,7 @@
     $.ajax
       ({
           type: "POST",
-          url: 'removeAttribute',
+          url: '/taxonomybuilder/removeAttribute',
           dataType: 'json',
           contentType:'application/json',
           async: true,
@@ -666,7 +666,7 @@
         $.ajax
           ({
               type: "POST",
-              url: 'addAttribute',
+              url: '/taxonomybuilder/addAttribute',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -715,7 +715,7 @@
         $.ajax
           ({
               type: "POST",
-              url: 'addDimension',
+              url: '/taxonomybuilder/addDimension',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -743,7 +743,7 @@
       var removePromise = new Promise ( function ( resolve, reject ) {
         var selectedID = selected.id();
         var selectedTable = selected.data('table');
-        var removeURL = (selectedTable == 'dimension') ? 'removeDimension' : 'removeAttribute';
+        var removeURL = (selectedTable == 'dimension') ? '/taxonomybuilder/removeDimension' : '/taxonomybuilder/removeAttribute';
         if (!admin) resolve();
         else {
           $.ajax
@@ -806,7 +806,7 @@
     $.ajax
       ({
           type: "POST",
-          url: 'mergeAttributes',
+          url: '/taxonomybuilder/mergeAttributes',
           dataType: 'json',
           contentType:'application/json',
           async: true,
@@ -952,7 +952,7 @@
     $.ajax
       ({
         type: "POST",
-        url: 'citation',
+        url: '/analysis/citation',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -965,7 +965,7 @@
           $.ajax
             ({
               type: "POST",
-              url: 'citationsPerAttribute',
+              url: '/analysis/citationsPerAttribute',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -979,7 +979,7 @@
                   $.ajax
                     ({
                       type: "POST",
-                      url: 'updateCitationMapping',
+                      url: '/taxonomybuilder/updateCitationMapping',
                       dataType: 'json',
                       contentType:'application/json',
                       async: true,
@@ -1025,7 +1025,7 @@
             $.ajax
               ({
                   type: "POST",
-                  url: 'parentRelationsPerAttribute',
+                  url: '/analysis/parentRelationsPerAttribute',
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
@@ -1038,7 +1038,7 @@
                     $.ajax
                       ({
                           type: "POST",
-                          url: 'citationsPerAttribute',
+                          url: '/analysis/citationsPerAttribute',
                           dataType: 'json',
                           contentType:'application/json',
                           async: true,
@@ -1058,7 +1058,7 @@
                                   $.ajax
                                     ({
                                         type: "POST",
-                                        url: 'forkAttribute',
+                                        url: '/taxonomybuilder/forkAttribute',
                                         dataType: 'json',
                                         contentType:'application/json',
                                         async: true,
@@ -1127,7 +1127,7 @@
         $.ajax
           ({
               type: "POST",
-              url: 'updateTaxonomyRelationAnnotation',
+              url: '/taxonomybuilder/updateTaxonomyRelationAnnotation',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -1157,7 +1157,7 @@
           $.ajax
             ({
               type: "POST",
-              url: 'removeTaxonomyRelation',
+              url: '/taxonomybuilder/removeTaxonomyRelation',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -1218,7 +1218,7 @@
             $.ajax
               ({
                   type: "POST",
-                  url: 'citationsPerAttributeIncludingChildren',
+                  url: '/analysis/citationsPerAttributeIncludingChildren',
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
@@ -1457,7 +1457,7 @@
             $.ajax
               ({
                   type: "POST",
-                  url: 'updateTaxonomyRelationType',
+                  url: '/taxonomybuilder/updateTaxonomyRelationType',
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
@@ -1673,7 +1673,7 @@
         $.ajax
           ({
               type: "POST",
-              url: 'addTaxonomyRelation',
+              url: '/taxonomybuilder/addTaxonomyRelation',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -1806,7 +1806,7 @@
             $.ajax
               ({
                   type: "POST",
-                  url: 'saveEdgeBendPoints',
+                  url: '/taxonomybuilder/saveEdgeBendPoints',
                   dataType: 'json',
                   contentType:'application/json',
                   async: true,
@@ -1904,7 +1904,7 @@
           $.ajax
             ({
               type: "POST",
-              url: 'getTaxonomyID',
+              url: '/taxonomybuilder/getTaxonomyID',
               dataType: 'json',
               contentType:'application/json',
               async: true,

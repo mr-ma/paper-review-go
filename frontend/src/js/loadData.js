@@ -1,7 +1,6 @@
 // functions used to load data from the database
 
   function showDimension ( dimension, useCY ) {
-    console.log("showing dimension: " + dimension)
     var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
     var relationTypes = DYNAMIC_ARRAY[STATIC_INDEX_RELATIONTYPES];
     var citationCounts = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNTS];
@@ -39,7 +38,7 @@
           $.ajax
             ({
               type: "POST",
-              url: 'dimension',
+              url: '/analysis/dimension',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -63,7 +62,7 @@
                     $.ajax
                       ({
                         type: "POST",
-                        url: 'attributesPerDimension',
+                        url: '/analysis/attributesPerDimension',
                         dataType: 'json',
                         contentType:'application/json',
                         async: true,
@@ -85,7 +84,7 @@
                     $.ajax
                       ({
                           type: "POST",
-                          url: 'attributeRelations',
+                          url: '/analysis/attributeRelations',
                           dataType: 'json',
                           contentType:'application/json',
                           async: true,
@@ -138,7 +137,7 @@
           $.ajax
           ({
               type: "POST",
-              url: 'interdimensionalRelations',
+              url: '/analysis/interdimensionalRelations',
               dataType: 'json',
               contentType:'application/json',
               async: true,
@@ -155,7 +154,7 @@
         });
         promises.push(getInterdimensionalRelationsPromise);
         var getRelationTypesPromise = new Promise ( function ( resolve, reject ) {
-          $.get('relationTypes', function ( relationTypes ) {
+          $.get('/analysis/relationTypes', function ( relationTypes ) {
             if (!relationTypes) {
               reject('Cannot get relation types from DB.');
               return;
@@ -197,7 +196,6 @@
             });
             results.forEach ( function ( result ) {
               if (result.name == 'DIMENSIONDATA') {
-                console.log('dim data: ', result.value)
                 result.value.forEach ( function ( dimensionData ) {
                   if (dimensionData.name == 'ATTRIBUTESPERDIMENSION') DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESPERDIMENSION][dimensionData.value.index] = dimensionData.value.value;
                   else DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTERELATIONS][dimensionData.value.index] = dimensionData.value.value;

@@ -12,29 +12,6 @@
 	  return result;
 	}
 
-	function uploadFiles ( files, callback ) {
-		var formData = new FormData();
-		for ( var i = 0; i < files.length; i++ ) {
-			formData.append('file', files[i], files[i].name);
-		}
-		$.ajax({
-		  url: '/upload',
-		  type: 'POST',
-		  data: formData,
-		  contentType: "application/pdf",
-		  processData: false,
-		  contentType: false,
-		  success: function ( result ) {
-	        if (!result || !result.response || !result.response.success) {
-	          handleError('Cannot upload files to server.');
-	          return;
-	        }
-	        console.log('File upload successful.');
-	        if (!!callback) callback();
-		  }
-		});
-	}
-
 	function readTextHelper ( pdf, maxPages ){
 	     var countPromises = [];
 	     for (var j = 1; j <= maxPages; j++) {

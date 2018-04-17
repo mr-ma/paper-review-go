@@ -8,18 +8,18 @@
     <title>Review Screen</title>
 
 
-    <link href="bootstrap.min.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
- 	<script src="jquery.min.js"></script>
-    <script src="bootstrap.min.js"></script>
-    <script src="scripts.js"></script>
+    <link href="/visualization/bootstrap.min.css" rel="stylesheet">
+    <link href="/visualization/style.css" rel="stylesheet">
+ 	<script src="/visualization/jquery.min.js"></script>
+    <script src="/visualization/bootstrap.min.js"></script>
+    <script src="/visualization/scripts.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
-    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+    <link href="/visualization/bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="/visualization/bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
 
-    <link href="main.css" type="text/css" rel="stylesheet">
-    <script src="userManagement.js"></script>
-    <script src="error.js"></script>
+    <link href="/visualization/main.css" type="text/css" rel="stylesheet">
+    <script src="/usermanagement/userManagement.js"></script>
+    <script src="/visualization/error.js"></script>
 
 		<script>
 		const DEFAULT_TAXONOMY_ID = 1;
@@ -44,12 +44,11 @@ function getReview() {
 var researchID = urlParam('researchID');
 var mitID =  urlParam('id');
 
-  $.getJSON( "review/"+researchID+"/"+mitID+"/1", {
+  $.getJSON( "/paperreview/review/"+researchID+"/"+mitID+"/1", {
     format: "json"
   })
     .done(function( data ) {
 	data = data.response;
-	console.log("data: ", data)
 	//console.log('response contains: '+data.length);
 
       $.each( data, function( i, item ) {
@@ -124,7 +123,7 @@ var newTag = $("#newTag").val();
 
 $.ajax({
   type: "POST",
-  url: "vote",
+  url: "/paperreview/vote",
   data: requestJson,
   dataType: "json",
   contentType: "application/json; charset=utf-8",
@@ -165,7 +164,7 @@ function urlParam(name){
 
 
    function PopulateCheckBoxList() {
-  $.getJSON( "tag/"+urlParam('researchID'), {
+  $.getJSON( "/paperreview/tag/"+urlParam('researchID'), {
     format: "json"
   })
     .done(function( data ) {
@@ -206,7 +205,7 @@ function urlParam(name){
 
 
  function PopulateStats() {
-  $.getJSON( "review/stats/"+urlParam('researchID')+"/"+urlParam('id'), {
+  $.getJSON( "/paperreview/review/stats/"+urlParam('researchID')+"/"+urlParam('id'), {
     format: "json"
   })
     .done(function( data ) {

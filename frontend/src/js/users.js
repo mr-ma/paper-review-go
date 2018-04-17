@@ -46,7 +46,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
         $.ajax
           ({
             type: "POST",
-            url: 'createUser',
+            url: '/usermanagement/createUser',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -73,7 +73,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
       $.ajax
         ({
           type: "POST",
-          url: 'updateUser',
+          url: '/usermanagement/updateUser',
           dataType: 'json',
           contentType:'application/json',
           async: true,
@@ -152,7 +152,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 	      $.ajax
 	        ({
 	            type: "POST",
-	            url: 'taxonomyPermissions',
+	            url: '/usermanagement/taxonomyPermissions',
 	            dataType: 'json',
 	            contentType:'application/json',
 	            async: true,
@@ -163,8 +163,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 			      	taxonomyPermissions.forEach ( function ( taxonomyPermission ) {
 			      		taxonomyIDs.push(taxonomyPermission.id);
 			      	});
-			      	console.log("permissions: ", taxonomyIDs);
-				      $.get('taxonomy', function ( taxonomies ) {
+				      $.get('/taxonomybuilder/taxonomy', function ( taxonomies ) {
 				      	if (!taxonomies) {
 				      		var msg = 'Error loading taxonomies.';
 				      		//if (!!handleErrorHelper) handleErrorHelper(msg);
@@ -219,7 +218,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 								    $.ajax
 								        ({
 								          type: "POST",
-								          url: 'updateTaxonomyPermissions',
+								          url: '/usermanagement/updateTaxonomyPermissions',
 								          dataType: 'json',
 								          contentType:'application/json',
 								          async: true,
@@ -253,7 +252,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 	        $.ajax
 	          ({
 	            type: "POST",
-	            url: 'deleteUser',
+	            url: '/usermanagement/deleteUser',
 	            dataType: 'json',
 	            contentType:'application/json',
 	            async: true,
@@ -277,7 +276,7 @@ var settings = 'glyphicon glyphicon-cog taxonomySettings';
 	
 	function initUsers() {
 		$('#add').prop('disabled', false);
-		$.get("getUsers",function( data ) {
+		$.get("/usermanagement/getUsers",function( data ) {
 		 	if (!data) {
 		 		handleError('Cannot get users from DB.');
 		 		return;

@@ -8,23 +8,23 @@
     <title>Approve Screen</title>
 
 
-    <link href="bootstrap.min.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
- 	<script src="jquery.min.js"></script>
-    <script src="bootstrap.min.js"></script>
-    <script src="scripts.js"></script>
+    <link href="/visualization/bootstrap.min.css" rel="stylesheet">
+    <link href="/visualization/style.css" rel="stylesheet">
+ 	<script src="/visualization/jquery.min.js"></script>
+    <script src="/visualization/bootstrap.min.js"></script>
+    <script src="/visualization/scripts.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
-    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+    <link href="/visualization/bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="/visualization/bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
 
-	<link href="/bootstrap-table.css" rel="stylesheet" type="text/css"> 
-	<script src="/bootstrap-table.js"></script>
+	<link href="/visualization/bootstrap-table.css" rel="stylesheet" type="text/css"> 
+	<script src="/visualization/bootstrap-table.js"></script>
 
-    <script src="tables.js"></script>
+    <script src="/visualization/tables.js"></script>
 
-    <link href="main.css" type="text/css" rel="stylesheet">
-    <script src="userManagement.js"></script>
-    <script src="error.js"></script>
+    <link href="/visualization/main.css" type="text/css" rel="stylesheet">
+    <script src="/usermangement/userManagement.js"></script>
+    <script src="/visualization/error.js"></script>
 
 		<script>
 		const DEFAULT_TAXONOMY_ID = 1;
@@ -105,7 +105,7 @@ function listReviews () {
     $.ajax
       ({
         type: "POST",
-        url: 'dimension',
+        url: '/analysis/dimension',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -120,7 +120,7 @@ function listReviews () {
 		    $.ajax
 		      ({
 		        type: "POST",
-		        url: 'getReviewList',
+		        url: '/paperreview/getReviewList',
 		        dataType: 'json',
 		        contentType:'application/json',
 		        async: true,
@@ -185,7 +185,7 @@ function saveReviewMappings() {
 	$.ajax
 	  ({
 	    type: "POST",
-	    url: 'attributesByName',
+	    url: '/analysis/attributesByName',
 	    dataType: 'json',
 	    contentType:'application/json',
 	    async: true,
@@ -212,7 +212,7 @@ function saveReviewMappings() {
 					    $.ajax
 					      ({
 					        type: "POST",
-					        url: 'dimension',
+					        url: '/analysis/dimension',
 					        dataType: 'json',
 					        contentType:'application/json',
 					        async: true,
@@ -238,7 +238,7 @@ function saveReviewMappings() {
 					    $.ajax
 					      ({
 					        type: "POST",
-					        url: 'saveReviewMappings',
+					        url: '/paperreview/saveReviewMappings',
 					        dataType: 'json',
 					        contentType:'application/json',
 					        async: true,
@@ -276,7 +276,7 @@ function deleteArticleVotes () {
 		$.ajax
 		  ({
 		    type: "POST",
-		    url: 'deleteArticleVotes',
+		    url: '/paperreview/deleteArticleVotes',
 		    dataType: 'json',
 		    contentType:'application/json',
 		    async: true,

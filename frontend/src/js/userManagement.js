@@ -23,7 +23,7 @@ function validateEmail(email) {
       $.ajax
         ({
             type: "POST",
-            url: 'addTaxonomy',
+            url: '/taxonomybuilder/addTaxonomy',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -45,11 +45,10 @@ function validateEmail(email) {
   }
 
   function getUser ( resolve, reject ){
-    console.log('login')
     $.ajax
       ({
         type: "POST",
-        url: 'login',
+        url: '/usermangement/login',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -84,8 +83,8 @@ function validateEmail(email) {
       if (!!resolve) resolve();
       return;
     }
-    if (user.admin == 1) var navbarPath = '/navbarAdmin.html';
-    else var navbarPath = '/navbar.html';
+    if (user.admin == 1) var navbarPath = '/visualization/navbarAdmin.html';
+    else var navbarPath = '/visualization/navbar.html';
     $.get(navbarPath, function (data ) {
       $('.navbar').replaceWith(data);
       loadNavbarFields(user);
@@ -97,7 +96,7 @@ function validateEmail(email) {
         if (!!link && link != '' && link.split('javascript').length <= 1) window.location.href = window.location.origin + link + hash
       });
       $('#taxonomyDropdown').html('');
-      $.get('taxonomy', function ( taxonomies ) {
+      $.get('/taxonomybuilder/taxonomy', function ( taxonomies ) {
         if (!!taxonomies && !!taxonomies.response) {
           $('#taxonomyDropdown').append('<li><table class="table" style="max-height:500px;overflow-y:auto;"><thead><tr><th>Taxonomies</th><th></th></tr></thead><tbody>');
           taxonomies.response.forEach ( function ( taxonomy ) {
@@ -115,7 +114,7 @@ function validateEmail(email) {
                 $.ajax
                   ({
                       type: "POST",
-                      url: 'removeTaxonomy',
+                      url: '/taxonomybuilder/removeTaxonomy',
                       dataType: 'json',
                       contentType:'application/json',
                       async: true,
@@ -155,7 +154,7 @@ function validateEmail(email) {
   }
 
   function loadModals ( user, resolve, reject ) {
-    $.get('modals.html', function (data ) {
+    $.get('/visualization/modals.html', function (data ) {
       $('.modals').replaceWith(data);
       $('.close-btn').unbind().click( function () {
         $(this).parent().parent().parent().modal('hide');
@@ -175,7 +174,7 @@ function validateEmail(email) {
         $.ajax
           ({
             type: "POST",
-            url: 'login',
+            url: '/usermangement/login',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -214,7 +213,7 @@ function validateEmail(email) {
         $.ajax
           ({
             type: "POST",
-            url: 'saveUser',
+            url: '/usermangement/saveUser',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -263,7 +262,7 @@ function validateEmail(email) {
         $.ajax
           ({
             type: "POST",
-            url: 'getTaxonomyID',
+            url: '/taxonomybuilder/getTaxonomyID',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -318,7 +317,7 @@ function validateEmail(email) {
           $.ajax
             ({
               type: "POST",
-              url: 'logout',
+              url: '/usermangement/logout',
               dataType: 'json',
               contentType:'application/json',
               async: true,

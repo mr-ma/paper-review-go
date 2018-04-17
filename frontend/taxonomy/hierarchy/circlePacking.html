@@ -2,34 +2,34 @@
 <html>
 <head>
     <title>Circle Packing</title>
-    <script src="jquery.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="d3.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
-    <script src="d3-hierarchy.v1.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-hierarchy/1.1.5/d3-hierarchy.min.js"></script>
+    <script src="/visualization/jquery.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/visualization/d3.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="/visualization/d3-hierarchy.v1.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-hierarchy/1.1.5/d3-hierarchy.min.js"></script>
 
-    <link href="bootstrap.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
-    <script src="bootstrap.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="/visualization/bootstrap.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="/visualization/bootstrap.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
-    <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+    <link href="/visualization/bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="/visualization/bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
 
-    <script src="multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
+    <script src="/visualization/multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
 
-    <link href="d3-context-menu.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
-    <script src="d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
+    <link href="/visualization/d3-context-menu.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
+    <script src="/visualization/d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
 
-    <link href="d3-tip.css" type="text/css" rel="stylesheet" data-web="https://rawgit.com/Caged/d3-tip/master/examples/example-styles.css">
-    <script src="d3-tip.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.js"></script>
+    <link href="/visualization/d3-tip.css" type="text/css" rel="stylesheet" data-web="https://rawgit.com/Caged/d3-tip/master/examples/example-styles.css">
+    <script src="/visualization/d3-tip.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.js"></script>
 
-    <script src="bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
+    <script src="/visualization/bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
 
-    <script src="FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+    <script src="/visualization/FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
 
-    <script src="loadData.js"></script>
-    <script src="exportHTML.js"></script>
+    <script src="/analysis/loadData.js"></script>
+    <script src="/visualization/exportHTML.js"></script>
 
-    <link href="main.css" type="text/css" rel="stylesheet">
-    <script src="userManagement.js"></script>
-    <script src="error.js"></script>
+    <link href="/visualization/main.css" type="text/css" rel="stylesheet">
+    <script src="/usermangement/userManagement.js"></script>
+    <script src="/visualization/error.js"></script>
     <style>
 
     .node {
@@ -321,7 +321,7 @@
     $.ajax
       ({
         type: "POST",
-        url: 'citationsPerAttribute',
+        url: '/analysis/citationsPerAttribute',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -571,7 +571,7 @@
           $.ajax
             ({
               type: "POST",
-              url: 'getTaxonomyID',
+              url: '/taxonomybuilder/getTaxonomyID',
               dataType: 'json',
               contentType:'application/json',
               async: true,

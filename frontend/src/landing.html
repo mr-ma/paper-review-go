@@ -10,19 +10,19 @@
     <meta name="description" content="Source code generated using layoutit.com">
     <meta name="author" content="LayoutIt!">
 
-    <link href="bootstrap.min.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
+    <link href="/visualization/bootstrap.min.css" rel="stylesheet">
+    <link href="/visualization/style.css" rel="stylesheet">
 	
-	<script src="jquery.min.js"></script>
-    <script src="bootstrap.min.js"></script>
-    <script src="scripts.js"></script>
+	<script src="/visualization/jquery.min.js"></script>
+    <script src="/visualization/bootstrap.min.js"></script>
+    <script src="/visualization/scripts.js"></script>
 
-    <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet">
-    <script src="bootstrap-dialog.min.js"></script>
+    <link href="/visualization/bootstrap-dialog.min.css" type="text/css" rel="stylesheet">
+    <script src="/visualization/bootstrap-dialog.min.js"></script>
 
-    <link href="main.css" type="text/css" rel="stylesheet">
-    <script src="userManagement.js"></script>
-    <script src="error.js"></script>
+    <link href="/visualization/main.css" type="text/css" rel="stylesheet">
+    <script src="/usermanagement/userManagement.js"></script>
+    <script src="/visualization/error.js"></script>
 	
 <script>
 	  const DEFAULT_TAXONOMY_ID = 1;
@@ -41,7 +41,7 @@ function getSelectedResearch() {
 	  }
 
 function initResearchOptions () {
-	  $.getJSON( "user", {
+	  $.getJSON( "/usermanagement/user", {
 	    format: "json"
 	  })
 	    .done(function( data ) {
@@ -79,7 +79,7 @@ function initResearchOptions () {
 }
 
  function PopulateResearchList( callback ) {
-  $.getJSON( "research", {
+  $.getJSON( "/paperreview/research", {
     format: "json"
   })
     .done(function( data ) {
@@ -102,7 +102,7 @@ function initResearchOptions () {
    
     function PopulateStats() {
   
-  $.getJSON( "review/stats/"+getSelectedResearch(), {
+  $.getJSON( "/paperreview/review/stats/"+getSelectedResearch(), {
     format: "json"
   })
     .done(function( data ) {

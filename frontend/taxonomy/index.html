@@ -15,12 +15,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.js"></script>
 
-  <link href="bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
-  <script src="bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+  <link href="/visualization/bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+  <script src="/visualization/bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
 
-  <link href="main.css" type="text/css" rel="stylesheet">
-  <script src="userManagement.js"></script>
-  <script src="error.js"></script>
+  <link href="/visualization/main.css" type="text/css" rel="stylesheet">
+  <script src="/usermanagement/userManagement.js"></script>
+  <script src="/visualization/error.js"></script>
 <style>
 .embed-responsive {
     position: relative;
@@ -65,7 +65,7 @@ $(function() {
     ({
         type: "POST",
         //the url where you want to sent the userName and password to
-        url: 'attribute',
+        url: '/analysis/attribute',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -158,7 +158,7 @@ function downloadAllCitations(){
     ({
         type: "POST",
         //the url where you want to sent the userName and password to
-        url: 'citation',
+        url: '/analysis/citation',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -238,7 +238,7 @@ function correlateReport(){
     ({
         type: "POST",
         //the url where you want to sent the userName and password to
-        url: 'correlation',
+        url: '/analysis/correlation',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -262,8 +262,8 @@ function correlateReport(){
   <div class="row">
       <div class="col-md-4">
         <div class="thumbnail">
-          <a href="/pdf/attack" target="_blank">
-            <img src="/png/attack.png" alt="Attack" style="width:100%">
+          <a href="/visualization/pdf/attack" target="_blank">
+            <img src="/visualization/png/attack.png" alt="Attack" style="width:100%">
             <div class="caption">
               <p>Attack dimension.</p>
             </div>
@@ -272,8 +272,8 @@ function correlateReport(){
       </div>
       <div class="col-md-4">
         <div class="thumbnail">
-            <a href="/pdf/defense" target="_blank">
-            <img src="/png/defense.png" alt="Defense" style="width:100%">
+            <a href="/visualization/pdf/defense" target="_blank">
+            <img src="/visualization/png/defense.png" alt="Defense" style="width:100%">
             <div class="caption">
               <p>Defense dimension.</p>
             </div>
@@ -282,8 +282,8 @@ function correlateReport(){
       </div>
       <div class="col-md-4">
         <div class="thumbnail">
-            <a href="/pdf/system" target="_blank">
-            <img src="/png/system.png" alt="System" style="width:100%">
+            <a href="/visualization/pdf/system" target="_blank">
+            <img src="/visualization/png/system.png" alt="System" style="width:100%">
             <div class="caption">
               <p>System dimension.</p>
             </div>
@@ -292,8 +292,8 @@ function correlateReport(){
       </div>
       <div class="col-md-4">
         <div class="thumbnail">
-            <a href="/pdf/relations" target="_blank">
-            <img src="/png/relations.png" alt="Relations" style="width:100%">
+            <a href="/visualization/pdf/relations" target="_blank">
+            <img src="/visualization/png/relations.png" alt="Relations" style="width:100%">
             <div class="caption">
               <p>Relations among dimensions.</p>
             </div>
