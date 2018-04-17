@@ -11,15 +11,15 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"./data"
-	"./model"
+	"../data"
+	"../model"
 	"github.com/alexedwards/scs"
+	"github.com/alexedwards/scs/stores/mysqlstore"
 	"github.com/rcrowley/go-tigertonic"
 )
 
@@ -52,16 +52,20 @@ var (
 	listen        = flag.String("listen", "127.0.0.1:8004", "listen address")
 )
 
-var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+var sessionManager *scs.Manager
 var paperReviewDriver data.PaperReviewDriver
 
 func main() {
-	sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
-	sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
-	//sessionManager.Secure(true)
 	flag.Parse()
 
 	paperReviewDriver = data.InitPaperReviewDriver(*mysqlUser, *mysqlPassword, *mysqlServer)
+	dbRef, err := paperReviewDriver.OpenDB()
+	if err == nil {
+		sessionManager = scs.NewManager(mysqlstore.New(dbRef, 600000000000))
+		sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
+		sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
+		//sessionManager.Secure(true)
+	}
 
 	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)
 
@@ -100,15 +104,15 @@ func main() {
 	})
 
 	mux.HandleFunc("GET", "/paperreview/review", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/review.html")
+		p := loadPage("../frontend/src/review.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/paperreview/landing", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/landing.html")
+		p := loadPage("../frontend/src/landing.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/paperreview/approve", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/approve.html")
+		p := loadPage("../frontend/src/approve.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 

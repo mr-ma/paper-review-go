@@ -11,15 +11,15 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"./data"
-	"./model"
+	"../data"
+	"../model"
 	"github.com/alexedwards/scs"
+	"github.com/alexedwards/scs/stores/mysqlstore"
 	"github.com/rcrowley/go-tigertonic"
 )
 
@@ -52,16 +52,20 @@ var (
 	listen        = flag.String("listen", "127.0.0.1:8006", "listen address")
 )
 
-var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+var sessionManager *scs.Manager
 var classificationDriver data.ClassificationDriver
 
 func main() {
-	sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
-	sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
-	//sessionManager.Secure(true)
 	flag.Parse()
 
 	classificationDriver = data.InitClassificationDriver(*mysqlUser, *mysqlPassword, *mysqlServer)
+	dbRef, err := classificationDriver.OpenDB()
+	if err == nil {
+		sessionManager = scs.NewManager(mysqlstore.New(dbRef, 600000000000))
+		sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
+		sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
+		//sessionManager.Secure(true)
+	}
 
 	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)
 
@@ -110,12 +114,12 @@ func main() {
 	mux.Handle("POST", "/analysis/kMeans", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getKMeansHandler), "getKMeansHandler", nil)))
 
 	mux.HandleFunc("GET", "/analysis/loadData.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/loadData.js")
+		p := loadPage("../frontend/src/js/loadData.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 
 	mux.HandleFunc("GET", "/analysis/scopus", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/scopus/scopusAPI.html")
+		p := loadPage("../frontend/taxonomy/scopus/scopusAPI.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 

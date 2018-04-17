@@ -8,18 +8,17 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"./data"
-	"./model"
+	"../data"
+	"../model"
 	"github.com/alexedwards/scs"
+	"github.com/alexedwards/scs/stores/mysqlstore"
 	"github.com/rcrowley/go-tigertonic"
 )
 
@@ -52,24 +51,26 @@ var (
 	listen        = flag.String("listen", "127.0.0.1:8002", "listen address")
 )
 
-var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+var sessionManager *scs.Manager
 var usermanagementDriver data.UsermanagementDriver
 
 func main() {
-	sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
-	sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
-	//sessionManager.Secure(true)
 	flag.Parse()
 
 	usermanagementDriver = data.InitUsermanagementDriver(*mysqlUser, *mysqlPassword, *mysqlServer)
-
-	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)
+	dbRef, err := usermanagementDriver.OpenDB()
+	if err == nil {
+		sessionManager = scs.NewManager(mysqlstore.New(dbRef, 600000000000))
+		sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
+		sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
+		//sessionManager.Secure(true)
+	}
 
 	mux := tigertonic.NewTrieServeMux()
 
 	// user and access management:
 
-	mux.HandleFunc("POST", "/usermangement/login", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/login", func(w http.ResponseWriter, r *http.Request) {
 		var loginRequest model.LoginRequest
 		if r.Body == nil {
 			http.Error(w, "Please send a request body", 400)
@@ -138,7 +139,7 @@ func main() {
 		w.Header().Set("content-type", "application/json")
 		w.Write(output)
 	})
-	mux.HandleFunc("POST", "/usermangement/logout", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/logout", func(w http.ResponseWriter, r *http.Request) {
 		session := sessionManager.Load(r)
 		err := session.Destroy(w)
 		result := model.Result{}
@@ -155,7 +156,7 @@ func main() {
 		w.Header().Set("content-type", "application/json")
 		w.Write(output)
 	})
-	mux.HandleFunc("POST", "/usermangement/saveUser", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/saveUser", func(w http.ResponseWriter, r *http.Request) {
 		var loginRequest model.LoginRequest
 		if r.Body == nil {
 			http.Error(w, "Please send a request body", 400)
@@ -195,54 +196,54 @@ func main() {
 		w.Header().Set("content-type", "application/json")
 		w.Write(output)
 	})
-	mux.HandleFunc("GET", "/usermangement/user", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET", "/usermanagement/user", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getUserHandler)
 	})
-	mux.HandleFunc("GET", "/usermangement/getUsers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET", "/usermanagement/getUsers", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getUsersHandler)
 	})
-	mux.HandleFunc("POST", "/usermangement/query", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/query", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, queryHandler)
 	})
-	mux.HandleFunc("POST", "/usermangement/createUser", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/createUser", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, createUserHandler)
 	})
-	mux.HandleFunc("POST", "/usermangement/updateUser", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/updateUser", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, updateUserHandler)
 	})
-	mux.HandleFunc("POST", "/usermangement/deleteUser", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/deleteUser", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, deleteUserHandler)
 	})
-	mux.HandleFunc("POST", "/usermangement/taxonomyPermissions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/taxonomyPermissions", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getTaxonomyPermissionsHandler)
 	})
-	mux.HandleFunc("POST", "/usermangement/updateTaxonomyPermissions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST", "/usermanagement/updateTaxonomyPermissions", func(w http.ResponseWriter, r *http.Request) {
 		checkAdmin(w, r, getUpdateTaxonomyPermissionsHandler)
 	})
 
-	mux.HandleFunc("GET", "/usermangement/users", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/users/users.html")
+	mux.HandleFunc("GET", "/usermanagement/users", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("../frontend/taxonomy/users/users.html")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/usermangement/modals.html", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/users/modals.html")
+	mux.HandleFunc("GET", "/usermanagement/modals.html", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("../frontend/taxonomy/users/modals.html")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/usermangement/navbar.html", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/users/navbar.html")
+	mux.HandleFunc("GET", "/usermanagement/navbar.html", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("../frontend/taxonomy/users/navbar.html")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/usermangement/navbarAdmin.html", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/users/navbarAdmin.html")
+	mux.HandleFunc("GET", "/usermanagement/navbarAdmin.html", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("../frontend/taxonomy/users/navbarAdmin.html")
 		fmt.Fprintf(w, "%s", p)
 	})
 
-	mux.HandleFunc("GET", "/usermangement/users.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/users.js")
+	mux.HandleFunc("GET", "/usermanagement/users.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("../frontend/src/js/users.js")
 		fmt.Fprintf(w, "%s", p)
 	})
-	mux.HandleFunc("GET", "/usermangement/userManagement.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/userManagement.js")
+	mux.HandleFunc("GET", "/usermanagement/userManagement.js", func(w http.ResponseWriter, r *http.Request) {
+		p := loadPage("../frontend/src/js/userManagement.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 
@@ -537,7 +538,7 @@ func getTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
-	result, err := taxonomyBuilderDriver.GetTaxonomyPermissions(userRequest.Email)
+	result, err := usermanagementDriver.GetTaxonomyPermissions(userRequest.Email)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {
@@ -561,7 +562,7 @@ func getUpdateTaxonomyPermissionsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	//driver := data.InitClassificationDriver(*mysqlUser, *mysqlPassword)
-	result, err := taxonomyBuilderDriver.UpdateTaxonomyPermissions(taxonomyPermissionsRequest.Email, taxonomyPermissionsRequest.Permissions)
+	result, err := usermanagementDriver.UpdateTaxonomyPermissions(taxonomyPermissionsRequest.Email, taxonomyPermissionsRequest.Permissions)
 	checkErr(err)
 	output, err := json.Marshal(result)
 	if err != nil {

@@ -2,6 +2,7 @@ package data
 
 import (
 	"strconv"
+	"strings"
 	//overriding MySqlDriver
 	//"github.com/go-sql-driver/mysql"
 	"../model"
@@ -17,6 +18,8 @@ type UsermanagementDriver interface {
 	DeleteUser(string) (model.Result, error)
 	GetUser(string) (model.User, error)
 	GetUsers() ([]model.User, error)
+	GetTaxonomyPermissions(string) ([]model.Taxonomy, error)
+	UpdateTaxonomyPermissions(string, string) (model.Result, error)
 }
 
 //InitMySQLDriver initialize a new my sql driver instance
@@ -163,4 +166,41 @@ func (d MySQLDriver) GetUsers() (users []model.User, err error) {
 	}
 	defer rows.Close()
 	return users, err
+}
+
+func (d MySQLDriver) GetTaxonomyPermissions(email string) (taxonomies []model.Taxonomy, err error) {
+	dbRef, err := d.OpenDB()
+	defer dbRef.Close()
+	checkErr(err)
+	db, stmt, err := d.Query("SELECT taxonomies FROM user WHERE email = ?;")
+	defer stmt.Close()
+	defer db.Close()
+	rows, err := stmt.Query(email)
+	checkErr(err)
+	var taxonomyPermissions string
+	taxonomyPermissions = ""
+	for rows.Next() {
+		rows.Scan(&taxonomyPermissions)
+	}
+	if taxonomyPermissions != "" {
+		array := strings.Split(taxonomyPermissions, ",")
+		for _, elem := range array {
+			id, err := strconv.Atoi(elem)
+			if err == nil {
+				a := model.Taxonomy{ID: id}
+				taxonomies = append(taxonomies, a)
+			}
+		}
+	}
+	defer rows.Close()
+	return taxonomies, err
+}
+
+func (d MySQLDriver) UpdateTaxonomyPermissions(email string, permissions string) (result model.Result, err error) {
+	dbRef, err := d.OpenDB()
+	defer dbRef.Close()
+	checkErr(err)
+	dbRef.Exec("UPDATE user SET taxonomies = ? WHERE email = ?;", permissions, email)
+	result.Success = true
+	return result, err
 }

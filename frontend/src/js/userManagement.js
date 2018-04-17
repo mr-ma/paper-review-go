@@ -48,7 +48,7 @@ function validateEmail(email) {
     $.ajax
       ({
         type: "POST",
-        url: '/usermangement/login',
+        url: '/usermanagement/login',
         dataType: 'json',
         contentType:'application/json',
         async: true,
@@ -174,7 +174,7 @@ function validateEmail(email) {
         $.ajax
           ({
             type: "POST",
-            url: '/usermangement/login',
+            url: '/usermanagement/login',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -213,7 +213,7 @@ function validateEmail(email) {
         $.ajax
           ({
             type: "POST",
-            url: '/usermangement/saveUser',
+            url: '/usermanagement/saveUser',
             dataType: 'json',
             contentType:'application/json',
             async: true,
@@ -317,7 +317,7 @@ function validateEmail(email) {
           $.ajax
             ({
               type: "POST",
-              url: '/usermangement/logout',
+              url: '/usermanagement/logout',
               dataType: 'json',
               contentType:'application/json',
               async: true,

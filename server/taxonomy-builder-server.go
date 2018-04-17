@@ -11,15 +11,15 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"./data"
-	"./model"
+	"../data"
+	"../model"
 	"github.com/alexedwards/scs"
+	"github.com/alexedwards/scs/stores/mysqlstore"
 	"github.com/rcrowley/go-tigertonic"
 )
 
@@ -52,16 +52,20 @@ var (
 	listen        = flag.String("listen", "127.0.0.1:8003", "listen address")
 )
 
-var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+var sessionManager *scs.Manager
 var taxonomyBuilderDriver data.TaxonomyBuilderDriver
 
 func main() {
-	sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
-	sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
-	//sessionManager.Secure(true)
 	flag.Parse()
 
 	taxonomyBuilderDriver = data.InitTaxonomyBuilderDriver(*mysqlUser, *mysqlPassword, *mysqlServer)
+	dbRef, err := taxonomyBuilderDriver.OpenDB()
+	if err == nil {
+		sessionManager = scs.NewManager(mysqlstore.New(dbRef, 600000000000))
+		sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
+		sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
+		//sessionManager.Secure(true)
+	}
 
 	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)
 
@@ -144,111 +148,111 @@ func main() {
 	})
 
 	mux.HandleFunc("GET", "/taxonomybuilder/zoomInIcon.png", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/icons/zoom_in_128.png")
+		p := loadPage("../frontend/src/icons/zoom_in_128.png")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/zoomOutIcon.png", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/icons/zoom_out_128.png")
+		p := loadPage("../frontend/src/icons/zoom_out_128.png")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/cytoscape.min.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/cytoscape.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/konva.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/konva.min.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/konva.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-undo-redo.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-undo-redo.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-undo-redo.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-clipboard.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-clipboard.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-clipboard.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-graphml.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-graphml.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-graphml.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-view-utilities.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-view-utilities.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-view-utilities.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-context-menus.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-context-menus.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-context-menus.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-context-menus.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-context-menus.css")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-context-menus.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-cxtmenu.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-cxtmenu.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-cxtmenu.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-autopan-on-drag.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-autopan-on-drag.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-autopan-on-drag.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-edge-bend-editing.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-edge-bend-editing.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-edge-bend-editing.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/CytoscapeEdgeEditation.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/CytoscapeEdgeEditation.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/CytoscapeEdgeEditation.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-edgehandles.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-edgehandles.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-edgehandles.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-expand-collapse.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-expand-collapse.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-expand-collapse.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape.js-navigator.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape.js-navigator.css")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape.js-navigator.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-navigator.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-navigator.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-navigator.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-node-resize.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-node-resize.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-node-resize.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-noderesize.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-noderesize.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-noderesize.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-panzoom.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-panzoom.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-panzoom.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape.js-panzoom.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape.js-panzoom.css")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape.js-panzoom.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/jquery.qtip.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/jquery.qtip.min.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/jquery.qtip.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/jquery.qtip.min.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/jquery.qtip.min.css")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/jquery.qtip.min.css")
 		w.Header().Add("Content-Type", "text/css")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-qtip.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-qtip.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-qtip.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/taxonomybuilder/cytoscape-snap-to-grid.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/taxonomy/cytoscape/extensions/cytoscape-snap-to-grid.js")
+		p := loadPage("../frontend/taxonomy/cytoscape/extensions/cytoscape-snap-to-grid.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 

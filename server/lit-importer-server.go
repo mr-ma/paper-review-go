@@ -8,18 +8,17 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"./data"
-	"./model"
+	"../data"
+	"../model"
 	"github.com/alexedwards/scs"
+	"github.com/alexedwards/scs/stores/mysqlstore"
 	"github.com/rcrowley/go-tigertonic"
 )
 
@@ -52,18 +51,20 @@ var (
 	listen        = flag.String("listen", "127.0.0.1:8005", "listen address")
 )
 
-var sessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+var sessionManager *scs.Manager
 var taxonomyBuilderDriver data.TaxonomyBuilderDriver
 
 func main() {
-	sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
-	sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
-	//sessionManager.Secure(true)
 	flag.Parse()
 
 	taxonomyBuilderDriver = data.InitTaxonomyBuilderDriver(*mysqlUser, *mysqlPassword, *mysqlServer)
-
-	cors := tigertonic.NewCORSBuilder().AddAllowedOrigins(*listen)
+	dbRef, err := taxonomyBuilderDriver.OpenDB()
+	if err == nil {
+		sessionManager = scs.NewManager(mysqlstore.New(dbRef, 600000000000))
+		sessionManager.Lifetime(time.Hour * 24) // session data expires after 24 hours
+		sessionManager.Persist(true)            // session data persists after the browser has been closed by the user
+		//sessionManager.Secure(true)
+	}
 
 	mux := tigertonic.NewTrieServeMux()
 
@@ -75,27 +76,27 @@ func main() {
 	})
 
 	mux.HandleFunc("GET", "/litimporter/stringComparison.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/stringComparison.js")
+		p := loadPage("../frontend/src/js/stringComparison.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/litimporter/pdf.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/libs/pdf.min.js")
+		p := loadPage("../frontend/src/js/libs/pdf.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/litimporter/pdf.worker.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/libs/pdf.worker.min.js")
+		p := loadPage("../frontend/src/js/libs/pdf.worker.min.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/litimporter/lodash.core.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/libs/lodash.core.js")
+		p := loadPage("../frontend/src/js/libs/lodash.core.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/litimporter/fileUploader.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/fileUploader.js")
+		p := loadPage("../frontend/src/js/fileUploader.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 	mux.HandleFunc("GET", "/litimporter/scopus.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("frontend/src/js/scopus.js")
+		p := loadPage("../frontend/src/js/scopus.js")
 		fmt.Fprintf(w, "%s", p)
 	})
 
