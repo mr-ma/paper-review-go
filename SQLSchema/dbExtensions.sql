@@ -249,3 +249,11 @@ BEGIN
   CLOSE cursor_i;
 END;
 ;;
+
+/* table used for go session management */
+CREATE TABLE sessions (
+  token CHAR(43) PRIMARY KEY,
+  data BLOB NOT NULL,
+  expiry TIMESTAMP(6) NOT NULL
+);
+CREATE INDEX sessions_expiry_idx ON sessions (expiry);
