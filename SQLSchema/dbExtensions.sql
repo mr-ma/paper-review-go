@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS user (
   id int(11) unsigned NOT NULL AUTO_INCREMENT,
   email varchar(128) NOT NULL,
   name varchar(128) NOT NULL,
-  password varchar(128) NOT NULL,
+  password varchar(500) NOT NULL,
   taxonomies varchar(500) DEFAULT "",
   admin tinyint(1) DEFAULT "0",
   PRIMARY KEY (id),
@@ -170,9 +170,9 @@ CREATE TABLE IF NOT EXISTS user (
 
 INSERT INTO user (email, name, password, admin)
   VALUES
-    ("mohsen.ahmadvand@tum.de", "Mohsen Ahmadvand", "123", 1),
-    ("amjad.ibrahim@tum.de", "Amjad Ibrahim", "123", 1),
-    ("felixhuber2@gmx.de", "Felix Huber", "123", 1);
+    ("mohsen.ahmadvand@tum.de", "Mohsen Ahmadvand", "$2a$04$hKTVDih.k.6OLco8yS6VUOPG7FnOmVwsqt2ndAcpFUdSfAFou8EKe", 1),
+    ("amjad.ibrahim@tum.de", "Amjad Ibrahim", "$04$2hLAXUOw1tTe6PFO7aVsZe24kB/E7qr5FV89RMQI3RALy06CkP8P2", 1),
+    ("felixhuber2@gmx.de", "Felix Huber", "$2a$04$cBAPLwaZoKR0yy8mpaEovOrIgxdZGdHJycU2XvoGOavSwDmZqxUbS", 1);
 
 /* foreign keys end */
 

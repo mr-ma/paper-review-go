@@ -317,6 +317,7 @@ type Result struct {
 type User struct {
 	ID         int    `json:"id"`
 	Email      string `json:"email"`
+	Password string `json:"password"`
 	Name       string `json:"name"`
 	Taxonomies string `json:"taxonomies"`
 	Admin      int    `json:"admin"`

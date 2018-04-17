@@ -7,6 +7,7 @@ FROM golang:1.8
 
 RUN go get github.com/rcrowley/go-tigertonic
 RUN go get github.com/alexedwards/scs
+RUN go get golang.org/x/crypto/bcrypt
 RUN go get github.com/Jeffail/gabs
 RUN go get github.com/stretchr/testify/assert
 RUN go get github.com/go-sql-driver/mysql

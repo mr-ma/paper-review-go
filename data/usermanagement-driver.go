@@ -3,6 +3,7 @@ package data
 import (
 	"strconv"
 	"strings"
+	"golang.org/x/crypto/bcrypt"
 	//overriding MySqlDriver
 	//"github.com/go-sql-driver/mysql"
 	"../model"
@@ -27,20 +28,36 @@ func InitUsermanagementDriver(user string, password string, server string) Userm
 	return MySQLDriver{username: user, pass: password, database: "classification", server: server}
 }
 
+// source: https://gowebexamples.com/password-hashing/
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost) // 14
+	return string(bytes), err
+}
+
+// source: https://gowebexamples.com/password-hashing/
+func CheckPasswordHash(password string, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
 func (d MySQLDriver) Login(email string, password string) (result model.LoginResult, err error) {
 	dbRef, err := d.OpenDB()
 	defer dbRef.Close()
 	checkErr(err)
-	db, stmt, err := d.Query("SELECT email, taxonomies, admin FROM user WHERE email = ? AND password = ?;")
+	db, stmt, err := d.Query("SELECT email, taxonomies, admin, password FROM user WHERE email = ?;")
 	defer stmt.Close()
 	defer db.Close()
-	rows, err := stmt.Query(email, password)
+	rows, err := stmt.Query(email)
 	checkErr(err)
 	if rows.Next() {
 		a := model.User{}
-		rows.Scan(&a.Email, &a.Taxonomies, &a.Admin)
-		result.Success = true
-		result.User = a
+		rows.Scan(&a.Email, &a.Taxonomies, &a.Admin, &a.Password)
+		if CheckPasswordHash(password, a.Password) {
+			result.Success = true
+			result.User = model.User{Email: a.Email, Taxonomies: a.Taxonomies, Admin: a.Admin}
+		} else {
+			result.Success = false
+		}
 	} else {
 		result.Success = false
 	}
@@ -83,8 +100,13 @@ func (d MySQLDriver) SaveUser(email string, password string) (result model.Resul
 		result.Success = false
 		return result, err
 	}
-	dbRef.Exec("INSERT IGNORE INTO user (email, name, password) VALUES (?, ?, ?);", email, email, password)
-	result.Success = true
+	hashedPW, err := HashPassword(password)
+	if err == nil {
+		dbRef.Exec("INSERT IGNORE INTO user (email, name, password) VALUES (?, ?, ?);", email, email, hashedPW)
+		result.Success = true
+	} else {
+		result.Success = false
+	}
 	return result, err
 }
 
@@ -107,8 +129,13 @@ func (d MySQLDriver) CreateUser(email string, password string, admin int) (resul
 		return result, err
 	}
 	adminStr := strconv.Itoa(admin)
-	dbRef.Exec("INSERT IGNORE INTO user (email, name, password, admin) VALUES (?, ?, ?, ?);", email, email, password, adminStr)
-	result.Success = true
+	hashedPW, err := HashPassword(password)
+	if err == nil {
+		dbRef.Exec("INSERT IGNORE INTO user (email, name, password, admin) VALUES (?, ?, ?, ?);", email, email, hashedPW, adminStr)
+		result.Success = true
+	} else {
+		result.Success = false
+	}
 	return result, err
 }
 
