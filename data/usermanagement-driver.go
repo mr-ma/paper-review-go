@@ -54,7 +54,8 @@ func (d MySQLDriver) Login(email string, password string) (result model.LoginRes
 		rows.Scan(&a.Email, &a.Taxonomies, &a.Admin, &a.Password)
 		if CheckPasswordHash(password, a.Password) {
 			result.Success = true
-			result.User = model.User{Email: a.Email, Taxonomies: a.Taxonomies, Admin: a.Admin}
+			a.Password = ""
+			result.User = a
 		} else {
 			result.Success = false
 		}
