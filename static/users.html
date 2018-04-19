@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <title>User Management</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/js/jquery.min.js"></script>
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <script src="/js/bootstrap.min.js"></script>
+  <link href="/css/bootstrap-dialog.min.css" rel="stylesheet" type="text/css">
+  <script src="/js/bootstrap-dialog.min.js"></script>
+
+  <link href="/css/bootstrap-table.css" rel="stylesheet" type="text/css">
+  <script src="/js/bootstrap-table.js"></script>
+
+  <script src="/js/bluebird.min.js"></script>
+
+  <link href="/css/main.css" rel="stylesheet" type="text/css">
+  <script src="/js/userManagement.js"></script>
+  <script src="/js/error.js"></script>
+
+  <script src="/js/tables.js"></script>
+  <script src="/js/users.js"></script>
+
+</head>
+<body>
+<div class="navbar"></div>
+<div class="modals"></div>
+
+<div class="container">
+  <h2>User management</h2>
+  <div class="input-group searchContainer">
+       <input type="text" class="form-control searchField" id="searchFieldUsers" placeholder="Search users">
+       <span class="input-group-btn">
+         <button class="btn btn-default remove" type="button">
+           <span class="glyphicon glyphicon-remove"></span>
+         </button>
+       </span>
+    </div>
+	<div id ="tblSpan"></div>
+	<br>
+	<input type="button" class ="btn btn-primary" id="add" value="Add a new user">
+</div>
+
+	<script>
+    const DEFAULT_TAXONOMY_ID = 1;
+    const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+    var TAXONOMY_ID;
+
+    $(document).ready(function  () {
+      var initUserPromise = new Promise( function ( resolve, reject ) {
+        initUserManagement(resolve, reject);
+      }).then( function (user) {
+        var admin = user.admin - 0;
+        if (!isNaN(admin) && admin == 1) initUsers();
+      }).catch( function ( err ) {
+        handleError(err);
+      });
+    });
+ 	</script>
+
+<div class="footer"></div>
+
+</body>
+</html>

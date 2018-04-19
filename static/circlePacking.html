@@ -1,0 +1,638 @@
+<!doctype html>
+<html>
+<head>
+    <title>Circle Packing</title>
+    <script src="/js/jquery.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/js/d3.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="/js/d3-hierarchy.v1.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-hierarchy/1.1.5/d3-hierarchy.min.js"></script>
+
+    <link href="/css/bootstrap.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="/js/bootstrap.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link href="/css/bootstrap-dialog.min.css" type="text/css" rel="stylesheet" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="/js/bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+    <script src="/js/multiselect.min.js" data-web="https://cdn.rawgit.com/crlcu/multiselect/8b020061/dist/js/multiselect.min.js"></script>
+
+    <link href="/css/d3-context-menu.css" type="text/css" rel="stylesheet" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
+    <script src="/js/d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
+
+    <link href="/css/d3-tip.css" type="text/css" rel="stylesheet" data-web="https://rawgit.com/Caged/d3-tip/master/examples/example-styles.css">
+    <script src="/js/d3-tip.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.js"></script>
+
+    <script src="/js/bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
+
+    <script src="/js/FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+
+    <script src="/js/loadData.js"></script>
+    <script src="/js/exportHTML.js"></script>
+
+    <link href="/css/main.css" type="text/css" rel="stylesheet">
+    <script src="/js/userManagement.js"></script>
+    <script src="/js/error.js"></script>
+    <style>
+
+    .node {
+      cursor: pointer;
+    }
+
+    .node:hover {
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+
+    .node--leaf {
+      fill: white;
+    }
+
+    .label {
+      font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-anchor: middle;
+      text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
+    }
+
+    .label,
+    .node--root,
+    .node--leaf {
+      pointer-events: none;
+    }
+
+    </style>
+</head>
+<body>
+  <div class="navbar"></div>
+  <div class="modals"></div>
+
+  <!-- <div class="col-sm-2" style="width:165px;margin-top:30px;margin-bottom:30px;margin-left:10px;"> -->
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-2">
+      <div class="btn btn-group" role="group" aria-label="...">
+        <button type="button" class="btn btn-default" id="exportPNG" title="Export PNG"><span class="glyphicon glyphicon-picture" value="Export PNG" ></span></button>
+        <button type="button" class="btn btn-default" id="exportHTML" title="Export HTML"><span class="glyphicon glyphicon-file" value="Export HTML" ></span></button>
+      </div>
+    </div>
+    <div class="col-sm-2">
+      <form style="padding:10px;width:200px;">
+        <label for="dataType">Data Type: </label>
+          <select class="form-control" id="dataType">
+            <option value="citationCount" selected="selected">Citation count</option>
+            <option value="referenceCount">Sum of references</option>
+          </select>
+        <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
+      </form>
+    </div>
+  </div>
+</div>
+  <!-- </div> -->
+  <div id="colorLegend"></div>
+  <div id="svgContainer">
+  </div>
+<script id="mainScript">
+  const IS_STATIC = false;
+
+  const STATIC_ARRAY = ['DIMENSIONS', 'MAJORATTRIBUTES', 'ATTRIBUTESPERDIMENSION', 'ATTRIBUTERELATIONS', 'INTERDIMENSIONALRELATIONS', 'RELATIONTYPES', 'CITATIONCOUNTS', 'CY'];
+
+  const STATIC_INDEX_DIMENSIONS = 0;
+  const STATIC_INDEX_MAJORATTRIBUTES = 1;
+  const STATIC_INDEX_ATTRIBUTESPERDIMENSION = 2;
+  const STATIC_INDEX_ATTRIBUTERELATIONS = 3;
+  const STATIC_INDEX_INTERDIMENSIONALRELATIONS = 4;
+  const STATIC_INDEX_RELATIONTYPES = 5;
+  const STATIC_INDEX_CITATIONCOUNTS = 6;
+  const STATIC_INDEX_CY = 7;
+
+  var STATIC_DIMENSIONS;
+  var STATIC_MAJORATTRIBUTES;
+  var STATIC_ATTRIBUTESPERDIMENSION;
+  var STATIC_ATTRIBUTERELATIONS;
+  var STATIC_INTERDIMENSIONALRELATIONS;
+  var STATIC_RELATIONTYPES;
+  var STATIC_CITATIONCOUNTS;
+  var STATIC_CY;
+  var DYNAMIC_ARRAY = [];
+
+  const DEFAULT_TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+  var currentHash = '';
+  var TAXONOMY_ID;
+
+  const DEFAULT_DIMENSION_NAME = 'Interdimensional view';
+
+  const MIN_SIZE_VALUE = 0.1;
+
+  const ATTRIBUTE_URL = 'attribute';
+  const CITATION_COUNTS_URL = 'citationCounts';
+
+  const colorsBlue = ["#1CB5E0", "#189ECC", "#1587B9", "#1171A6", "#0E5A93", "#0A437F", "#072D6C", "#031659", "#000046"];
+  const colorsYGB = ["#F0F8FF","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"]; // #FFFFDD
+  const colorsRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
+  const colorsWeddingDayBlues = ["#40E0D0", "#6FCB9C", "#9FB668", "#CFA134", "#FF8C00", "#FF6920", "#FF4640", "#FF2360", "FF0080"];
+  const colors2 = ["#DFDFDF", "#BFBFBF", "#9F9F9F", "#7F7F7F", "#5F5F5F", "#3F3F3F", "#1F1F1F", "#000000"];
+  const colors3 = ["#8078FA", "#7069E2", "#605ACA", "#514BB2", "#413C9A", "#312D82", "#221E6A", "#120F52", "#03003B"];
+  const colors4 = ["#F0F2F0", "#D2D5DA", "#B4B8C4", "#969BAE", "#787F98", "#5A6282", "#3C456C", "#1E2856", "#000C40"];
+
+  const COLOR_GRADIENTS =  [{name: 'rainbow', colors: colorsRainbow}, {name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
+
+  var color = d3.scale.linear()
+      .domain([-1, 5])
+      .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
+      .interpolate(d3.interpolateHcl);
+
+  var isInterDimensional = true;
+  var displayedDimension;
+
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
+  function getSVGString( svgNode ) {
+    svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
+    var cssStyleText = getCSSStyles( svgNode );
+    appendCSS( cssStyleText, svgNode );
+
+    var serializer = new XMLSerializer();
+    var svgString = serializer.serializeToString(svgNode);
+    svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+    svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+
+    return svgString;
+
+    function getCSSStyles( parentElement ) {
+      var selectorTextArr = [];
+
+      // Add Parent element Id and Classes to the list
+      selectorTextArr.push( '#'+parentElement.id );
+      for (var c = 0; c < parentElement.classList.length; c++)
+          if ( !contains('.'+parentElement.classList[c], selectorTextArr) )
+            selectorTextArr.push( '.'+parentElement.classList[c] );
+
+      // Add Children element Ids and Classes to the list
+      var nodes = parentElement.getElementsByTagName("*");
+      for (var i = 0; i < nodes.length; i++) {
+        var id = nodes[i].id;
+        if ( !contains('#'+id, selectorTextArr) )
+          selectorTextArr.push( '#'+id );
+
+        var classes = nodes[i].classList;
+        for (var c = 0; c < classes.length; c++)
+          if ( !contains('.'+classes[c], selectorTextArr) )
+            selectorTextArr.push( '.'+classes[c] );
+      }
+
+      // Extract CSS Rules
+      var extractedCSSText = "";
+      for (var i = 0; i < document.styleSheets.length; i++) {
+        var s = document.styleSheets[i];
+
+        try {
+            if(!s.cssRules) continue;
+        } catch( e ) {
+              if(e.name !== 'SecurityError') throw e; // for Firefox
+              continue;
+            }
+
+        var cssRules = s.cssRules;
+        for (var r = 0; r < cssRules.length; r++) {
+          if ( contains( cssRules[r].selectorText, selectorTextArr ) )
+            extractedCSSText += cssRules[r].cssText;
+        }
+      }
+
+
+      return extractedCSSText;
+
+      function contains(str,arr) {
+        return arr.indexOf( str ) === -1 ? false : true;
+      }
+
+    }
+
+    function appendCSS( cssText, element ) {
+      var styleElement = document.createElement("style");
+      styleElement.setAttribute("type","text/css");
+      styleElement.innerHTML = cssText;
+      var refNode = element.hasChildNodes() ? element.children[0] : null;
+      element.insertBefore( styleElement, refNode );
+    }
+  }
+
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
+  function svgString2Image( svgString, width, height, format, callback ) {
+    var format = format ? format : 'png';
+
+    //var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( svgString ) ) ); // Convert SVG string to data URL
+
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    var image = new Image();
+    image.onload = function() {
+      console.log("loaded")
+      context.clearRect ( 0, 0, width, height );
+      context.drawImage(image, 0, 0, width, height);
+
+      canvas.toBlob( function(blob) {
+        var filesize = Math.round( blob.length/1024 ) + ' KB';
+        if ( callback ) callback( blob, filesize );
+      });
+    };
+    var url = URL.createObjectURL(
+      new Blob([svgString], {
+        type: 'image/svg+xml;charset=utf8'
+        })
+    );
+    image.src = url;
+  }
+
+  /*
+    Based on a d3 code example.
+
+    Source: http://bl.ocks.org/nbremer/5cd07f2cb4ad202a9facfbd5d2bc842e
+  */
+ function applyColorGradient ( defs, gradient, minValue, maxValue ) {
+    if (!gradient.name || !gradient.colors) return {};
+    var colors = gradient.colors;
+    var colorRange = d3.range(0, 1, 1.0 / (colors.length - 1));
+    colorRange.push(1);
+
+    var colorScale = d3.scale.linear()
+      .domain(colorRange)
+      .range(colors)
+      .interpolate(d3.interpolateHcl);
+
+    var colorInterpolate = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    defs.append("linearGradient")
+      .attr("id", "gradient-" + gradient.name + "-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop")
+      .data(colors)
+      .enter().append("stop")
+      .attr("offset", function(d,i) { return i/(colors.length-1); })
+      .attr("stop-color", function(d) { return d; });
+    return {colorScale: colorScale, colorInterpolate: colorInterpolate};
+  }
+
+  // source: ttps://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
+  function updateColorLegend ( gradientID, width, height, maxValue ) { //     var w = 300, h = 50;
+    d3.select("#colorLegend").selectAll("svg").remove();
+    var legend = d3.select("#colorLegend")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    legend.append("rect")
+      .attr("width", width)
+      .attr("height", height - 30)
+      .style("fill", "url(#" + gradientID + ")")
+      .attr("transform", "translate(10,10)");
+
+    var y = d3.scale.linear()
+      .range([500, 0]) // 300, 0
+      .domain([maxValue, 10]); // 68, 12
+
+    var yAxis = d3.svg.axis().scale(y).orient("bottom").ticks(5);
+
+    legend.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(10,30)")
+      .call(yAxis)
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end");
+  }
+
+  function updateColorGradient ( svg, gradient, maxValue ) {
+    var gradientID = "gradient-" + gradient.name + "-colors";
+    svg.selectAll(".node")
+      .transition().duration(1000)
+      .style("fill", function (d,i) { var classes = $(this).attr('class'); return (!!classes && classes.split('node--leafnode').length > 1) ? gradient.colorScale(gradient.colorInterpolate(d.data.size)) : color(d.depth); });
+    updateColorLegend(gradientID, 300, 50, maxValue);
+  }
+
+  function showCitations ( attribute ) {
+    if (!attribute || attribute == '') return;
+    $.ajax
+      ({
+        type: "POST",
+        url: '/analysis/citationsPerAttribute',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute}),
+        success: function ( citationsPerAttribute ) {
+          if (!citationsPerAttribute) {
+            handleError('Cannot get citations from DB for attribute: ' + attribute + '.');
+            return;
+          }
+          var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>Occurrences</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+          var sumOfReferences = 0;
+          if (!!citationsPerAttribute.response) {
+            citationsPerAttribute.response.forEach ( function ( citationPerAttribute ) {
+              citationTable += '<tr><td>' + citationPerAttribute.citation + '</td><td>' + citationPerAttribute.occurrenceCount + '</td><td>' + citationPerAttribute.referenceCount + '</td><td>' + citationPerAttribute.bib + '</td></tr>';
+              sumOfReferences += citationPerAttribute.referenceCount;
+            });
+          }
+          citationTable += '</tbody></table></div>';
+          if (sumOfReferences > 0) citationTable = '<div><p><b>Sum of references:</b>  ' + sumOfReferences + '</p></div>' + citationTable;
+          BootstrapDialog.show({
+            title: 'Citations for attribute "' + attribute + '"',
+            message: citationTable
+          });
+        }
+      });
+  }
+
+  function sumOriginalValues ( d ) {
+    var sum = !!d.data.originalValue ? d.data.originalValue : 0;
+    if (!!d.children && d.children.length > 0) {
+      d.children.forEach ( function ( child ) {
+        sum += sumOriginalValues(child);
+      });
+    }
+    return sum;
+  }
+
+  // based on a d3 code example:
+  // source: https://bl.ocks.org/mbostock/7607535
+  function showHierarchy ( json, minValue, maxValue ) {
+    d3.selectAll("svg").remove();
+    $('#svgContainer').html('<svg id="circlePackingSVG" width="960" height="960"></svg>');
+    var svg = d3.select("svg"),
+        margin = 20,
+        diameter = svg.attr("width"),
+        g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+
+    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) {
+      var text = d.data.name;
+      text += ': ' + d.data.originalValue;
+      return text;
+    });
+    svg.call(d3Tip);
+
+    var defs = svg.append("defs");
+
+    COLOR_GRADIENTS.forEach ( function ( gradient ) {
+      var result = applyColorGradient(defs, gradient, minValue, maxValue);
+      if (!!result) {
+        if (!!result.colorScale) gradient.colorScale = result.colorScale;
+        if (!!result.colorInterpolate) gradient.colorInterpolate = result.colorInterpolate;
+      }
+    });
+
+    var pack = d3.pack()
+        .size([diameter - margin, diameter - margin])
+        .padding(2);
+
+      var rootNode = d3.hierarchy(json)
+          .sum(function(d) { return d.size; })
+          .sort(function(a, b) { return b.value - a.value; })
+          .each ( function (d) { d.data.originalValue = sumOriginalValues(d); });
+
+      var focus = rootNode,
+          nodes = pack(rootNode).descendants(),
+          view;
+
+      console.log('nodes: ', nodes);
+
+      var circle = g.selectAll("circle")
+        .data(nodes)
+        .enter().append("circle")
+          .attr("class", function(d) { return d.parent ? (d.data.children && d.data.children.length > 0) ? "node" : "node node--leafnode" : "node node--root"; })
+          .on("click", function(d) { if (focus !== d.parent) zoom(d.parent), d3.event.stopPropagation(); else if ($(this).attr("class").split('node--leafnode').length > 1) showCitations(d.data.name), d3.event.stopPropagation(); else if (focus !== d) zoom(d), d3.event.stopPropagation(); })
+          .on("mouseover", function (d) { d3Tip.show(d); })
+          .on("mouseout", function (d) { d3Tip.hide(d); });
+
+      var text = g.selectAll("text")
+        .data(nodes)
+        .enter().append("text")
+          .attr("class", "label")
+          .style("fill-opacity", function(d) { return d.parent === rootNode ? 1 : 0; })
+          .style("display", function(d) { return d.parent === rootNode ? "inline" : "none"; })
+          .text(function(d) { return d.data.name; });
+
+      var node = g.selectAll("circle,text");
+
+      svg.style("background", color(-1))
+         .on("click", function() { zoom(rootNode); });
+
+      d3.select("body").on("keydown", function( e ) { if (d3.event.keyCode == 27) zoom(!!node.parent ? node.parent : rootNode); }); // escape key
+
+      zoomTo([rootNode.x, rootNode.y, rootNode.r * 2 + margin]);
+
+      function zoom(d) {
+        var focus0 = focus; focus = d;
+
+        var transition = d3.transition()
+            .duration(d3.event.altKey ? 7500 : 750)
+            .tween("zoom", function(d) {
+              var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
+              return function(t) { zoomTo(i(t)); };
+            });
+
+        svg.selectAll("text")
+          .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
+          .style("fill-opacity", function(d) { if (d.parent === focus) { this.style.display = "inline"; } else { this.style.display = "none"; } return d.parent === focus ? 1 : 0; });
+      }
+
+      function zoomTo(v) {
+        var k = diameter / v[2]; view = v;
+        node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
+        circle.attr("r", function(d) { return d.r * k; });
+      }
+      var colorThemeIndex = $('#colorTheme')[0].value - 0;
+      if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[colorThemeIndex], maxValue);
+
+      $('#colorTheme').unbind().on('change', function ( e ) {
+        var index = this.value - 0;
+        if (!isNaN(index) && index >= 0 && index < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[index], maxValue);
+      });
+    $('#exportPNG').unbind().click ( function () {
+      var svg = d3.select("#circlePackingSVG");
+      var svgString = getSVGString(svg.node());
+      var width = svg.attr('width');
+      var height = svg.attr('height');
+      svgString2Image( svgString, width*3, height*3, 'png', function ( dataBlob, filesize ) {
+        saveAs( dataBlob, 'CirclePacking.png' ); // FileSaver.js function
+      });
+    });
+    $('#exportHTML').unbind().click ( function () {
+      exportHTML('CirclePacking.html');
+    });
+  }
+
+  // calculate tree hierarchy respecting "parent-child" relations between elements
+  function traverseTree ( json, attributes, parents, counter, useReferenceCount ) {
+    if (attributes.length == 0 || counter > 100) {
+      parents.forEach ( function ( parent ) {
+        if (!!useReferenceCount) {
+          parent.size = !!parent.referenceCountSum ? parent.referenceCountSum : MIN_SIZE_VALUE;
+          parent.originalValue = !!parent.referenceCountSum ? parent.referenceCountSum : 0;
+        } else {
+          parent.size = !!parent.citationCount ? parent.citationCount : MIN_SIZE_VALUE;
+          parent.originalValue = !!parent.citationCount ? parent.citationCount : 0;
+        }
+      });
+      return json;
+    }
+    var remainingAttributes = [];
+    attributes.forEach ( function ( attribute ) {
+      var found = false;
+      for ( var i = 0; i < parents.length; i++ ) {
+        if (parents[i].name.trim() == attribute.parentText.trim()) {
+          var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount, 'referenceCountSum': attribute.referenceCountSum};
+          parents[i].children.push(obj);
+          parents.push(obj);
+          found = true;
+          break;
+        }
+      }
+      if (!found) remainingAttributes.push(attribute);
+    });
+    return traverseTree(json, remainingAttributes, parents, counter+1, useReferenceCount);
+  }
+
+  // create JSON object used for the creation of the  d3 circle packing visualization
+  function createJSON ( useCY, dimensions, interDimensional, attributes, relations, relationTypes, citationCounts ) {
+    if (!attributes || attributes.length == 0) return;
+    isInterDimensional = interDimensional;
+    var useReferenceCount = $('#dataType').val() == 'referenceCount';
+
+    var json = {'name': 'Taxonomy', 'children': [], 'citationCount': 0, 'referenceCountSum': 0};
+    dimensions.forEach ( function ( dimension ) {
+      json.children.push({'name': dimension.text, 'children': [], 'citationCount': 0, 'referenceCountSum': 0});
+    });
+    var remainingAttributes = [];
+    var orphanAttributes = [];
+    var parents = [];
+    var minValue = 0;
+    var maxValue = 0;
+    attributes.forEach ( function ( attribute ) {
+      var found = false;
+      for ( var i = 0; i < citationCounts.length; i++ ) {
+        if (citationCounts[i].attribute == attribute.text) {
+          attribute.citationCount = citationCounts[i].citationCount;
+          attribute.referenceCountSum = citationCounts[i].referenceCountSum;
+          if (useReferenceCount && attribute.referenceCountSum > maxValue) maxValue = attribute.referenceCountSum;
+          else if (!useReferenceCount && attribute.citationCount > maxValue) maxValue = attribute.citationCount;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        attribute.citationCount = 0;
+        attribute.referenceCountSum = 0;
+      }
+      if (!!attribute.parentText) attribute.parentText = attribute.parentText.split(',').shift();
+      if (!attribute.dimension || attribute.dimension == '') orphanAttributes.push(attribute);
+      else if (!attribute.parentText || attribute.parentText == '') {
+        var found = false;
+        for ( var i = 0; i < json.children.length; i++ ) {
+          if (json.children[i].name.trim() == attribute.dimension.trim()) {
+            var obj = {'name': attribute.text, 'children': [], 'citationCount': attribute.citationCount, 'referenceCountSum': attribute.referenceCountSum};
+            json.children[i].children.push(obj);
+            parents.push(obj);
+            found = true;
+            break;
+          }
+        }
+        if (!found) remainingAttributes.push(attribute);
+      } else remainingAttributes.push(attribute);
+    });
+
+    orphanAttributes.forEach ( function ( orphan ) {
+      var obj = {'name': orphan.text, 'children': [], 'citationCount': orphan.citationCount, 'referenceCountSum': orphan.referenceCountSum};
+      json.children.push(obj);
+      parents.push(obj);
+    });
+    json = traverseTree(json, remainingAttributes, parents, 0, useReferenceCount);
+    console.log("data: ", json)
+    showHierarchy(json, minValue, maxValue);
+  }
+
+    function initPage () {
+      $('#colorTheme').html('');
+      for ( var i = 0; i < COLOR_GRADIENTS.length; i++ ) {
+        $('#colorTheme').append('<option value="' + i + '">' + COLOR_GRADIENTS[i].name + '</option>');
+      }
+      $('#dataType').unbind().on('change', function () {
+        if (!!displayedDimension) showDimension(displayedDimension);
+      });
+      if (!IS_STATIC) {
+        var hash = window.location.hash.split('#').pop().split('_').shift();
+        var hashInt = hash - 0;
+        if (hashInt == 0 || isNaN(hashInt)) {
+          $.ajax
+            ({
+              type: "POST",
+              url: '/taxonomybuilder/getTaxonomyID',
+              dataType: 'json',
+              contentType:'application/json',
+              async: true,
+              data: JSON.stringify({text: unescape(hash)}),
+              success: function ( taxonomy ) {
+                if (!taxonomy || !taxonomy.response || taxonomy.response.length == 0) {
+                  TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                  //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                  window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                  return;
+                } else {
+                  var id = taxonomy.response[0].id - 0;
+                  console.log("taxonomy id: ", id)
+                  if (!isNaN(id)) TAXONOMY_ID = id;
+                  else {
+                    TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                    window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+                  }
+                }
+                loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+              }, failure: function () {
+                TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+                //loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+                window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+              }
+          });
+        } else {
+          TAXONOMY_ID = hashInt;
+          loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+        }
+      } else {
+        TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+        window.location.hash = '#' + DEFAULT_TAXONOMY_NAME;
+        loadTaxonomyData(TAXONOMY_ID, ATTRIBUTE_URL, CITATION_COUNTS_URL);
+      }
+    }
+
+    $(document).ready( function () {
+      window.onhashchange = function () {
+        var hash = window.location.hash;
+        // prevent page reload when a compound node is being expanded or collapsed
+        if (unescape(hash) != unescape(currentHash)) window.location.reload(false);
+      };
+
+      if (!!IS_STATIC) {
+        loadBanner('STATIC');
+        initPage();
+        return;
+      }
+      var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+        initUserManagement(resolve, reject);
+      }).then ( function ( user ) {
+        //if (!!user && user.admin == 1) {}
+        initPage();
+      }).catch ( function ( err ) {
+        console.log('Error loading user: ', err);
+        handleError(err);
+        initPage();
+      });
+    });
+	</script>
+<!-- main script end -->
+</body>
+</html>

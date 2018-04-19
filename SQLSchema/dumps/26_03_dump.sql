@@ -15,6 +15,15 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+DROP TABLE IF EXISTS `sessions`;
+CREATE TABLE sessions (
+  token CHAR(43) PRIMARY KEY,
+  data BLOB NOT NULL,
+  expiry TIMESTAMP(6) NOT NULL
+);
+CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+
+
 --
 -- Table structure for table `allchildrenperattribute`
 --
@@ -116,7 +125,7 @@ DROP TABLE IF EXISTS `articles_view`;
 /*!50001 DROP VIEW IF EXISTS `articles_view`*/;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
-/*!50001 CREATE VIEW `articles_view` AS SELECT 
+/*!50001 CREATE VIEW `articles_view` AS SELECT
  1 AS `ArticleId`,
  1 AS `Title`,
  1 AS `year`,
@@ -300,7 +309,7 @@ DROP TABLE IF EXISTS `paper_attribute`;
 /*!50001 DROP VIEW IF EXISTS `paper_attribute`*/;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
-/*!50001 CREATE VIEW `paper_attribute` AS SELECT 
+/*!50001 CREATE VIEW `paper_attribute` AS SELECT
  1 AS `id_taxonomy`,
  1 AS `id_paper`,
  1 AS `citation`,
@@ -318,7 +327,7 @@ DROP TABLE IF EXISTS `paper_merged_attributes`;
 /*!50001 DROP VIEW IF EXISTS `paper_merged_attributes`*/;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
-/*!50001 CREATE VIEW `paper_merged_attributes` AS SELECT 
+/*!50001 CREATE VIEW `paper_merged_attributes` AS SELECT
  1 AS `id_taxonomy`,
  1 AS `id_paper`,
  1 AS `citation`,
@@ -530,7 +539,7 @@ DROP TABLE IF EXISTS `unique_articles_view`;
 /*!50001 DROP VIEW IF EXISTS `unique_articles_view`*/;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
-/*!50001 CREATE VIEW `unique_articles_view` AS SELECT 
+/*!50001 CREATE VIEW `unique_articles_view` AS SELECT
  1 AS `ArticleId`,
  1 AS `Title`,
  1 AS `year`,
@@ -555,7 +564,7 @@ CREATE TABLE `user` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `email` varchar(128) NOT NULL,
   `name` varchar(128) NOT NULL,
-  `password` varchar(128) NOT NULL,
+  `password` varchar(500) NOT NULL,
   `taxonomies` varchar(500) DEFAULT '',
   `admin` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),

@@ -10,11 +10,16 @@ services:
    - 80:80
    - 443:443
    volumes:
-   - ./nginx/conf.d/nginx.conf:/etc/nginx/nginx.conf:ro
+     - ./nginx/conf.d/nginx.conf:/etc/nginx/nginx.conf:ro
+     - ./static:/etc/nginx/static:ro
    command: [nginx-debug, '-g', 'daemon off;']
    depends_on:
-     - app
-
+     - taxonomy-builder
+     - analysis
+     - lit-importer
+     - user-management
+     - visualization
+     - paper-review
   mysql:
    container_name: some-mysql
    image: mysql/mysql-server:5.7
@@ -22,16 +27,31 @@ services:
    ports:
    - "3306:3306"
    volumes:
-      - data-volume:/var/lib/mysql3
+      - data-volume:/var/lib/mysql5
       - ./SQLSchema/dumps/26_03_dump.sql:/docker-entrypoint-initdb.d/26_03_dump.sql
-   environment:
-     MYSQL_DATABASE: classification
-     MYSQL_ROOT_PASSWORD: ${ENV_MYSQL_ROOT_PASS}
-     MYSQL_ROOT_HOST: '%'
+   env_file:
+     - .env
    restart: always
-  app:
+  taxonomy-builder:
+    container_name: some-taxonomy-builder
     restart: always
-    hostname: taxonomy-tool
+    hostname: taxonomy-builder
+    build: .
+    ports:
+      - "8086:8086"
+    expose:
+      - "8086"
+    env_file:
+      - .env
+    command: /go/src/github/mr-ma/paper-review-go/server/taxonomy-builder-server -mysqluser root -mysqlpass ${MYSQL_ROOT_PASSWORD} -mysqlserver mysql:3306 -listen 0.0.0.0:8086
+    depends_on:
+      - mysql
+    links:
+      - mysql
+  analysis:
+    container_name: some-analysis
+    restart: always
+    hostname: analysis
     build: .
     ports:
       - "8081:8081"
@@ -39,7 +59,76 @@ services:
       - "8081"
     env_file:
       - .env
-    command: /go/src/github/mr-ma/paper-review-go/taxonomyserver -mysqluser root -mysqlpass ${ENV_MYSQL_ROOT_PASS} -mysqlserver mysql:3306 -listen 0.0.0.0:8081
+    command: /go/src/github/mr-ma/paper-review-go/server/analysis-server -mysqluser root -mysqlpass ${MYSQL_ROOT_PASSWORD} -mysqlserver mysql:3306 -listen 0.0.0.0:8081
+    depends_on:
+      - mysql
+    links:
+      - mysql
+
+  lit-importer:
+    container_name: some-lit-importer
+    restart: always
+    hostname: lit-importer
+    build: .
+    ports:
+      - "8085:8085"
+    expose:
+      - "8085"
+    env_file:
+      - .env
+    command: /go/src/github/mr-ma/paper-review-go/server/lit-importer-server -mysqluser root -mysqlpass ${MYSQL_ROOT_PASSWORD} -mysqlserver mysql:3306 -listen 0.0.0.0:8085
+    depends_on:
+      - mysql
+    links:
+      - mysql
+
+  user-management:
+    container_name: some-user-management
+    restart: always
+    hostname: user-management
+    build: .
+    ports:
+      - "8082:8082"
+    expose:
+      - "8082"
+    env_file:
+      - .env
+    command: /go/src/github/mr-ma/paper-review-go/server/user-management-server -mysqluser root -mysqlpass ${MYSQL_ROOT_PASSWORD} -mysqlserver mysql:3306 -listen 0.0.0.0:8082
+    depends_on:
+      - mysql
+    links:
+      - mysql
+
+  visualization:
+    container_name: some-visualization
+    restart: always
+    hostname: visualization
+    build: .
+    ports:
+      - "8084:8084"
+    expose:
+      - "8084"
+    env_file:
+      - .env
+    command: /go/src/github/mr-ma/paper-review-go/server/visualization-server -mysqluser root -mysqlpass ${MYSQL_ROOT_PASSWORD} -mysqlserver mysql:3306 -listen 0.0.0.0:8084
+    depends_on:
+      - mysql
+    links:
+      - mysql
+
+
+  paper-review:
+    container_name: some-paper-view
+    restart: always
+    hostname: paper-review
+    build: .
+    ports:
+      - "8083:8083"
+    expose:
+      - "8083"
+    env_file:
+      - .env
+    command: /go/src/github/mr-ma/paper-review-go/server/review-server -mysqluser root -mysqlpass ${MYSQL_ROOT_PASSWORD} -mysqlserver mysql:3306 -listen 0.0.0.0:8083
     depends_on:
       - mysql
     links:

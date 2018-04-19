@@ -1,0 +1,18 @@
+version: '3'
+volumes:
+  data-volume: {}
+services:
+  mysql:
+   container_name: some-mysql
+   image: mysql/mysql-server:5.7
+   hostname: mysql
+   ports:
+     - "3306:3306"
+   volumes:
+     - data-volume:/var/lib/mysql
+     - ./SQLSchema/dumps/26_03_dump.sql:/docker-entrypoint-initdb.d/26_03_dump.sql
+   environment:
+     MYSQL_DATABASE: classification
+     MYSQL_ROOT_PASSWORD: ${ENV_MYSQL_ROOT_PASS}
+     MYSQL_ROOT_HOST: '%'
+   restart: always

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -68,223 +67,223 @@ func main() {
 
 	mux := tigertonic.NewTrieServeMux()
 
-	mux.HandleFunc("GET", "/visualization/error.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/error.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/tables.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/tables.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/exportHTML.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/exportHTML.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/scripts.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/scripts.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/style.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/style.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/main.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/main.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/editableTable.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/editableTable.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bluebird.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/bluebird.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/FileSaver.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/FileSaver.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/multiselect.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/multiselect.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/jquery.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/jquery.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/d3.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3.layout.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/d3.layout.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3-hierarchy.v1.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/d3-hierarchy.v1.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3-context-menu.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/d3-context-menu.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3-context-menu.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/d3-context-menu.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bootstrap.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/bootstrap.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bootstrap.min.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/bootstrap.min.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bootstrap-waitingfor.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/bootstrap-waitingfor.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bootstrap-table.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/bootstrap-table.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bootstrap-table.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/bootstrap-table.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/selectize.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/selectize.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/selectize.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/selectize.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/selectize.bootstrap3.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/selectize.bootstrap3.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/fonts/glyphicons-halflings-regular.woff", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/fonts/glyphicons-halflings-regular.woff")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/fonts/glyphicons-halflings-regular.woff2", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/fonts/glyphicons-halflings-regular.woff2")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/fonts/glyphicons-halflings-regular.ttf", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/fonts/glyphicons-halflings-regular.ttf")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bootstrap-dialog.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/bootstrap-dialog.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/bootstrap-dialog.min.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/bootstrap-dialog.min.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3.v4.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/d3.v4.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/vis.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/vis.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/vis.min.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/vis.min.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3-tip.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/d3-tip.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/d3-tip.css", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/css/libs/d3-tip.css")
-		w.Header().Add("Content-Type", "text/css")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/parse-bibtex.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/parse-bibtex.js")
-		fmt.Fprintf(w, "%s", p)
-	})
+	// mux.HandleFunc("GET", "/visualization/error.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/error.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/tables.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/tables.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/exportHTML.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/exportHTML.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/scripts.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/scripts.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/style.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/style.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/main.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/main.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/editableTable.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/editableTable.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bluebird.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/bluebird.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/FileSaver.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/FileSaver.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/multiselect.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/multiselect.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/jquery.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/jquery.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/d3.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3.layout.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/d3.layout.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3-hierarchy.v1.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/d3-hierarchy.v1.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3-context-menu.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/d3-context-menu.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3-context-menu.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/d3-context-menu.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bootstrap.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/bootstrap.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bootstrap.min.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/bootstrap.min.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bootstrap-waitingfor.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/bootstrap-waitingfor.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bootstrap-table.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/bootstrap-table.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bootstrap-table.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/bootstrap-table.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/selectize.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/selectize.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/selectize.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/selectize.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/selectize.bootstrap3.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/selectize.bootstrap3.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/fonts/glyphicons-halflings-regular.woff", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/fonts/glyphicons-halflings-regular.woff")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/fonts/glyphicons-halflings-regular.woff2", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/fonts/glyphicons-halflings-regular.woff2")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/fonts/glyphicons-halflings-regular.ttf", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/fonts/glyphicons-halflings-regular.ttf")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bootstrap-dialog.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/bootstrap-dialog.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/bootstrap-dialog.min.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/bootstrap-dialog.min.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3.v4.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/d3.v4.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/vis.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/vis.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/vis.min.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/vis.min.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3-tip.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/d3-tip.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/d3-tip.css", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/css/libs/d3-tip.css")
+	// 	w.Header().Add("Content-Type", "text/css")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/parse-bibtex.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/parse-bibtex.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
 
-	mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/taxonomy/cytoscape/taxonomyRelations.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/circlePacking", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/taxonomy/hierarchy/circlePacking.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/conceptCorrelationMatrix2D", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/taxonomy/correlationMap/interactive/conceptCorrelations_two_dimensional.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/conceptCorrelationMatrix3D", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/taxonomy/correlationMap/interactive/conceptCorrelations_three_dimensional.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/taxonomyRelations", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/taxonomy/cytoscape/taxonomyRelations.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/visualization/pdf/{file}", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("handling pdf")
-		fp := filepath.Clean(r.URL.Path)
-		var p []byte
-		if strings.Contains(fp, "system") {
-			p = loadPage("../frontend/pdfs/system.pdf")
-		} else if strings.Contains(fp, "attack") {
-			p = loadPage("../frontend/pdfs/attack.pdf")
-		} else if strings.Contains(fp, "defense") {
-			p = loadPage("../frontend/pdfs/defense.pdf")
-		} else if strings.Contains(fp, "relations") {
-			p = loadPage("../frontend/pdfs/view-relations.pdf")
-		}
-		fmt.Printf("Printing pdf %d", len(p))
-		b := bytes.NewBuffer(p)
-		// stream straight to client(browser)
-		w.Header().Set("Content-type", "application/pdf")
-
-		if _, err := b.WriteTo(w); err != nil { // <----- here!
-			fmt.Fprintf(w, "%s", err)
-		}
-		fmt.Println("handling pdf end")
-		w.Write([]byte("PDF Generated"))
-	})
-	mux.HandleFunc("GET", "/visualization/png/{file}", func(w http.ResponseWriter, r *http.Request) {
-		fp := filepath.Clean(r.URL.Path)
-		var p []byte
-		if strings.Contains(fp, "system") {
-			p = loadPage("../frontend/pngs/system.png")
-		} else if strings.Contains(fp, "attack") {
-			p = loadPage("../frontend/pngs/attack.png")
-		} else if strings.Contains(fp, "defense") {
-			p = loadPage("../frontend/pngs/defense.png")
-		} else if strings.Contains(fp, "relations") {
-			p = loadPage("../frontend/pngs/relations.png")
-		}
-
-		b := bytes.NewBuffer(p)
-		// stream straight to client(browser)
-		w.Header().Set("Content-type", "application/png")
-
-		if _, err := b.WriteTo(w); err != nil { // <----- here!
-			fmt.Fprintf(w, "%s", err)
-		}
-		w.Write([]byte("PNG Generated"))
-	})
+	// mux.HandleFunc("GET", "/", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/taxonomy/cytoscape/taxonomyRelations.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/circlePacking", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/taxonomy/hierarchy/circlePacking.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/conceptCorrelationMatrix2D", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/taxonomy/correlationMap/interactive/conceptCorrelations_two_dimensional.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/conceptCorrelationMatrix3D", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/taxonomy/correlationMap/interactive/conceptCorrelations_three_dimensional.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/taxonomyRelations", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/taxonomy/cytoscape/taxonomyRelations.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/visualization/pdf/{file}", func(w http.ResponseWriter, r *http.Request) {
+	// 	fmt.Println("handling pdf")
+	// 	fp := filepath.Clean(r.URL.Path)
+	// 	var p []byte
+	// 	if strings.Contains(fp, "system") {
+	// 		p = loadPage("../frontend/pdfs/system.pdf")
+	// 	} else if strings.Contains(fp, "attack") {
+	// 		p = loadPage("../frontend/pdfs/attack.pdf")
+	// 	} else if strings.Contains(fp, "defense") {
+	// 		p = loadPage("../frontend/pdfs/defense.pdf")
+	// 	} else if strings.Contains(fp, "relations") {
+	// 		p = loadPage("../frontend/pdfs/view-relations.pdf")
+	// 	}
+	// 	fmt.Printf("Printing pdf %d", len(p))
+	// 	b := bytes.NewBuffer(p)
+	// 	// stream straight to client(browser)
+	// 	w.Header().Set("Content-type", "application/pdf")
+	//
+	// 	if _, err := b.WriteTo(w); err != nil { // <----- here!
+	// 		fmt.Fprintf(w, "%s", err)
+	// 	}
+	// 	fmt.Println("handling pdf end")
+	// 	w.Write([]byte("PDF Generated"))
+	// })
+	// mux.HandleFunc("GET", "/visualization/png/{file}", func(w http.ResponseWriter, r *http.Request) {
+	// 	fp := filepath.Clean(r.URL.Path)
+	// 	var p []byte
+	// 	if strings.Contains(fp, "system") {
+	// 		p = loadPage("../frontend/pngs/system.png")
+	// 	} else if strings.Contains(fp, "attack") {
+	// 		p = loadPage("../frontend/pngs/attack.png")
+	// 	} else if strings.Contains(fp, "defense") {
+	// 		p = loadPage("../frontend/pngs/defense.png")
+	// 	} else if strings.Contains(fp, "relations") {
+	// 		p = loadPage("../frontend/pngs/relations.png")
+	// 	}
+	//
+	// 	b := bytes.NewBuffer(p)
+	// 	// stream straight to client(browser)
+	// 	w.Header().Set("Content-type", "application/png")
+	//
+	// 	if _, err := b.WriteTo(w); err != nil { // <----- here!
+	// 		fmt.Fprintf(w, "%s", err)
+	// 	}
+	// 	w.Write([]byte("PNG Generated"))
+	// })
 
 	server := tigertonic.NewServer(*listen, tigertonic.Logged(sessionManager.Use(mux), nil)) // context.ClearHandler(mux), to avoid memory leaks
 	go func() {

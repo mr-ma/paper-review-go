@@ -75,30 +75,30 @@ func main() {
 		checkTaxonomyPermissions(w, r, getUpdateCitationMappingsHandler)
 	})
 
-	mux.HandleFunc("GET", "/litimporter/stringComparison.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/stringComparison.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/litimporter/pdf.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/pdf.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/litimporter/pdf.worker.min.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/pdf.worker.min.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/litimporter/lodash.core.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/libs/lodash.core.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/litimporter/fileUploader.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/fileUploader.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/litimporter/scopus.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/scopus.js")
-		fmt.Fprintf(w, "%s", p)
-	})
+	// mux.HandleFunc("GET", "/litimporter/stringComparison.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/stringComparison.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/litimporter/pdf.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/pdf.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/litimporter/pdf.worker.min.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/pdf.worker.min.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/litimporter/lodash.core.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/libs/lodash.core.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/litimporter/fileUploader.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/fileUploader.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/litimporter/scopus.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/scopus.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
 
 	server := tigertonic.NewServer(*listen, tigertonic.Logged(sessionManager.Use(mux), nil)) // context.ClearHandler(mux), to avoid memory leaks
 	go func() {

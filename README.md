@@ -11,7 +11,7 @@
 
 
 
-# Mannual execution steps:
+# Manual execution steps:
 0. Clone master branch
 1. Grab the latest database dump form paper-review-go/SQLSchema/dumps/
 2. Import the dump to mysql
@@ -28,7 +28,7 @@ RUN go get github.com/mr-ma/paper-review-go
 6. Browse on localhost:8001
 
 # paper-review-go
-paper review enables researchers to review papers collaboratively and vote for papers 
+paper review enables researchers to review papers collaboratively and vote for papers
 
 Install:
 go get github.com/mr-ma/paper-review-go

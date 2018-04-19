@@ -103,18 +103,18 @@ func main() {
 		checkAdmin(w, r, deleteArticleVotesHandler)
 	})
 
-	mux.HandleFunc("GET", "/paperreview/review", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/review.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/paperreview/landing", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/landing.html")
-		fmt.Fprintf(w, "%s", p)
-	})
-	mux.HandleFunc("GET", "/paperreview/approve", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/approve.html")
-		fmt.Fprintf(w, "%s", p)
-	})
+	// mux.HandleFunc("GET", "/paperreview/review", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/review.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/paperreview/landing", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/landing.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	// mux.HandleFunc("GET", "/paperreview/approve", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/approve.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
 
 	server := tigertonic.NewServer(*listen, tigertonic.Logged(sessionManager.Use(mux), nil)) // context.ClearHandler(mux), to avoid memory leaks
 	go func() {

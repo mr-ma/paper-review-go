@@ -23,6 +23,12 @@ COPY . .
 #WORKDIR /$HOME/work/src/mr-ma
 #RUN git clone https://github.com/mr-ma/paper-review-go.git
 #WORKDIR /$HOME/work/src/mr-ma/paper-review-go
-RUN go build taxonomyserver.go
+WORKDIR /go/src/github/mr-ma/paper-review-go/server
+RUN go build taxonomy-builder-server.go
+RUN go build analysis-server.go
+RUN go build review-server.go
+RUN go build user-management-server.go
+RUN go build visualization-server.go
+RUN go build lit-importer-server.go
 #EXPOSE 8080
 #CMD "./taxonomyserver -mysqluser root -mysqlpass kB*6jd<KPa<M2x -listen 0.0.0.0:8080"
