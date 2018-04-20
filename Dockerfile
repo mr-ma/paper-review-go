@@ -28,7 +28,6 @@ RUN go build taxonomy-builder-server.go
 RUN go build analysis-server.go
 RUN go build review-server.go
 RUN go build user-management-server.go
-RUN go build visualization-server.go
 RUN go build lit-importer-server.go
 #EXPOSE 8080
 #CMD "./taxonomyserver -mysqluser root -mysqlpass kB*6jd<KPa<M2x -listen 0.0.0.0:8080"

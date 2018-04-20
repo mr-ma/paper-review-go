@@ -1,0 +1,3863 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Colored Concept Correlations</title>
+<header>
+<style>
+
+.background {
+  fill: #eee;
+}
+
+line {
+  stroke: #fff;
+}
+
+text.active {
+  fill: red;
+}
+
+.progress {
+    position: relative;
+}
+
+.progress span {
+    position: absolute;
+    display: block;
+    width: 100%;
+    color: black;
+ }
+
+</style>
+    <script src="/js/d3.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="/js/jquery.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <link href="/css/bootstrap.min.css" type="text/css" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="/js/bootstrap.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link href="/css/bootstrap-dialog.min.css" type="text/css" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+    <script src="/js/bootstrap-dialog.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+    <link href="/css/selectize.css" type="text/css" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.css">
+    <script src="/js/selectize.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/js/standalone/selectize.min.js"></script>
+    <link href="/css/selectize.bootstrap3.css" type="text/css" data-web="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.bootstrap3.css">
+
+    <!--<script src="bootstrap-waitingfor.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-waitingfor/1.2.4/bootstrap-waitingfor.min.js"></script>-->
+
+    <link href="/css/d3-context-menu.css" type="text/css" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/css/d3-context-menu.css">
+    <script src="/js/d3-context-menu.js" data-web="https://cdn.rawgit.com/patorjk/d3-context-menu/d05b42d4/js/d3-context-menu.js"></script>
+
+    <link href="/css/d3-tip.css" type="text/css" data-web="https://rawgit.com/Caged/d3-tip/master/examples/example-styles.css">
+    <script src="/js/d3-tip.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.js"></script>
+
+    <script src="/js/lodash.core.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+    <!-- <script src="compare-strings.js" data-web="https://cdn.rawgit.com/aceakash/string-similarity/0bc73e79/compare-strings.js"></script> -->
+    <script src="/js/levenshtein.min.js" data-web="https://cdn.rawgit.com/hiddentao/fast-levenshtein/master/levenshtein.min.js"></script>
+    <script src="/js/fuzzysort.js" data-web="https://cdn.rawgit.com/farzher/fuzzysort/19e81c13/fuzzysort.js"></script>
+
+    <script src="/js/editableTable.js"></script>
+
+    <script src="/js/pdf.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.267/pdf.min.js"></script>
+    <script src="/js/FileSaver.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+    <script src="/js/bluebird.min.js" data-web="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.1/bluebird.min.js"></script>
+
+    <!--<script src="/visualization/parse-bibtex.js" data-web="https://cdn.rawgit.com/mikolalysenko/bibtex-parser/7feff8a3/parse-bibtex.js"></script>-->
+
+    <script src="/js/fileUploader.js"></script>
+    <script src="/js/scopus.js"></script>
+    <script src="/js/stringComparison.js"></script>
+
+    <script src="/js/exportHTML.js"></script>
+
+    <link href="/css/main.css" type="text/css">
+    <script src="/js/userManagement.js"></script>
+    <script src="/js/error.js"></script>
+
+<script>
+// bootstrap-waitingfor.min.js
+// source: https://github.com/ehpc/bootstrap-waitingfor
+// https://cdnjs.com/libraries/bootstrap-waitingfor
+!function(e,a){"use strict";"function"==typeof define&&define.amd?define(["jquery"],function(d){return e.waitingDialog=a(d)}):e.waitingDialog=e.waitingDialog||a(e.jQuery)}(this,function(e){"use strict";function a(a){return a&&a.remove(),e('<div class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true" style="padding-top:15%; overflow-y:visible;"><div class="modal-dialog modal-m"><div class="modal-content"><div class="modal-header" style="display: none;"></div><div class="modal-body"><div class="progress progress-striped active" style="margin-bottom:0;"><div class="progress-bar" style="width: 100%"></div></div></div></div></div></div>')}var d,t,n={};return{show:function(n,i){"undefined"==typeof i&&(i={}),"undefined"==typeof n&&(n="Loading");var r,o,s=e.extend({headerText:"",headerSize:3,headerClass:"",dialogSize:"m",progressType:"",contentElement:"p",contentClass:"content",ltr:!0,timer:500,timeout:0,onHide:null},i);t=s,d=a(d),d.find(".modal-dialog").attr("class","modal-dialog").addClass("modal-"+s.dialogSize),d.find(".progress-bar").attr("class","progress-bar"),s.progressType&&d.find(".progress-bar").addClass("progress-bar-"+s.progressType),s.ltr&&d.find(".progress-bar").css("float","left").end().attr("dir","ltr"),r=e("<h"+s.headerSize+" />"),r.css({margin:0}),s.headerClass&&r.addClass(s.headerClass),o=e("<"+s.contentElement+" />"),s.contentClass&&o.addClass(s.contentClass),s.headerText===!1?(o.html(n),d.find(".modal-body").prepend(o)):s.headerText?(r.html(s.headerText),d.find(".modal-header").html(r).show(),o.html(n),d.find(".modal-body").prepend(o)):(r.html(n),d.find(".modal-header").html(r).show()),"function"==typeof s.onHide&&d.off("hidden.bs.modal").on("hidden.bs.modal",function(){s.onHide.call(d)}),d.modal()},hide:function(){"undefined"!=typeof d&&d.modal("hide")},message:function(e){return"undefined"!=typeof d?"undefined"!=typeof e?d.find(".modal-header>h"+t.headerSize).html(e):d.find(".modal-header>h"+t.headerSize).html():void 0},animate:function(e,a,i){if(a=a||t.timer,i=i||t.timeout,e=e||d.find(".modal-header>h"+t.headerSize).html(),n.animate=n.animate||[],"string"==typeof e&&(e=["..","....","......"].map(function(a){return e+a})),"object"==typeof e&&e instanceof Array){var r=e;e=function(e){var a=r.indexOf(e.html());if(0>a)e.html(r[0]);else{var d=a+1>=r.length?0:a+1;e.html(r[d])}}}if("function"==typeof e){a>i&&setTimeout(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},i);var o=setInterval(function(){e.call(d,d.find(".modal-header>h"+t.headerSize))},a);return n.animate.push(o),o}},stopAnimate:function(e){return e=e||n.animate[n.animate.length-1],clearInterval(e),delete n.animate[n.animate.indexOf(e)],d},progress:function(e,a){return arguments.length?(a&&(e=parseInt(e/a*100)),d.find(".progress-bar").css("width",e+"%"),d):parseInt(d.find(".progress-bar")[0].style.width)}}});
+</script>
+
+<script>
+  /*
+    Source: https://github.com/aceakash/string-similarity
+  */
+  function compareTwoStrings(str1, str2) {
+    var result = null;
+    result = calculateResultIfIdentical(str1, str2);
+    if (result != null) {
+      return result;
+    }
+    result = calculateResultIfEitherIsEmpty(str1, str2);
+    if (result != null) {
+      return result;
+    }
+    result = calculateResultIfBothAreSingleCharacter(str1, str2);
+    if (result != null) {
+      return result;
+    }
+
+    var pairs1 = wordLetterPairs(str1.toUpperCase());
+    var pairs2 = wordLetterPairs(str2.toUpperCase());
+    var intersection = 0;
+    var union = pairs1.length + pairs2.length;
+
+    _.forEach(pairs1, function (pair1) {
+      for(var i = 0; i < pairs2.length; i++) {
+        var pair2 = pairs2[i];
+        if (pair1 === pair2) {
+          intersection++;
+          pairs2.splice(i, 1);
+          break;
+        }
+      }
+    });
+
+    return (2.0 * intersection) / union;
+
+    // private functions ---------------------------
+    function letterPairs(str) {
+      var numPairs = str.length - 1;
+      var pairs = [];
+      for(var i = 0; i < numPairs; i++) {
+        pairs[i] = str.substring(i, i + 2);
+      }
+      return pairs;
+    }
+
+    function wordLetterPairs(str) {
+      return _.flattenDeep(_.map(str.split(' '), letterPairs));
+    }
+
+    function isEdgeCaseWithOneOrZeroChars(str1, str2) {
+      if (str1.length == str2.length && str1.length == 1) {
+        return true;
+      }
+      return false;
+    }
+
+    function calculateResultIfIdentical(str1, str2) {
+      if (str1.toUpperCase() == str2.toUpperCase()) {
+        return 1;
+      }
+      return null;
+    }
+
+    function calculateResultIfBothAreSingleCharacter(str1, str2) {
+      if (str1.length == 1 && str2.length == 1) {
+        return 0;
+      }
+    }
+
+    function calculateResultIfEitherIsEmpty(str1, str2) {
+      // if both are empty strings
+      if (str1.length == 0 && str2.length == 0) {
+        return 1;
+      }
+
+      // if only one is empty string
+      if ((str1.length + str2.length) > 0 && (str1.length * str2.length) == 0) {
+        return 0;
+      }
+      return null;
+    }
+  }
+
+
+  function findBestMatch(mainString, targetStrings) {
+    if (!areArgsValid(mainString, targetStrings)) {
+      throw new Error('Bad arguments: First argument should be a string, second should be an array of strings');
+    }
+    var ratings = _.map(targetStrings, function (targetString) {
+      return {
+        target: targetString,
+        rating: compareTwoStrings(mainString, targetString)
+      };
+    });
+
+    return {
+      ratings: ratings,
+      bestMatch: _.maxBy(ratings, 'rating')
+    };
+
+    // private functions ---------------------------
+    function areArgsValid(mainString, targetStrings) {
+      var mainStringIsAString = (typeof mainString === 'string');
+
+      var targetStringsIsAnArrayOfStrings = Array.isArray(targetStrings) &&
+        targetStrings.length > 0 &&
+        _.every(targetStrings, function (targetString) {
+          return (typeof targetString === 'string');
+        });
+
+      return mainStringIsAString && targetStringsIsAnArrayOfStrings;
+    }
+  }
+</script>
+<script>
+// Source: https://github.com/mikolalysenko/bibtex-parser
+
+// Original work by Henrik Muehe (c) 2010
+//
+// CommonJS port by Mikola Lysenko 2013
+//
+//
+
+// Issues:
+//  no comment handling within strings
+//  no string concatenation
+//  no variable values yet
+
+// Grammar implemented here:
+//  bibtex -> (string | preamble | comment | entry)*;
+//  string -> '@STRING' '{' key_equals_value '}';
+//  preamble -> '@PREAMBLE' '{' value '}';
+//  comment -> '@COMMENT' '{' value '}';
+//  entry -> '@' key '{' key ',' key_value_list '}';
+//  key_value_list -> key_equals_value (',' key_equals_value)*;
+//  key_equals_value -> key '=' value;
+//  value -> value_quotes | value_braces | key;
+//  value_quotes -> '"' .*? '"'; // not quite
+//  value_braces -> '{' .*? '"'; // not quite
+function BibtexParser() {
+  this.pos = 0;
+  this.input = "";
+
+  this.entries = {};
+  this.comments = [];
+  this.strings = {
+      JAN: "January",
+      FEB: "February",
+      MAR: "March",
+      APR: "April",
+      MAY: "May",
+      JUN: "June",
+      JUL: "July",
+      AUG: "August",
+      SEP: "September",
+      OCT: "October",
+      NOV: "November",
+      DEC: "December"
+  };
+  this.currentKey = "";
+  this.currentEntry = "";
+
+
+  this.setInput = function(t) {
+    this.input = t;
+  }
+
+  this.getEntries = function() {
+      return this.entries;
+  }
+
+  this.isWhitespace = function(s) {
+    return (s == ' ' || s == '\r' || s == '\t' || s == '\n');
+  }
+
+  this.match = function(s) {
+    this.skipWhitespace();
+    if (this.input.substring(this.pos, this.pos+s.length) == s) {
+      this.pos += s.length;
+    } else {
+      throw "Token mismatch, expected " + s + ", found " + this.input.substring(this.pos);
+    }
+    this.skipWhitespace();
+  }
+
+  this.tryMatch = function(s) {
+    this.skipWhitespace();
+    if (this.input.substring(this.pos, this.pos+s.length) == s) {
+      return true;
+    } else {
+      return false;
+    }
+    this.skipWhitespace();
+  }
+
+  this.skipWhitespace = function() {
+    while (this.isWhitespace(this.input[this.pos])) {
+      this.pos++;
+    }
+    if (this.input[this.pos] == "%") {
+      while(this.input[this.pos] != "\n") {
+        this.pos++;
+      }
+      this.skipWhitespace();
+    }
+  }
+
+  this.value_braces = function() {
+    var bracecount = 0;
+    this.match("{");
+    var start = this.pos;
+    while(true) {
+      if (this.input[this.pos] == '}' && this.input[this.pos-1] != '\\') {
+        if (bracecount > 0) {
+          bracecount--;
+        } else {
+          var end = this.pos;
+          this.match("}");
+          return this.input.substring(start, end);
+        }
+      } else if (this.input[this.pos] == '{') {
+        bracecount++;
+      } else if (this.pos == this.input.length-1) {
+        throw "Unterminated value";
+      }
+      this.pos++;
+    }
+  }
+
+  this.value_quotes = function() {
+    this.match('"');
+    var start = this.pos;
+    while(true) {
+      if (this.input[this.pos] == '"' && this.input[this.pos-1] != '\\') {
+          var end = this.pos;
+          this.match('"');
+          return this.input.substring(start, end);
+      } else if (this.pos == this.input.length-1) {
+        throw "Unterminated value:" + this.input.substring(start);
+      }
+      this.pos++;
+    }
+  }
+
+  this.single_value = function() {
+    var start = this.pos;
+    if (this.tryMatch("{")) {
+      return this.value_braces();
+    } else if (this.tryMatch('"')) {
+      return this.value_quotes();
+    } else {
+      var k = this.key();
+      if (this.strings[k.toUpperCase()]) {
+        return this.strings[k];
+      } else if (k.match("^[0-9]+$")) {
+        return k;
+      } else {
+        throw "Value expected:" + this.input.substring(start);
+      }
+    }
+  }
+
+  this.value = function() {
+    var values = [];
+    values.push(this.single_value());
+    while (this.tryMatch("#")) {
+      this.match("#");
+      values.push(this.single_value());
+    }
+    return values.join("");
+  }
+
+  this.key = function() {
+    var start = this.pos;
+    while(true) {
+      if (this.pos == this.input.length) {
+        throw "Runaway key";
+      }
+
+      if (this.input[this.pos].match("[a-zA-Z0-9_:\\./-]")) {
+        this.pos++
+      } else {
+        return this.input.substring(start, this.pos).toUpperCase();
+      }
+    }
+  }
+
+  this.key_equals_value = function() {
+    var key = this.key();
+    if (this.tryMatch("=")) {
+      this.match("=");
+      var val = this.value();
+      return [ key, val ];
+    } else {
+      throw "... = value expected, equals sign missing:" + this.input.substring(this.pos);
+    }
+  }
+
+  this.key_value_list = function() {
+    var kv = this.key_equals_value();
+    this.entries[this.currentEntry][kv[0]] = kv[1];
+    while (this.tryMatch(",")) {
+      this.match(",");
+      // fixes problems with commas at the end of a list
+      if (this.tryMatch("}")) {
+        break;
+      }
+      kv = this.key_equals_value();
+      this.entries[this.currentEntry][kv[0]] = kv[1];
+    }
+  }
+
+  this.entry_body = function(d) {
+    this.currentEntry = this.key();
+    this.entries[this.currentEntry] = { entryType: d.substring(1) };
+    this.match(",");
+    this.key_value_list();
+  }
+
+  this.directive = function () {
+    this.match("@");
+    return "@"+this.key();
+  }
+
+  this.string = function () {
+    var kv = this.key_equals_value();
+    this.strings[kv[0].toUpperCase()] = kv[1];
+  }
+
+  this.preamble = function() {
+    this.value();
+  }
+
+  this.comment = function() {
+    var start = this.pos;
+    while(true) {
+      if (this.pos == this.input.length) {
+        throw "Runaway comment";
+      }
+
+      if (this.input[this.pos] != '}') {
+        this.pos++
+      } else {
+        this.comments.push(this.input.substring(start, this.pos));
+        return;
+      }
+    }
+  }
+
+  this.entry = function(d) {
+    this.entry_body(d);
+  }
+
+  this.bibtex = function() {
+    while(this.tryMatch("@")) {
+      var d = this.directive().toUpperCase();
+      this.match("{");
+      if (d == "@STRING") {
+        this.string();
+      } else if (d == "@PREAMBLE") {
+        this.preamble();
+      } else if (d == "@COMMENT") {
+        this.comment();
+      } else {
+        this.entry(d);
+      }
+      this.match("}");
+    }
+
+    this.entries['@comments'] = this.comments;
+  }
+}
+
+//Runs the parser
+function doParse(input) {
+  var b = new BibtexParser()
+  b.setInput(input)
+  b.bibtex()
+  return b.entries
+}
+</script>
+  <script>
+    function closeButton ( button ) {
+      $(button).parentsUntil('modal').parent().modal('hide');
+    }
+  </script>
+</header>
+<body>
+
+<div class="navbar"></div>
+<div class="modals"></div>
+
+<input id="upload-input" type="file" name="uploads[]" multiple="multiple" style="display:none;">
+<input id="upload-input-server" type="file" name="uploads[]" multiple="multiple" style="display:none;">
+<input id="upload-input-JSON" type="file" name="uploads[]" multiple="multiple" style="display:none;">
+
+<div class="modal fade" id="default-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="defaultModalTitle"></h1><br>
+      <form id="defaultModalForm">
+        <!--<label for="defaultModalText" id="defaultModalLabel"></label>-->
+        <div class="tableTemplateContainer">
+          <div class="input-group searchContainer">
+            <input type="text" class="form-control" id="searchTableField" style="width:200px;" placeholder="Search table">
+          </div>
+          <div id ="defaultModalTableContainer"></div>
+          <br>
+          <input type="button" class ="btn btn-primary" id="addRow" value="Add row">
+        </div>
+        <div style="margin-top:20px;">
+          <input type="submit" id="defaultModalButton" class="btn btn-success" value="Save">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="rename-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="renameModalTitle"></h1><br>
+      <form id="renameModalForm">
+        <label for="renameModalText" id="renameModalLabel"></label>
+        <input type="text" id="renameModalText" value="">
+        <div style="margin-top:20px;">
+          <input type="submit" id="renameModalButton" class="btn btn-success" value="Save">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="bib-modal" class="loginmodal" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="loginmodal-container">
+      <span class="close-btn"><a href="javascript:void(0)" onclick="closeButton(this)">X</a></span>
+      <h1 id="bibModalTitle"></h1><br>
+      <form id="bibModalForm">
+        <label for="bibModalText" id="bibModalLabel"></label>
+        <div>
+          <textarea id="bibModalText" value="" style="width:300px;height:300px;max-width:1000px;max-height:1000px;overflow:auto;"></textarea>
+        </div>
+        <div style="margin-top:20px;">
+          <input type="submit" id="bibModalButton" class="btn btn-success" value="Confirm">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-2">
+        <div class="btn btn-group" role="group" aria-label="...">
+          <button type="button" class="btn btn-default" id="exportPNG" title="Export PNG"><span class="glyphicon glyphicon-picture" value="Export PNG" ></span></button>
+          <button type="button" class="btn btn-default" id="exportHTML" title="Export HTML"><span class="glyphicon glyphicon-file" value="Export HTML" ></span></button>
+          <button type="button" class="btn btn-default" id="exportJSON" title="Export JSON"><span class="glyphicon glyphicon-download-alt" value="Export JSON" ></span></button>
+        <!--
+          <button type="button" class="btn btn-default" id="compareJSONFiles" title="Compare JSON Correlation Files"><span class="glyphicon glyphicon-random" value="Compare JSON Correlation Files" ></span></button>
+          <button type="button" class="btn btn-default" id="testPerformance" title="Test Performance"><span class="glyphicon glyphicon-random" value="Test Performance" ></span></button>
+          <button type="button" class="btn btn-default" id="testPerformanceCorrelationProbability" title="Test Performance per Correlation Propability"><span class="glyphicon glyphicon-random" value="Test Performance per Correlation Propability" ></span></button>
+        -->
+          <button type="button" class="btn btn-default" id="saveMappings" title="Save To Database" style="display:none;"><span class="glyphicon glyphicon-floppy-disk" value="Save Mappings" ></span></button>
+        </div>
+        <div class="dropdown" style="margin-left:13px;" title="Paper Import">
+            <button class="btn btn-default dropdown-toggle" type="button" id="settingsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span class="glyphicon glyphicon-book" value="Paper Import" title="Paper Import"></span>
+              <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="settingsMenu" style="text-align:center;">
+              <li style="display:inline-block;"><h4>Paper Import</h4></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><label for="selectStringComparisonTechnique">String Comparison Technique: </label></div><div><select id="selectStringComparisonTechnique" style="width:100px;" title="String Comparison Technique">
+                <option title="Exact matching using regular expressions">Regex</option>
+                <option title="Dice's Coefficient calculates string similarity based on the number of bigrams two words have in common (value between 0 and 1)">Dice's Coefficient</option>
+                <option title="The Levenshtein distance is the minimal number of insertions, deletions and replacements needed for transforming one string into another one (value must be a natural number)">Levenshtein</option>
+                <option title="SublimeText-like fuzzy search (https://github.com/farzher/fuzzysort) (negative value, 0 standing for exact matching)">Fuzzysort</option>
+              </select></div></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><label for="importMinSimilarity">Min Similarity: </label></div><div><input type="text" id="importMinSimilarity" value="" style="width:50px;" title="Min similarity"></div></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><div><label for="importMinOccurrences">Min Occurrences: </label></div><div><input type="text" id="importMinOccurrences" value="1" style="width:50px;" title="Min occurrences"></div></li>
+              <li style="display:inline-block;"><div style="padding:10px;"><div><label for="showCellNumbers">Show Occurrence Numbers: </label></div><div><input type="checkbox" id="showCellNumbers" title="Show Occurrence Numbers" checked></div></li>
+              <li style="display:inline-block;"><input type="button" class="btn btn-success" id="import" title="Import" value="Import Papers"></li>
+              <!--<li><button type="button" class="btn btn-default" id="import" title="Import"><span class=" glyphicon glyphicon-folder-open" value="Import" ></span></button></li>-->
+            </ul>
+          </div>
+    </div>
+    <div class="col-sm-2">
+      <form style="padding:10px;width:200px;">
+      <div hidden>
+        <label for="showChildAttributes">Show child attributes</label>
+        <input type="checkbox" id="showChildAttributes" title="Show child attributes" style="margin-left:15px;" checked>
+        <label for="includeChildAttributes">Include child attributes</label>
+        <input type="checkbox" id="includeChildAttributes" title="Include citations of child attributes" style="margin-left:15px;">
+      </div>
+      <div class="dataTypeSelectContainer">
+        <label for="dataType">Data Type: </label><select class="form-control" id="dataType">
+          <option value="citationCount" selected="selected">Citation count</option>
+          <option value="referenceCount">Sum of references</option>
+        </select>
+      </div>
+      <label for="order">Order by: </label><select class="form-control" id="order">
+        <option value="default" selected="selected"></option>
+        <option value="name">by Name</option>
+        <option value="count">by Value</option>
+      </select>
+      <label for="colorTheme">Color Theme</label><select class="form-control" id="colorTheme"></select>
+      </form>
+    </div>
+    <div class="col-sm-2">
+      <div class="parentSelectContainer" style="margin-left:20px;margin-top:50px;">
+          <form style="width:165px;">
+            <label for="parents1">x-axis: </label>
+            <select class="form-control parentSelect" id="parents2" hidden>
+            </select>
+            <label for="parents2">y-axis: </label>
+            <select class="form-control parentSelect" id="parents1" hidden>
+            </select>
+          </form>
+      </div>
+    </div>
+</div>
+</div>
+<div id="colorLegend"></div>
+
+<script id="mainScript">
+
+  // variables, used for the conversion to static HTML
+  const IS_STATIC = false;
+
+  const STATIC_ARRAY = ['CITATIONS', 'CITATIONCOUNT', 'DIMENSIONS', 'ALLATTRIBUTES', 'ATTRIBUTESY', 'ATTRIBUTESX', 'CORRELATIONS', 'COVERAGE'];
+
+  const STATIC_INDEX_CITATIONS = 0;
+  const STATIC_INDEX_CITATIONCOUNT = 1;
+  const STATIC_INDEX_DIMENSIONS = 2;
+  const STATIC_INDEX_ALLATTRIBUTES = 3;
+  const STATIC_INDEX_ATTRIBUTESY = 4;
+  const STATIC_INDEX_ATTRIBUTESX = 5;
+  const STATIC_INDEX_CORRELATIONS = 6;
+  const STATIC_INDEX_COVERAGE = 7;
+
+  var STATIC_CITATIONS;
+  var STATIC_CITATIONCOUNT;
+  var STATIC_DIMENSIONS;
+  var STATIC_ALLATTRIBUTES;
+  var STATIC_ATTRIBUTESY;
+  var STATIC_ATTRIBUTESX;
+  var STATIC_CORRELATIONS;
+  var STATIC_COVERAGE;
+  var DYNAMIC_ARRAY = [];
+
+  const DEFAULT_TAXONOMY_ID = 1;
+  const DEFAULT_TAXONOMY_NAME = 'Integrity protection';
+  var currentHash = '';
+  var TAXONOMY_ID;
+
+  const KMEANS_CLUSTERS = 7;
+  const MIN_IMPORT_OCCURRENCES = 1;
+  const FUZZY_SORT_MIN_SIMILARITY = -150;
+
+  var totalNumberOfCitations, maxReferenceCount;
+  var selectize1, selectize2;
+  var parents = [];
+  var buildingMatrix = false;
+
+  // string comparison techniques
+  // functions are in "stringComparison.js"
+  // new string comparison techniques can be added here by specifying a title and a string comparison function
+  const STRING_COMPARISON_TECHNIQUES = [{title: "Regex", method: occurrencesRegex}, {title: "Dice's Coefficient", method: occurrencesDice}, {title: "Levenshtein", method: occurrencesLevenshtein}, {title: "Fuzzysort", method: occurrencesFuzzysort}];
+
+  const DEFAULT_STRING_COMPARISON_TECHNIQUE = 'Regex';
+  const DEFAULT_STRING_COMPARISON_METHOD = occurrencesRegex;
+
+  var minSimilarity = 1;
+
+  // color gradients
+  const colorsBlue = ["#1CB5E0", "#189ECC", "#1587B9", "#1171A6", "#0E5A93", "#0A437F", "#072D6C", "#031659", "#000046"];
+  const colorsYGB = ["#F0F8FF","#AAF191","#80D385","#61B385","#3E9583","#217681","#285285","#1F2D86","#000086"]; // #FFFFDD
+  const colorsRainbow = ["#2c7bb6", "#00a6ca","#00ccbc","#90eb9d","#ffff8c","#f9d057","#f29e2e","#e76818","#d7191c"];
+  const colorsWeddingDayBlues = ["#40E0D0", "#6FCB9C", "#9FB668", "#CFA134", "#FF8C00", "#FF6920", "#FF4640", "#FF2360", "FF0080"];
+  const colors2 = ["#DFDFDF", "#BFBFBF", "#9F9F9F", "#7F7F7F", "#5F5F5F", "#3F3F3F", "#1F1F1F", "#000000"];
+  const colors3 = ["#8078FA", "#7069E2", "#605ACA", "#514BB2", "#413C9A", "#312D82", "#221E6A", "#120F52", "#03003B"];
+  const colors4 = ["#F0F2F0", "#D2D5DA", "#B4B8C4", "#969BAE", "#787F98", "#5A6282", "#3C456C", "#1E2856", "#000C40"];
+
+  const COLOR_GRADIENTS =  [{name: 'blue', colors: colorsBlue}, {name: 'ygb', colors: colorsYGB}, {name: 'rainbow', colors: colorsRainbow}, {name: 'weddingDayBlues', colors: colorsWeddingDayBlues}, {name: 'colors2', colors: colors2}, {name: 'colors3', colors: colors3}, {name: 'colors4', colors: colors4}];
+
+  const DEFAULT_MIN_SIMILARITY = 1;
+  const DEFAULT_TEXT_FILL = 'white';
+  const FONT_SIZE = '8pt';
+
+  // The following constants are used for the rotation and shortening of parent and dimension text labels of the matrix
+  const FACTOR = 7;
+  const ROTATION_FACTOR = 5.5;
+  const ROTATION_FACTOR_2 = 6;
+  const SHORTEN_VALUE = 0.035;
+  const SHORTEN_VALUE_ROTATION = 2.25;
+  const SHORTEN_VALUE_DIMENSION = 3;
+  const SHORTEN_VALUE_ROTATION_DIMENSION = 2.25;
+  const SHORTEN_LEAF_VALUE = 18;
+  const MIN_SHORTEN_VALUE = 3;
+  const MIN_SHORTEN_FACTOR = 3;
+
+  // calculate conformity between 2 correlation arrays
+  function compareCorrelations ( correlations1, correlations2 ) {
+    var texts1 = [];
+    var texts2 = [];
+    var results = [];
+    for ( var i = 0; i < correlations1.length; i++ ) {
+      if (correlations1[i].hasOwnProperty('text1') && correlations1[i].hasOwnProperty('text2') && correlations1[i].hasOwnProperty('value')) {
+        var textI1 = correlations1[i]['text1'];
+        var textI2 = correlations1[i]['text2'];
+        for ( var j = 0; j < correlations2.length; j++ ) {
+          if (correlations2[j].hasOwnProperty('text1') && correlations2[j].hasOwnProperty('text2') && correlations2[j].hasOwnProperty('value')) {
+            var textJ1 = correlations2[j]['text1'];
+            var textJ2 = correlations2[j]['text2'];
+            if (textI1 == textJ1 && textI2 == textJ2) {
+              var value1 = correlations1[i].value > 0;
+              var value2 = correlations2[j].value > 0;
+              results.push({text1: textI1, text2: textI2, value: value1 == value2});
+              break;
+            }
+          }
+        }
+      }
+    }
+    var counter = 0;
+    for ( var i = 0; i < results.length; i++ ) {
+      if (!!results[i].value) counter++;
+    }
+    console.log('Correlation results: ', results);
+    console.log('Conformity: ' +  (counter / (results.length > 0 ? results.length : 1) * 100) + ' %');
+  }
+
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
+  function getSVGString( svgNode ) {
+    svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
+    var cssStyleText = getCSSStyles( svgNode );
+    appendCSS( cssStyleText, svgNode );
+
+    var serializer = new XMLSerializer();
+    var svgString = serializer.serializeToString(svgNode);
+    svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+    svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+
+    return svgString;
+
+    function getCSSStyles( parentElement ) {
+      var selectorTextArr = [];
+
+      // Add Parent element Id and Classes to the list
+      selectorTextArr.push( '#'+parentElement.id );
+      for (var c = 0; c < parentElement.classList.length; c++)
+          if ( !contains('.'+parentElement.classList[c], selectorTextArr) )
+            selectorTextArr.push( '.'+parentElement.classList[c] );
+
+      // Add Children element Ids and Classes to the list
+      var nodes = parentElement.getElementsByTagName("*");
+      for (var i = 0; i < nodes.length; i++) {
+        var id = nodes[i].id;
+        if ( !contains('#'+id, selectorTextArr) )
+          selectorTextArr.push( '#'+id );
+
+        var classes = nodes[i].classList;
+        for (var c = 0; c < classes.length; c++)
+          if ( !contains('.'+classes[c], selectorTextArr) )
+            selectorTextArr.push( '.'+classes[c] );
+      }
+
+      // Extract CSS Rules
+      var extractedCSSText = "";
+      for (var i = 0; i < document.styleSheets.length; i++) {
+        var s = document.styleSheets[i];
+
+        try {
+            if(!s.cssRules) continue;
+        } catch( e ) {
+              if(e.name !== 'SecurityError') throw e; // for Firefox
+              continue;
+            }
+
+        var cssRules = s.cssRules;
+        for (var r = 0; r < cssRules.length; r++) {
+          if ( contains( cssRules[r].selectorText, selectorTextArr ) )
+            extractedCSSText += cssRules[r].cssText;
+        }
+      }
+
+
+      return extractedCSSText;
+
+      function contains(str,arr) {
+        return arr.indexOf( str ) === -1 ? false : true;
+      }
+
+    }
+
+    function appendCSS( cssText, element ) {
+      var styleElement = document.createElement("style");
+      styleElement.setAttribute("type","text/css");
+      styleElement.innerHTML = cssText;
+      var refNode = element.hasChildNodes() ? element.children[0] : null;
+      element.insertBefore( styleElement, refNode );
+    }
+  }
+
+  // source: http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177
+  function svgString2Image( svgString, width, height, format, callback ) {
+    var format = format ? format : 'png';
+
+    //var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( svgString ) ) ); // Convert SVG string to data URL
+
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    var image = new Image();
+    image.onload = function() {
+      context.clearRect ( 0, 0, width, height );
+      context.drawImage(image, 0, 0, width, height);
+
+      canvas.toBlob( function(blob) {
+        var filesize = Math.round( blob.length/1024 ) + ' KB';
+        if ( callback ) callback( blob, filesize );
+      });
+    };
+    var url = URL.createObjectURL(
+      new Blob([svgString], {
+        type: 'image/svg+xml;charset=utf8'
+        })
+    );
+    image.src = url;
+  }
+
+  function buildParentTreeHelper ( attributes ) {
+    var roots = [];
+    attributes.forEach ( function ( attribute ) {
+      var foundParent = false;
+      if (!!attribute.parentText) {
+        attributes.forEach ( function ( attribute2 ) {
+          if (attribute2.text == attribute.parentText && attribute.text != attribute2.text) {
+            attribute2.children.push(attribute);
+            foundParent = true;
+          }
+        });
+      }
+      if (!foundParent) roots.push(attribute);
+    });
+    return roots;
+  }
+
+  function buildParentTree ( attributes ) {
+    var results = [];
+    attributes.forEach ( function ( attribute ) {
+      results.push({text: attribute.text, parentText: attribute.parentText, children: []});
+    });
+    return buildParentTreeHelper(results);
+  }
+
+  // calculate number of hierarchy levels
+  function getTreeDepth ( nodes ) {
+    var max = 0;
+    nodes.forEach ( function ( node ) {
+      var value = node.parents.length;
+      if (value > max) max = value;
+    });
+    return max;
+  }
+
+  // check if there are any taxonomy dimensions
+  function hasDimensions ( nodes ) {
+    for ( var i = 0; i < nodes.length; i++ ) {
+      if (!!nodes[i].dimension && nodes[i].dimension != '') return true;
+    }
+    return false;
+  }
+
+  function checkForOccurrence ( array, value ) {
+    for ( var i = 0; i < array.length; i++ ) {
+      for ( var j = 0; j < array[i].length; j++ ) {
+        if (array[i][j] == value) return j;
+      }
+    }
+    return -1;
+  }
+
+  // calculate maximal length of a name text
+  function getMaxNameLength ( nodes ) {
+    var max = 0;
+    nodes.forEach ( function ( node ) {
+      var value = node.text.length;
+      if (value > max) max = value;
+    });
+    return max;
+  }
+
+  /*
+    Based on a d3 code example.
+
+    Source: http://bl.ocks.org/nbremer/5cd07f2cb4ad202a9facfbd5d2bc842e
+  */
+  function applyColorGradient ( defs, gradient, minValue, maxValue ) {
+    if (!gradient.name || !gradient.colors) return {};
+    var colors = gradient.colors;
+    var colorRange = d3.range(0, 1, 1.0 / (colors.length - 1));
+    colorRange.push(1);
+
+    var colorScale = d3.scale.linear()
+      .domain(colorRange)
+      .range(colors)
+      .interpolate(d3.interpolateHcl);
+
+    var colorInterpolate = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0,1]);
+
+    //defs.selectAll(".colorGradient").remove();
+    defs.append("linearGradient")
+      .attr("class", "colorGradient")
+      .attr("id", "gradient-" + gradient.name + "-colors")
+      .attr("x1", "0%").attr("y1", "0%")
+      .attr("x2", "100%").attr("y2", "0%")
+      .selectAll("stop")
+      .data(colors)
+      .enter().append("stop")
+      .attr("offset", function(d,i) { return i/(colors.length-1); })
+      .attr("stop-color", function(d) { return d; });
+    return {colorScale: colorScale, colorInterpolate: colorInterpolate};
+  }
+
+  /*
+    Based on a d3 code example.
+
+    Source: https://bl.ocks.org/duspviz-mit/9b6dce37101c30ab80d0bf378fe5e583
+  */
+  function updateColorLegend ( gradientID, width, height, maxValue ) { //     var w = 300, h = 50;
+    d3.select("#colorLegend").selectAll("svg").remove();
+    var legend = d3.select("#colorLegend")
+      .append("svg")
+      .attr("width", width + 20)
+      .attr("height", height);
+
+    legend.append("rect")
+      .attr("width", width)
+      .attr("height", height - 30)
+      .style("fill", "url(#" + gradientID + ")")
+      .attr("transform", "translate(10,10)");
+
+    var y = d3.scale.linear()
+      .range([0, width]) // 300, 0
+      .domain([0, maxValue]); // 68, 12
+
+    var yAxis = d3.svg.axis().scale(y).orient("bottom").ticks(3);
+
+    legend.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(10,30)")
+      .call(yAxis)
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end");
+  }
+
+  function updateColorGradient ( svg, gradient, maxValue, withTransition ) {
+    var gradientID = "gradient-" + gradient.name + "-colors";
+    updateColorLegend(gradientID, 300, 50, maxValue);
+  }
+
+  // default sorting functions, which group concepts that have the same dimension/parents together
+  // to ensure a pleasant visual appearance
+  function sortDefaultY ( a, b ) {
+    if (a.dimension != '' && b.dimension == '') return -1;
+    if (a.dimension == '' && b.dimension != '') return 1;
+    if (a.dimension < b.dimension) return -1;
+    else if (a.dimension > b.dimension) return 1;
+    var i = a.parents.length - 1;
+    var j = b.parents.length - 1;
+    while (i >= 0 && j >= 0) {
+      if (a.parents[i] < b.parents[j]) return -1;
+      if (b.parents[j] < a.parents[i]) return 1;
+      i--;
+      j--;
+    }
+    if (i >= 0) return -1;
+    if (j >= 0) return 1;
+    if (a.text != '' && b.text == '') return -1;
+    if (a.text == '' && b.text != '') return 1;
+    if (a.text == '' && b.text == '') return 0;
+    return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+  }
+
+  function sortDefaultX ( a, b ) {
+    if (a.dimension != '' && b.dimension == '') return -1;
+    if (a.dimension == '' && b.dimension != '') return 1;
+    if (a.dimension < b.dimension) return -1;
+    else if (a.dimension > b.dimension) return 1;
+    var i = a.parents.length - 1;
+    var j = b.parents.length - 1;
+    while (i >= 0 && j >= 0) {
+      if (a.parents[i] < b.parents[j]) return -1;
+      if (b.parents[j] < a.parents[i]) return 1;
+      i--;
+      j--;
+    }
+    if (i >= 0) return -1;
+    if (j >= 0) return 1;
+    if (a.text != '' && b.text == '') return -1;
+    if (a.text == '' && b.text != '') return 1;
+    if (a.text == '' && b.text == '') return 0;
+    return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+  }
+
+  // sort nodes based on the selected value
+  function sortNodes ( value, nodesY, nodesX ) {
+    var sortY, sortX;
+    if (value == 'name') {
+      sortY = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else { var value = d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); return value != 0 ? value : sortDefaultY(a, b); }};
+      sortX = function(a, b) { if (a.text == '') return 1; if (b.text == '') return -1; else { var value = d3.ascending(a.text.toLowerCase(), b.text.toLowerCase()); return value != 0 ? value : sortDefaultX(a, b); }};
+    } else if (value == 'count') {
+      sortY = function (a, b) { if (a.count == b.count) return sortDefaultY(a, b); return b.count - a.count; };
+      sortX = function (a, b) { if (a.count == b.count) return sortDefaultX(a, b); return b.count - a.count; };
+    } else {
+      sortY = sortDefaultY;
+      sortX = sortDefaultX;
+    }
+    nodesY.sort(sortY);
+    nodesX.sort(sortX);
+    return {y: nodesY, x: nodesX};
+  }
+
+  // calculate matrix creation time with dummy elements
+  function testPerformance ( attributeNumberY, attributeNumberX, correlationPropability ) {
+    var attributesY = [];
+    var attributesX = [];
+    var correlations = [];
+    for ( var i = 1; i <= attributeNumberY; i++ ) {
+      attributesY.push({text: 'ElementY' + i});
+    }
+    for ( var i = 1; i <= attributeNumberX; i++ ) {
+      attributesX.push({text: 'ElementX' + i});
+    }
+    for ( var i = 0; i < attributesY.length; i++ ) {
+      for ( var j = 0; j < attributesX.length; j++ ) {
+        if (Math.random() <= correlationPropability) {
+          correlations.push({text1: attributesY[i].text, text2: attributesX[j].text, value: 1});
+        }
+      }
+    }
+    console.log('Performance Test with attributeNumberY: ' + attributeNumberY + ', attributeNumberX: ' + attributeNumberX + ', correlationPropability: ' + correlationPropability + ':');
+    console.time('BuildMatrix');
+    var startTime = window.performance.now();
+    buildingMatrix = false;
+    buildMatrix({response: attributesY}, {response: attributesX}, {response: correlations}, -1, '', false);
+    var endTime = window.performance.now();
+    console.timeEnd('BuildMatrix');
+    return endTime - startTime;
+  }
+
+  // calculate average matrix creation time with dummy elements (for different numbers of elements)
+  function testPerformancePerElementNumber ( start, end, stepSize, correlationPropability, numberOfRuns ) {
+    if (numberOfRuns <= 0) return 0;
+    var results = [];
+    for ( var i = start; i <= end; i += stepSize ) {
+      var sum = 0;
+      for ( var j = 0; j < numberOfRuns; j++ ) {
+        var timeDiff = testPerformance(i, i, correlationPropability);
+        sum += timeDiff;
+      }
+      results.push({nodes: i, correlationPropability: correlationPropability, time: sum / numberOfRuns});
+    }
+    return results;
+  }
+
+  // calculate average matrix creation time with dummy elements (for different correlation probabilities between elements)
+  function testPerformancePerCorrelationPropability ( stepSize, numberOfNodes, numberOfRuns ) {
+    if (numberOfRuns <= 0) return 0;
+    var results = [];
+    for ( var i = 0; i <= 1; i += stepSize ) {
+      var sum = 0;
+      for ( var j = 0; j < numberOfRuns; j++ ) {
+        var timeDiff = testPerformance(numberOfNodes, numberOfNodes, i);
+        sum += timeDiff;
+      }
+      results.push({nodes: numberOfNodes, correlationPropability: i, time: sum / numberOfRuns});
+    }
+    return results;
+  }
+
+  function testPerformanceDummy () {
+    var result = testPerformancePerElementNumber(10, 100, 10, 0.5, 10);
+    console.log('Performance results: ', result);
+    try {
+      var resultString = unescape(JSON.stringify(result));
+      var resultBlob = new Blob([resultString], {type: "application/json;charset=utf-8"});
+      saveAs(resultBlob, 'Performance.json');
+    } catch ( err ) {
+      console.log('JSON error: ', err);
+      handleError('Error creating JSON file from performance results.');
+    }
+  }
+
+  function testPerformanceCorrelationProbabilityDummy () {
+    var result = testPerformancePerCorrelationPropability(0.1, 50, 10);
+    console.log('Performance results: ', result);
+    try {
+      var resultString = unescape(JSON.stringify(result));
+      var resultBlob = new Blob([resultString], {type: "application/json;charset=utf-8"});
+      saveAs(resultBlob, 'Performance.json');
+    } catch ( err ) {
+      console.log('JSON error: ', err);
+      handleError('Error creating JSON file from performance results.');
+    }
+  }
+
+  /*
+    The elementary matrix creation code is based on a d3 code example (creating rows and columns and adding it to the SVG).
+
+    Source: https://github.com/lonelydatum/bost.ocks.org/blob/99f535dc6e42865f4a73b1868668ef4ee3ae6184/mike/miserables/index.html
+
+    However, not much of the original code is left. It was mainly used for learning how to build the basic matrix construct.
+  */
+  function buildMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL, sortValues, selectableCells, nodesOriginalY, nodesOriginalX ) {0
+    if (!!buildingMatrix) return;
+    buildingMatrix = true;
+    console.time('Build Matrix');
+    d3.selectAll(".d3-tip").remove();
+
+    var matrixY = [],
+        matrixX = [],
+        nodesY = attributesY.response,
+        n = attributesY.response.length,
+        nodesX = attributesX.response,
+        m = attributesX.response.length;
+
+    if (n == 0 || m == 0) {
+      buildingMatrix = false;
+      return;
+    }
+
+    // build basic matrix structure
+    nodesY.forEach ( function (node, i) {
+      node.index = i;
+      if (node.id < 0) node.count = -1;
+      else node.count = 0;
+      matrixY[i] = d3.range(m).map(function(j) { return {x: j, y: i+1, z: 0}; });
+      maxHeight += node.text.length;
+      node.parents = (!!node.parentText && node.parentText != '') ? node.parentText.split(',') : [];
+    });
+    nodesX.forEach(function(node, i) {
+      node.index = i;
+      if (node.id < 0) node.count = -1;
+      else node.count = 0;
+      matrixX[i] = d3.range(n).map(function(j) { return {x: i+1, y: j, z: 0}; });
+      maxWidth += node.text.length;
+      node.parents = (!!node.parentText && node.parentText != '') ? node.parentText.split(',') : [];
+    });
+
+    if (!nodesOriginalY) nodesOriginalY = nodesY.slice(0);
+    if (!nodesOriginalX) nodesOriginalX = nodesX.slice(0);
+
+    var maxWidth = 0;
+    var maxHeight = 0;
+
+    if (onClickURL == '/analysis/citationDetails') selectableCells = true;
+
+    var hasDimensionsY = hasDimensions(nodesY);
+    var hasDimensionsX = hasDimensions(nodesX);
+
+    // calculate number of hierarchy levels
+    var treeDepthY = getTreeDepth(nodesY);
+    var treeDepthX = getTreeDepth(nodesX);
+
+    // check if there are any parent hierarchy levels / dimensions
+    var hasParentsY = treeDepthY > 0;
+    var hasParentsX = treeDepthX > 0;
+    if (hasDimensionsY) treeDepthY++;
+    if (hasDimensionsX) treeDepthX++;
+
+    // calculate matrix margins
+
+    var marginLeft = 100;
+    var marginTop = 105;
+
+    var textTransformFactorY = 105;
+    var textTransformFactorX = 105;
+
+    if (!hasDimensionsY && !hasParentsY) {
+      marginLeft = 150;
+      textTransformFactorY = 125;
+    }
+    if (!hasDimensionsX && !hasParentsX) {
+      marginTop = 150;
+      textTransformFactorX = 125;
+    }
+
+    var left = marginLeft + Math.max(1, treeDepthY) * 35;
+    var sortedLeft = marginLeft + Math.max(1, treeDepthY) * 60;
+    var top = marginTop + Math.max(1, treeDepthX) * 35;
+    var sortedTop = marginTop + Math.max(1, treeDepthX) * 60;
+
+    var svgMarginLeft = sortedLeft - left;
+    var svgMarginTop = sortedTop - top;
+
+    var selectedOrder = $('#order').val();
+
+    if (!selectedOrder || selectedOrder == 'default') {
+      nodesY.sort(sortDefaultY);
+      nodesX.sort(sortDefaultX);
+    }
+    left = sortedLeft;
+    top = sortedTop;
+    svgMarginLeft = 0;
+    svgMarginTop = 0;
+
+    console.log("correlations: ", correlations.response)
+
+    // fill matrix values
+    correlations.response.forEach(function(link) {
+      var foundLinks = 0;
+      if (link.text1 == link.text2) {
+        for ( var k = 0; k < nodesY.length; k++) {
+          if (nodesY[k].text == link.text1) {
+            for ( var l = 0; l < nodesX.length; l++) {
+              if (nodesX[l].text == link.text2) {
+                matrixY[k][l].z += link.value;
+                matrixY[k][l].src = nodesY[k].text;
+                matrixY[k][l].dest = nodesX[l].text;
+                matrixY[k][l].onClickURL = onClickURL;
+                matrixX[l][k].z += link.value;
+                matrixX[l][k].src = nodesY[k].text;
+                matrixX[l][k].dest = nodesX[l].text;
+                matrixX[l][k].onClickURL = onClickURL;
+                if (!!link.occurrences) {
+                  matrixY[k][l].occurrences = link.occurrences;
+                  matrixX[l][k].occurrences = link.occurrences;
+                }
+                nodesY[k].count += link.value;
+                nodesX[l].count += link.value;
+                foundLinks++;
+                break;
+              }
+            }
+            if (foundLinks > 0) break;
+          }
+        }
+      } else {
+        for ( var k = 0; k < nodesY.length; k++ ) {
+          if (nodesY[k].text == link.text1 || nodesY[k].text == link.text2) {
+            for ( var l = 0; l < nodesX.length; l++) {
+              if (nodesX[l].text == link.text2 && nodesY[k].text != nodesX[l].text) {
+                matrixY[k][l].z += link.value;
+                matrixY[k][l].src = nodesY[k].text;
+                matrixY[k][l].dest = nodesX[l].text;
+                matrixY[k][l].onClickURL = onClickURL;
+                matrixX[l][k].z += link.value;
+                matrixX[l][k].src = nodesY[k].text;
+                matrixX[l][k].dest = nodesX[l].text;
+                matrixX[l][k].onClickURL = onClickURL;
+                if (!!link.occurrences) {
+                  matrixY[k][l].occurrences = link.occurrences;
+                  matrixX[l][k].occurrences = link.occurrences;
+                }
+                nodesY[k].count += link.value;
+                nodesX[l].count += link.value;
+                foundLinks++;
+                break;
+              } else if (nodesX[l].text == link.text1 && nodesY[k].text != nodesX[l].text) {
+                matrixY[k][l].z += link.value;
+                matrixY[k][l].src = nodesY[k].text;
+                matrixY[k][l].dest = nodesX[l].text;
+                matrixY[k][l].onClickURL = onClickURL;
+                matrixX[l][k].z += link.value;
+                matrixX[l][k].src = nodesY[k].text;
+                matrixX[l][k].dest = nodesX[l].text;
+                matrixX[l][k].onClickURL = onClickURL;
+                if (!!link.occurrences) {
+                  matrixY[k][l].occurrences = link.occurrences;
+                  matrixX[l][k].occurrences = link.occurrences;
+                }
+                nodesY[k].count += link.value;
+                nodesX[l].count += link.value;
+                foundLinks++;
+                break;
+              }
+            }
+            if (foundLinks > 1) break;
+          }
+        }
+      }
+    });
+
+    var labelText = ($('#dataType')[0].value == 'referenceCount') ? ' reference' : ' citation';
+    var clickCellOption = !!selectableCells ? clickCellSelectable : clickCell;
+    if (!!selectableCells) labelText = ' occurrence';
+    if (!maxValue) maxValue = -1;
+    if (maxValue < 0) {
+      maxValue = 0;
+      for ( var i = 0; i < matrixY.length; i++ ) {
+        for ( var j = 0; j < matrixY[i].length; j++ ) {
+          if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
+        }
+      }
+    }
+    if (!!sortValues && !!selectedOrder && selectedOrder != 'default') {
+      var sortedNodes = sortNodes(selectedOrder, nodesY, nodesX);
+      buildingMatrix = false;
+      return buildMatrix({response: sortedNodes.y}, {response: sortedNodes.x}, correlations, maxValue, onClickURL, false, selectableCells, nodesOriginalY, nodesOriginalX);
+    }
+
+    var minValue = 0;
+    var margin = {top: top, right: 0, bottom: 30, left: left},
+        width =  nodesX.length * 20,
+        height = nodesY.length * 20;
+
+    function getYPosition ( d ) {
+      var sum = 0;
+      for ( var i = 0; i < d.x; i++ ) {
+        sum += nodesX[i].text.length / maxWidth * width;
+      }
+      return sum;
+    }
+
+    function getXPosition ( d ) {
+      var sum = 0;
+      for ( var i = 0; i < d.y; i++ ) {
+        sum += nodesY[i].text.length / maxHeight * height;
+      }
+      return sum;
+    }
+
+    for ( var i = 0; i < nodesY.length; i++ ) {
+      nodesY[i].yPosition = getXPosition({y: i});
+    }
+    for ( var i = 0; i < nodesX.length; i++ ) {
+      nodesX[i].xPosition = getYPosition({x: i});
+    }
+
+    // create SVG with calculated margins
+    d3.selectAll("svg").remove();
+    var svg = d3.select("body").append("svg")
+        .attr("id", "matrixSVG")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .style("margin-left", svgMarginLeft + "px")
+        .style("margin-top", svgMarginTop + "px")
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var defs = svg.append("defs");
+
+    // recalculate all color gradients based on the current min and max values
+    function refreshColorGradients ( minValue, maxValue ) {
+      if (!minValue) minValue = 0;
+      if (!maxValue) {
+        maxValue = 0;
+        for ( var i = 0; i < matrixY.length; i++ ) {
+          for ( var j = 0; j < matrixY[i].length; j++ ) {
+            if (matrixY[i][j].z > maxValue) maxValue = matrixY[i][j].z;
+          }
+        }
+      }
+      COLOR_GRADIENTS.forEach ( function ( gradient ) {
+        var result = applyColorGradient(defs, gradient, minValue, maxValue);
+        if (!!result) {
+          if (!!result.colorScale) gradient.colorScale = result.colorScale;
+          if (!!result.colorInterpolate) gradient.colorInterpolate = result.colorInterpolate;
+        }
+      });
+      var colorThemeIndex = $('#colorTheme')[0].value - 0;
+      if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) updateColorGradient(svg, COLOR_GRADIENTS[colorThemeIndex], maxValue, false);
+    }
+
+    var maxScale = Math.max(width, height);
+    var y = d3.scale.ordinal().domain(d3.range(n)).rangeBands([0, maxScale]),
+        x = d3.scale.ordinal().domain(d3.range(m)).rangeBands([0, maxScale]),
+        z = d3.scale.linear().clamp(true),
+        c = d3.scale.category10().domain(d3.range(10));
+
+    if (maxValue > 4) z.domain([0, 4]);
+
+    var orders = [];
+    orders.push({
+      name: d3.range(m).sort(function(a, b) { if (nodesX[a].text == '') return 1; if (nodesX[b].text == '') return -1; else return d3.ascending(nodesX[a].text.toLowerCase(), nodesX[b].text.toLowerCase()); }),
+      count: d3.range(m).sort(function(a, b) { return nodesX[b].count - nodesX[a].count; }),
+      default: d3.range(m)
+    });
+    orders.push({
+      name: d3.range(n).sort(function(a, b) { if (nodesY[a].text == '') return 1; if (nodesY[b].text == '') return -1; else return d3.ascending(nodesY[a].text.toLowerCase(), nodesY[b].text.toLowerCase()); }),
+      count: d3.range(n).sort(function(a, b) { return nodesY[b].count - nodesY[a].count; }),
+      default: d3.range(n)
+    });
+
+    var maxAxisLength = Math.max(m, n);
+
+    y.domain(d3.range(maxAxisLength));
+    x.domain(d3.range(maxAxisLength));
+
+    var d3Tip = d3.tip().attr('class', 'd3-tip').html(function(d) { if (!!d.fullText) { if (d.fullText == -1) return ''; return d.fullText; } return '' + d.z + (d.z != 1 ? labelText + 's' : labelText); });
+    svg.call(d3Tip);
+
+    var heightPerCell = height / nodesY.length;
+    var widthPerCell = width / nodesX.length;
+
+    var heightPerParentCell = (margin.top-marginTop)/(treeDepthX+1);
+    var widthPerParentCell = (margin.left-marginLeft)/(treeDepthY+1);
+
+    // add matrix borders and parent level lines
+
+    svg.append("line")
+      .attr("class", "line")
+      .attr("x1", -margin.left + 10)
+      .attr("x2", 0)
+      .attr("y1", height)
+      .attr("y2", height)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    svg.append("line")
+      .attr("class", "line")
+      .attr("x1", -margin.left + 10)
+      .attr("x2", -margin.left + 10)
+      .attr("y1", 0)
+      .attr("y2", height)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    for ( var i = 0; i < treeDepthY; i++ ) {
+      if (i == 0) {
+        svg.append("line")
+          .attr("class", "line")
+          .attr("x1", -margin.left + (i+1)*widthPerParentCell)
+          .attr("x2", -margin.left + (i+1)*widthPerParentCell)
+          .attr("y1", 0)
+          .attr("y2", height)
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+      }
+    }
+
+    svg.append("line")
+      .attr("class", "line")
+      .attr("x1", width)
+      .attr("x2", width)
+      .attr("y1", -margin.top + 10)
+      .attr("y2", 0)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    svg.append("line")
+      .attr("class", "line")
+      .attr("x1", 0)
+      .attr("x2", width)
+      .attr("y1", -margin.top + 10)
+      .attr("y2", -margin.top + 10)
+      .attr("stroke-width", "1")
+      .style("stroke", "black");
+
+    for ( var i = 0; i < treeDepthX; i++ ) {
+      if (i == 0) {
+        svg.append("line")
+          .attr("class", "line")
+          .attr("x1", 0)
+          .attr("x2", width)
+          .attr("y1", -margin.top + (i+1)*heightPerParentCell)
+          .attr("y2", -margin.top + (i+1)*heightPerParentCell)
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+      }
+    }
+    svg.append("rect")
+        .attr("class", "background")
+        //.style("fill", "white")
+        .style("fill-opacity", 0)
+        .attr("width", width)
+        .attr("height", height)
+        .attr("stroke-width", "1")
+        .style("stroke", "black");
+
+    var row = svg.selectAll(".row")
+        .data(matrixY)
+      .enter().append("g")
+        .attr("class", "row")
+        .attr("y", function (d, i) { return y(i); })
+        .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
+        .each(row);
+
+    if (!!selectableCells) appendCellTexts(true);
+    else if ($('#showCellNumbers').is(':checked')) appendCellTexts(false);
+
+    $('#showCellNumbers').unbind().on('change', function () {
+      var isChecked = $(this).is(':checked');
+      if (isChecked) appendCellTexts(!!selectableCells);
+      else svg.selectAll(".occurrences").remove();
+    });
+
+    var column = svg.selectAll(".column")
+        .data(matrixX)
+      .enter().append("g")
+        .attr("class", "column")
+        .attr("x", function (d, i) { return x(i); })
+        .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+
+    var maxNodeAmount = Math.max(nodesY.length, nodesX.length);
+
+    // rename the citation of a paper
+    function renameText ( elm, d ) {
+      var that = d3.select(elm);
+      var isColumn = true;
+      var thatClass = that.attr('class');
+      if (!!thatClass && thatClass.split('rowText').length > 1) isColumn = false;
+      var previousText = that.text();
+      if (!previousText || previousText == '') return;
+      var fullText = that.attr('data-fulltext');
+      if (previousText.split('...').length > 1) {
+        if (!fullText) return;
+        previousText = fullText;
+      }
+      $('#renameModalTitle').html('Rename "' + previousText + '"');
+      $('#renameModalLabel').html('Rename to:');
+      $('#renameModalText').val(previousText);
+      $('#renameModalButton').prop('disabled', false);
+      $('#renameModalForm').unbind().on('submit', function ( evt ) {
+        evt.preventDefault();
+        var newText = $('#renameModalText').val();
+        if (!!newText) {
+          if (isColumn) {
+            nodesX[d[0].x-1].citation = newText;
+            if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
+              that.attr('data-fulltext', newText)
+              that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
+            } else that.text(newText);
+          } else {
+            nodesY[d[0].y-1].citation = newText;
+            if (newText.length * ROTATION_FACTOR > marginLeft && newText.length > SHORTEN_LEAF_VALUE) {
+              that.attr('data-fulltext', newText)
+              that.text(newText.substr(0, SHORTEN_LEAF_VALUE) + '...');
+            } else that.text(newText);
+          }
+        }
+        $('#rename-modal').modal('hide');
+      });
+      $('#rename-modal').modal('show');
+    }
+
+    // change the BibTex entry of a paper
+    function changeBib ( elm, d ) {
+      var that = d3.select(elm);
+      var isColumn = true;
+      var thatClass = that.attr('class');
+      if (!!thatClass && thatClass.split('rowText').length > 1) isColumn = false;
+      var previousText = that.text();
+      if (!previousText || previousText == '') return;
+      var fullText = that.attr('data-fulltext');
+      if (previousText.split('...').length > 1) {
+        if (!fullText) return;
+        previousText = fullText;
+      }
+      var previousCitation = isColumn ? nodesX[d[0].x-1].citation : nodesY[d[0].y-1].citation;
+      var previousBib = isColumn ? nodesX[d[0].x-1].bib : nodesY[d[0].y-1].bib;
+      if (!previousBib) previousBib = '';
+      if (!previousCitation) previousCitation = '';
+      $('#bibModalTitle').html('Enter BibTex for "' + previousText + '"');
+      $('#bibModalLabel').html('BibTex:');
+      $('#bibModalText').val(previousBib);
+      $('#bibModalButton').prop('disabled', false);
+      $('#bibModalForm').unbind().on('submit', function ( evt ) {
+        evt.preventDefault();
+        var newText = $('#bibModalText').val();
+        if (!!newText) {
+          var bibTex = doParse(newText);
+          if (!bibTex) return;
+          for ( var key in bibTex ) {
+            if (!!bibTex[key] && !$.isArray(bibTex[key])) {
+              if (isColumn) {
+                nodesX[d[0].x-1].citation = key;
+                if (key.length * ROTATION_FACTOR > marginLeft && key.length > SHORTEN_LEAF_VALUE) {
+                  that.attr('data-fulltext', key)
+                  that.text(key.substr(0, SHORTEN_LEAF_VALUE) + '...');
+                } else that.text(key);
+              } else {
+                nodesY[d[0].y-1].citation = key;
+                if (key.length * ROTATION_FACTOR > marginLeft && key.length > SHORTEN_LEAF_VALUE) {
+                  that.attr('data-fulltext', key)
+                  that.text(key.substr(0, SHORTEN_LEAF_VALUE) + '...');
+                } else that.text(key);
+              }
+              try {
+                var bib = unescape(JSON.stringify(bibTex[key]));
+                if (isColumn) nodesX[d[0].x-1].bib = bib;
+                else nodesY[d[0].y-1].bib = bib;
+              } catch ( err ) {
+                console.log('Error parsing BibTex object into string: ', err);
+              }
+              break;
+            }
+          }
+          if ((isColumn && !nodesX[d[0].x-1].bib) || (!isColumn && !nodesY[d[0].y-1].bib)) handleError('Invalid BibTex format.');
+        }
+        $('#bib-modal').modal('hide');
+      });
+      $('#bib-modal').modal('show');
+    }
+
+    // add synonoms to a concept (used for the occurrence count calculation during the paper text parsing (Paper import))
+    function updateSynonyms ( elm, d ) {
+      console.log(d)
+      var that = d3.select(elm);
+      var isColumn = true;
+      var thatClass = that.attr('class');
+      if (!!thatClass && thatClass.split('rowText').length > 1) isColumn = false;
+      if (isColumn) {
+        var attribute = nodesX[d[0].x-1].text;
+        var synonymText = nodesX[d[0].x-1].synonyms;
+      } else {
+        var attribute = nodesY[d[0].y-1].text;
+        var synonymText = nodesY[d[0].y-1].synonyms;
+      }
+      var synonyms = (!!synonymText && synonymText != '') ? synonymText.split(',') : [];
+      var synonymRows = '';
+      synonyms.forEach ( function ( synonym ) {
+        synonymRows += '<tr>' + synonym + '</tr>';
+      });
+      var tableHeader = '<thead><th>Synonym</th></thead>';
+      var text = that.text();
+      if (!text || text == '') return;
+      var fullText = that.attr('data-fulltext');
+      if (text.split('...').length > 1) {
+        if (!fullText) return;
+        text = fullText;
+      }
+      $('#defaultModalTitle').html(text);
+      $('#searchTableField').val('');
+      $('#defaultModalTableContainer').html(initTable(tableHeader, synonyms));
+      $('#defaultModalButton').prop('disabled', false);
+      $('#defaultModalForm').unbind().on('submit', function ( evt ) {
+        evt.preventDefault();
+        var synonymString = '';
+        $('#defaultModalTableContainer').find('tbody').find('tr').each ( function ( index, entry ) {
+          var cellText = $(entry).find('td:first');
+          cellText = !!cellText ? $(cellText).text() : '';
+          if (!!cellText && cellText != '') synonymString += (synonymString != '' ? ',' : '') + cellText;
+        });
+        if (isColumn) nodesX[d[0].x-1].synonyms = synonymString;
+        else nodesY[d[0].y-1].synonyms = synonymString;
+        $('#default-modal').modal('hide');
+        $.ajax
+          ({
+            type: "POST",
+            url: '/taxonomybuilder/updateSynonyms',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, attribute: attribute, synonyms: synonymString}),
+            success: function ( result ) {
+              if (!!result && !!result.success) console.log('Updated synonyms successfully for attribute: ' + attribute + '.');
+            }
+          });
+      });
+      $('#default-modal').unbind().on('shown.bs.modal', function () {
+        loadTableListeners();
+      });
+      $('#default-modal').modal('show');
+    }
+
+    // update color gradient and cell text
+    function updateText ( d, field, el, p_el, thatCell, txt ) {
+      if (!isNaN(txt)) {
+        d[field] = txt;
+        var cell = d3.select(thatCell.previousSibling);
+        if (txt != 0) {
+          refreshColorGradients();
+          var colorThemeIndex = $('#colorTheme')[0].value - 0;
+          if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) {
+            var gradient = COLOR_GRADIENTS[colorThemeIndex];
+            d3.selectAll(".cell").style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d[field])); })
+                .style("fill-opacity", function (d,i) { return z(d[field]); });
+          }
+          el.style("fill", DEFAULT_TEXT_FILL).text(function(d) { if (d[field] >= 1000) return ('' + Math.floor(d[field] / 1000) + '...'); return d[field]; });
+        } else {
+          d3Tip.hide(el.data()[0]);
+          cell.style("fill-opacity", 0);
+          el.style("fill", DEFAULT_TEXT_FILL).text('');
+        }
+      } else {
+        d3Tip.hide(el.data()[0]);
+        cell.style("fill-opacity", 0);
+        el.style("fill", DEFAULT_TEXT_FILL).text('');
+      }
+      p_el.select("foreignObject").remove();
+    }
+
+    // show or hide dimensions
+    function filterDimension ( elm, dimension, show ) {
+      var newNodesY = [];
+      var newNodesX = [];
+      switch(elm) {
+        case 'row':
+          var nodes = show ? nodesOriginalY : nodesY;
+          nodes.forEach ( function ( node ) {
+            if (show) {
+              if (dimension == '' || (!!node.dimension && node.dimension == dimension)) newNodesY.push(node);
+            } else {
+              if (!node.dimension || node.dimension != dimension) newNodesY.push(node);
+            }
+          });
+          newNodesX = nodesX;
+          break;
+        case 'column':
+          var nodes = show ? nodesOriginalX : nodesX;
+          nodes.forEach ( function ( node ) {
+            if (show) {
+              if (dimension == '' || (!!node.dimension && node.dimension == dimension)) newNodesX.push(node);
+            } else {
+              if (!node.dimension || node.dimension != dimension) newNodesX.push(node);
+            }
+          });
+          newNodesY = nodesY;
+          break;
+        default:
+      }
+      console.log("newY: ", newNodesY, "newX: ", newNodesX, nodesY, dimension)
+      if (newNodesY.length > 0 && newNodesX.length > 0) buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
+    }
+
+    // show or hide child nodes
+    function filterChildAttributes ( elm, parent, show, callback ) {
+      var newNodesY = [];
+      var newNodesX = [];
+     switch (elm) {
+       case 'row':
+         var nodes = show ? nodesOriginalY : nodesY;
+         nodes.forEach ( function ( node ) {
+            if (show) {
+              if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesY.push(node);
+            } else {
+              if (node.text != parent && node.parents.indexOf(parent) < 0) newNodesY.push(node);
+            }
+         });
+         newNodesX = nodesX;
+         break;
+       case 'column':
+         var nodes = show ? nodesOriginalX : nodesX;
+         nodes.forEach ( function ( node ) {
+            if (show) {
+              if (node.text == parent || node.parents.indexOf(parent) >= 0) newNodesX.push(node);
+            } else {
+              if (node.text != parent && node.parents.indexOf(parent) < 0) newNodesX.push(node);
+            }
+         });
+         newNodesY = nodesY;
+         break;
+       default:
+     }
+     if (newNodesY.length > 0 && newNodesX.length > 0) {
+      buildMatrix({response: newNodesY}, {response: newNodesX}, correlations, maxValue, onClickURL, true, selectableCells, nodesOriginalY, nodesOriginalX);
+      if (!!callback) callback(true);
+     } else if (!!callback) callback(false);
+    }
+
+    // delete paper
+    function deleteCitation ( elm ) {
+      var that = d3.select(elm);
+      var citation = that.attr('data-originalText');
+      if (!citation || citation == '') return;
+      if (!admin) {
+        filterChildAttributes('column', citation, false, function ( result ) {
+          if (!result) window.location.reload(false);
+        });
+        return;
+      }
+      BootstrapDialog.confirm('Delete "' + citation + '" from the DB?', function ( result ) {
+        if (!result) return;
+        $.ajax
+          ({
+            type: "POST",
+            url: '/taxonomybuilder/deleteCitation',
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, citation: citation}),
+            success: function ( result ) {
+              if (!result || !result.success) {
+                handleError('Cannot delete citation: ' + citation);
+                return;
+              }
+              filterChildAttributes('column', citation, false, function ( result ) {
+                if (!result) window.location.reload(false);
+              });
+            }
+        });
+      });
+    }
+
+    var hideOption =
+      {
+        title: 'Hide',
+        action: function(elm, d, i) {
+          var that = d3.select(elm);
+          var text = that.text().trim();
+          if (!text || text == '') return;
+          var fullText = that.attr('data-fulltext');
+          if (text.split('...').length > 1) {
+            if (!fullText) return;
+            text = fullText;
+          }
+          var elmClass = that.attr('class');
+          switch (elmClass) {
+            case 'rowText': filterChildAttributes('row', text, false); break;
+            case 'columnText': filterChildAttributes('column', text, false); break;
+            case 'rowDimensionText': filterDimension('row', text, false); break;
+            case 'columnDimensionText': filterDimension('column', text, false); break;
+            case 'rowParentText': filterChildAttributes('row', text, false); break;
+            case 'columnParentText': filterChildAttributes('column', text, false); break;
+            default:
+          }
+        },
+        disabled: false
+      };
+
+    var renameOption =
+      {
+        title: 'Rename',
+        action: function(elm, d, i) {
+          renameText(elm, d);
+        },
+        disabled: false
+      };
+
+    var bibOption =
+      {
+        title: 'BibTex',
+        action: function(elm, d, i) {
+          changeBib(elm, d);
+        },
+        disabled: false
+      };
+
+    var deleteOption =
+      {
+        title: 'Delete',
+        action: function(elm, d, i) {
+          deleteCitation(elm);
+        },
+        disabled: false
+      };
+
+    var menu = [hideOption];
+    var dimensionMenuY = [hideOption, {
+      title: 'Show other dimensions',
+      action: function(elm, d, i) {
+        filterDimension('row', '', true);
+        selectize1.setValue('', true);
+      },
+      disabled: false
+    }];
+    var dimensionMenuX = [hideOption, {
+      title: 'Show other dimensions',
+      action: function(elm, d, i) {
+        filterDimension('column', '', true);
+        selectize2.setValue('', true);
+      },
+      disabled: false
+    }];
+
+    var advancedMenu = menu.concat([{
+        title: 'Synonyms',
+        action: function(elm, d, i) {
+          updateSynonyms(elm, d);
+        },
+        disabled: false
+      }
+    ]);
+
+    var citationMenu = [hideOption, renameOption, bibOption, deleteOption];
+
+    var selectableCellMenu = [
+      {
+        title: 'Set occurrences',
+        action: function(elm, d, i) {
+          elm.append('input')
+              .attr('type','text')
+              .attr('name','occurrences')
+              .attr('value', d.z);
+        },
+        disabled: false
+      }
+    ];
+
+    // source: http://bl.ocks.org/GerHobbelt/2653660
+    function make_editable(d, field)
+    {
+        this
+          .style("cursor", "text")
+          .on("mouseover", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", "red");
+            var evt = new MouseEvent("mouseover");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("mouseout", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", DEFAULT_TEXT_FILL);
+            var evt = new MouseEvent("mouseout");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("click", function() {
+            var cell = d3.select(this.previousSibling);
+            var evt = new MouseEvent("click");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("contextmenu", function(d) {
+            var that = this;
+            var p = that.parentNode;
+            var xy = that.getBBox();
+            var p_xy = p.getBBox();
+
+            xy.x -= p_xy.x;
+            xy.y -= p_xy.y;
+
+            var el = d3.select(that);
+            var p_el = d3.select(p);
+
+            var frm = p_el.append("foreignObject");
+            var inp = frm
+                .attr("x", el.attr("x") - 10) // .attr("x", xy.x - 6)
+                .attr("y", el.attr("y") - 12) // .attr("y", xy.y - 4)
+                .attr("width", 20)
+                .attr("height", 22)
+                .append("xhtml:form")
+                        .append("input")
+                            .attr("value", function() {
+                                this.focus();
+                                return el.text();
+                            })
+                            .attr("style", "width: 19; font-size: " + FONT_SIZE + ";")
+                            .on("blur", function() {
+                                var txt = inp.node().value - 0;
+                                updateText(d, field, el, p_el, that, txt);
+                            })
+                            .on("keypress", function() {
+                                // IE fix
+                                if (!d3.event)
+                                    d3.event = window.event;
+                                var e = d3.event;
+                                if (e.keyCode == 13) // enter
+                                {
+                                    if (typeof(e.cancelBubble) !== 'undefined') // IE
+                                      e.cancelBubble = true;
+                                    if (e.stopPropagation)
+                                      e.stopPropagation();
+                                    e.preventDefault();
+
+                                    var txt = inp.node().value - 0;
+                                    updateText(d, field, el, p_el, that, txt);
+                                } else if (e.keyCode == 27) { // esc
+                                  var txt = inp.node().value - 0;
+                                  updateText(d, field, el, p_el, that, txt);
+                                }
+                            });
+          });
+    }
+
+    // add text to matrix cells
+    function appendCellTexts ( editable ) {
+        var cellContainerText = d3.selectAll(".cellContainer").append("text")
+            .attr("class", "occurrences")
+            .attr("x", function(d,i) { return x(d.x) + x.rangeBand() / 2; })
+            .attr("y", function(d,i) { return y.rangeBand() / 2; })
+            .attr("dy", ".32em")
+            .attr("font-size", FONT_SIZE)
+            .attr("text-anchor", "middle")
+            .style("fill", DEFAULT_TEXT_FILL)
+            .text( function (d) {
+              var value = d3.select(this.previousSibling).data()[0].z;
+              if (value >= 1000) return ('' + Math.floor(value / 1000) + '...');
+              return value > 0 ? value : '';
+            });
+        if (!!editable) cellContainerText.call(make_editable, "z");
+        else {
+          cellContainerText
+          .style("cursor", "pointer")
+          .on("mouseover", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", "red");
+            var evt = new MouseEvent("mouseover");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("mouseout", function() {
+            var cell = d3.select(this.previousSibling);
+            d3.select(this).style("fill", DEFAULT_TEXT_FILL);
+            var evt = new MouseEvent("mouseout");
+            cell.node().dispatchEvent(evt);
+          })
+          .on("click", function() {
+            var cell = d3.select(this.previousSibling);
+            var evt = new MouseEvent("click");
+            cell.node().dispatchEvent(evt);
+          })
+        }
+    }
+
+    // add row text labels
+    function addRowText ( row ) {
+      row.append("text")
+          .attr("class", "rowText")
+          .attr("x", -6)
+          .attr("y", y.rangeBand() / 2)
+          .attr("dy", ".32em")
+          .attr("text-anchor", "start")
+          .attr("font-size", FONT_SIZE)
+          .attr("data-originalText", function (d, i) { return nodesY[i].text; })
+          .text(function(d, i) {
+            if (!nodesY[i].text) return '';
+            if (nodesY[i].text.length * ROTATION_FACTOR > marginLeft && nodesY[i].text.length > SHORTEN_LEAF_VALUE) {
+              d3.select(this).attr('data-fulltext', nodesY[i].text)
+              return nodesY[i].text.substr(0, SHORTEN_LEAF_VALUE) + '...';
+            }
+            return nodesY[i].text;
+          })
+          .attr("transform", function (d, i) { return "translate(-" + textTransformFactorY + ",0)"; });
+    }
+
+    // Add row parent and dimension labels.
+    // This code prevents overlapping of text labels by shortening texts if needed.
+    // Parent and dimension text labels are only being added if the previous element did not have them.
+    // Text labels are being rotated by 90 degrees if possible (without overlapping)
+    function addRowParentText ( row ) {
+      // lastTextRef saves a reference to the previously added text label
+      var lastTextRef;
+      var selectedOrder = $('#order').val();
+      for ( var k = 0; k < treeDepthY; k++ ) {
+        var lastValueY = '';
+        var rowIndex = -1;
+        // counter saves the amount of nodes that are associated with the same previously added parent text label
+        var counter = 0;
+          var parentsY = [];
+          for ( var l = 0; l < treeDepthY; l++ ) {
+            parentsY.push([]);
+          }
+        row.append("text")
+            .attr("class", "rowParentText")
+            .attr("x", -6)
+            .attr("dy", ".32em")
+            .attr("text-anchor", "start")
+            .attr("font-size", FONT_SIZE)
+            .text(function(d, i) {
+              if (!nodesY[i].indices) nodesY[i].indices = [];
+              // "indices" saved the row index of the parent text label at position "k" that the current node is associated with
+              nodesY[i].indices[k] = -1;
+              counter++;
+              var index = (!!lastValueY && lastValueY != '') ? nodesY[i].parents.indexOf(lastValueY) : -1;
+              if (index == k) {
+                nodesY[i].indices[k] = rowIndex;
+                return '';
+              }
+              if (index < 0) {
+                if (!!lastTextRef && !!lastValueY && lastValueY != '') {
+                  if (counter <= 1) {
+                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
+                    var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
+                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
+                    if (lastValueY.length * FACTOR > widthPerParentCell && lastValueY.length > shortenValue) {
+                      lastTextRef.text(lastValueY.substr(0, shortenValue) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueY);
+                    }
+                  } else {
+                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)rotate(90)"; });
+                    if (heightPerCell*counter < lastValueY.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
+                      lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueY);
+                    }
+                  }
+                }
+                lastTextRef = null;
+                counter = 0;
+                lastValueY = '';
+                rowIndex = -1;
+              }
+              if (nodesY[i].parents.length > k) var value = nodesY[i].parents[k];
+              else if (nodesY[i].parents.length > 0) var value = nodesY[i].parents[nodesY[i].parents.length-1];
+              else var value = '';
+              if (!value || value == '') {
+                parentsY.length = 0;
+                for ( var l = 0; l < treeDepthY; l++ ) {
+                  parentsY.push([]);
+                }
+                nodesY[i].indices[k] = rowIndex;
+                return '';
+              }
+              value = nodesY[i].parents[k];
+              if (!value || value == '' || checkForOccurrence(parentsY, value) > k) {
+                nodesY[i].indices[k] = rowIndex;
+                return '';
+              }
+              parentsY.length = 0;
+              for ( var l = 0; l < treeDepthY; l++ ) {
+                parentsY.push([]);
+              }
+              for ( var l = 0; l < nodesY[i].parents.length; l++ ) {
+                parentsY[k].push(nodesY[i].parents[l]);
+              }
+              if (!!lastTextRef && !!lastValueY && lastValueY != '') {
+                if (counter <= 1) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
+                    var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
+                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
+                  if (lastValueY.length * FACTOR > widthPerParentCell && lastValueY.length > shortenValue) {
+                    lastTextRef.text(lastValueY.substr(0, shortenValue) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueY);
+                  }
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)rotate(90)"; });
+                  if (heightPerCell*counter < lastValueY.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
+                    lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueY);
+                  }
+                }
+              }
+              lastTextRef = $(this);
+              counter = 0;
+              lastValueY = value;
+              rowIndex = i+1;
+              nodesY[i].indices[k] = rowIndex;
+              var valueIndex = nodesY[i].parents.indexOf(value);
+              if (valueIndex == nodesY[i].parents.length-1 && k < treeDepthY-1) {
+                var currentRow = d3.select(d3.select(this).node().parentNode);
+                currentRow.append("line")
+                  .attr("class", "line")
+                  .attr("x1", -margin.left + widthPerParentCell)
+                  .attr("stroke-width", "1")
+                  .style("stroke", "black");
+              }
+              return value;
+            });
+        if (!!lastTextRef && !!lastValueY && lastValueY != '') {
+          if (counter <= 1) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)"});
+                var shortenValue = (rowIndex >= 0 && rowIndex < nodesY.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthY-nodesY[rowIndex].parents.length)) : SHORTEN_VALUE;
+                shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * widthPerParentCell);
+                if (lastValueY.length * FACTOR > widthPerParentCell && lastValueY.length > shortenValue) {
+                  lastTextRef.text(lastValueY.substr(0, shortenValue) + '...');
+                  lastTextRef.attr('data-fulltext', lastValueY);
+                }
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + (treeDepthY-k-1)*widthPerParentCell + 10 + (k == treeDepthY-1 ? 10 : 0)) + ",12)rotate(90)"; });
+            if (heightPerCell*counter < lastValueY.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueY.length > SHORTEN_VALUE_ROTATION*counter) {
+              lastTextRef.text(lastValueY.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+              lastTextRef.attr('data-fulltext', lastValueY);
+            }
+          }
+          lastTextRef = null;
+        }
+      }
+      var lastParentsY = nodesY[0].parents;
+      var shownTextsY = lastParentsY;
+      // add separating lines to separate rows visually from each other if the associated elements do not have the same parents/dimensions
+      row.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0 || lastParentsY.length == 0 || nodesY[i].parents.length == 0) {
+              var parentsLength = !!lastParentsY ? lastParentsY.length : 0;
+              if (nodesY[i].parents.length < parentsLength) parentsLength = nodesY[i].parents.length;
+              lastParentsY = nodesY[i].parents;
+              shownTextsY = lastParentsY;
+              if (!hasParentsY && !hasDimensionsY) return -margin.left + 10;
+              else if (!hasParentsY) return -margin.left + treeDepthY*widthPerParentCell + (treeDepthY == 0 ? 10 : 0);
+              parentsLength++;
+              var factor = Math.max(1, parentsLength);
+              if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+              return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
+            }
+            var counter = 0;
+            var sameParents = [];
+            for ( var k = lastParentsY.length-1; k >= 0; k-- ) {
+              var index = nodesY[i].parents.indexOf(lastParentsY[k]);
+              if (index < 0) {
+                // maxIndex marks the minimal index in the parent text array where the parents of the 2 considered elements differ
+                var maxIndex = Infinity;
+                if (k < lastParentsY.length && sameParents.length > 0) {
+                  sameParents.forEach ( function ( sameParent ) {
+                    var s = shownTextsY.indexOf(sameParent);
+                    if (s < maxIndex) maxIndex = s;
+                  });
+                }
+                if (maxIndex < 0) maxIndex = 0;
+                if (maxIndex > shownTextsY.length-1) maxIndex = 0;
+                // parentsDiff is the length difference between the numbers of parents of the current and the previous element
+                var parentsDiff = nodesY[i].parents.length - lastParentsY.length;
+                if (parentsDiff > 0) {
+                  var parentsLength = nodesY[i].parents.length;
+                } else {
+                  parentsDiff = -parentsDiff;
+                  var parentsLength = lastParentsY.length;
+                }
+                if (counter == 0) {
+                  lastParentsY = nodesY[i].parents;
+                  shownTextsY = lastParentsY;
+                  if (parentsLength == 0) parentsLength++;
+                  var factor = Math.max(1, treeDepthY - parentsLength);
+                  if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+                  return -margin.left + factor*widthPerParentCell + (factor == 0 ? 10 : 0);
+                }
+                if (parentsDiff == 0) parentsDiff++;
+                var result = -margin.left + (treeDepthY - (maxIndex - parentsDiff + 1))*widthPerParentCell + (treeDepthY - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
+                lastParentsY = nodesY[i].parents;
+                if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+                return result;
+              } else sameParents.push(lastParentsY[k]);
+              counter++;
+            }
+            var maxIndex = Infinity;
+            if (k < lastParentsY.length && sameParents.length > 0) {
+              sameParents.forEach ( function ( sameParent ) {
+                var s = shownTextsY.indexOf(sameParent);
+                if (s < maxIndex) maxIndex = s;
+              });
+            }
+            if (maxIndex < 0) maxIndex = 0;
+            if (maxIndex > shownTextsY.length-1) maxIndex = 0;
+            var parentsDiff = nodesY[i].parents.length - lastParentsY.length;
+            if (parentsDiff == 0) parentsDiff++;
+            lastParentsY = nodesY[i].parents;
+            if (lastParentsY.length > shownTextsY.length) shownTextsY = lastParentsY;
+            return -margin.left + (treeDepthY - (maxIndex - parentsDiff + 1))*widthPerParentCell + ((treeDepthY - (maxIndex - parentsDiff + 1)) == 0 ? 10 : 0);
+          })
+          .attr("class", "rowParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+
+          for ( var k = 0; k < treeDepthY; k++ ) {
+            row.append("line")
+              .attr("class", "line")
+              .attr("x1", function (d,i) { return -margin.left + (treeDepthY-k)*widthPerParentCell; })
+              .attr("x2", function (d,i) { return -margin.left + (treeDepthY-k)*widthPerParentCell; })
+              .attr("y1", function (d,i) { return d3.select(this).attr('y'); })
+              .attr("y2", function (d,i) { var yTmp = d3.select(this).attr('y'); if (nodesY[i].indices[k] < 0) return yTmp; return yTmp + y.rangeBand(); })
+              .attr("stroke-width", "1")
+              .style("stroke", "black");
+          }
+    }
+    // add row dimension text labels
+    function addRowDimensionText ( row ) {
+      var lastDimension = '';
+      var lastTextRef;
+      var counter = 0;
+      row.append("text")
+          .attr("class", "rowDimensionText")
+          .attr("x", -6)
+          .attr("dy", ".32em")
+          .attr("text-anchor", "start")
+          .attr("font-size", FONT_SIZE)
+          .text(function(d, i) {
+            counter++;
+            if (nodesY[i].dimension == lastDimension) {
+              return '';
+            } else {
+              if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+                if (counter <= 1) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+                  if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+                  if (heightPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
+                }
+              }
+              lastTextRef = null;
+              counter = 0;
+              lastDimension = '';
+            }
+            var value = nodesY[i].dimension;
+            if (!value || value == '') return '';
+            if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+              if (counter <= 1) {//if (heightPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+                if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
+              } else {
+                lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+                if (heightPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
+              }
+            }
+            lastTextRef = $(this);
+            counter = 0;
+            lastDimension = value;
+            return value;
+          });
+        if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+          if (counter <= 1) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (-margin.left + 20) + ",12)"});
+            if (lastDimension.length * FACTOR > widthPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (-margin.left + 20) + ",12)rotate(90)"; });
+            if (heightPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
+          }
+          lastTextRef = null;
+        }
+      var counter = 0;
+      lastDimension = '';
+      // add separating lines for rows
+      row.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0) {
+              lastDimension = nodesY[0].dimension;
+              return -margin.left + 10;
+            }
+            if (!nodesY[i].dimension || nodesY[i].dimension == '') {
+              counter = 0;
+              return -margin.left + 10;
+            }
+            counter++;
+            if (nodesY[i].dimension == lastDimension) {
+              return -margin.left + widthPerParentCell;
+            }
+            lastDimension = nodesY[i].dimension;
+            counter = 0;
+            return -margin.left + 10;
+          })
+          .attr("x2", function (a, i) {
+            if (i == 0) {
+              lastDimension = nodesY[0].dimension;
+              return 0;
+            }
+            if (!nodesY[i].dimension || nodesY[i].dimension == '') {
+              counter = 0;
+              return 0;
+            }
+            counter++;
+            if (nodesY[i].dimension == lastDimension) {
+              return -margin.left + widthPerParentCell;
+            }
+            lastDimension = nodesY[i].dimension;
+            counter = 0;
+            return 0;
+          })
+          .attr("class", "rowParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+    }
+    // add row handlers for user interaction
+    function addRowHandlers ( row ) {
+      row.selectAll('.rowText,.rowParentText,.rowDimensionText')
+        .on ("mouseover", function ( p, j ) {
+          var that = d3.select(this);
+          var text = that.text().trim();
+          var fullText = that.attr('data-fulltext');
+          if (!fullText) fullText = -1;
+          if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
+          if (j > treeDepthY) {
+            var text = d3.select(this).text().trim();
+            d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return nodesY[d[0].y-1].dimension == text; });
+          } else d3.selectAll('.row').selectAll('.rowText,.rowParentText,.rowDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].y == p[0].y) || (i <= j && !!nodesY[d[0].y-1].indices && nodesY[d[0].y-1].indices[j-1] == p[0].y); });
+        })
+        .on("mouseout", mouseout)
+        .style("cursor", "pointer")
+        .on('click', function ( e, i ) {
+          var isDimension = false;
+          var that = d3.select(this);
+          var text = that.text().trim();
+          if (!text || text == '') return;
+          var fullText = that.attr('data-fulltext');
+          if (text.split('...').length > 1) {
+            if (!fullText) return;
+            text = fullText;
+          }
+          if (i >= treeDepthY && hasDimensionsY) isDimension = true;
+          if (false && !IS_STATIC) {
+            if (!selectize1) return;
+            if (parents.indexOf(text) < 0) return;
+            selectize1.setValue(text, true);
+          } else {
+            if (isDimension) filterDimension('row', text, true);
+            else filterChildAttributes('row', text, true);
+            selectize1.setValue(text, true);
+          }
+        });
+        row.selectAll('.rowParentText').on("contextmenu", d3.contextMenu(menu));
+        row.selectAll('.rowDimensionText').on("contextmenu", d3.contextMenu(dimensionMenuY));
+        row.selectAll('.rowText').on("contextmenu", d3.contextMenu(advancedMenu));
+    }
+    addRowText(row);
+    addRowParentText(row);
+    if (hasDimensionsY) {
+      addRowDimensionText(row);
+    }
+    addRowHandlers(row);
+
+    // add column text labels
+    function addColumnText ( column ) {
+      column.append("text")
+          .attr("class", "columnText")
+          .attr("x", 6) // 0
+          .attr("y", y.rangeBand() / 2)
+          .attr("dy", ".32em")
+          .attr("text-anchor", "end")
+          .attr("font-size", FONT_SIZE)
+          .attr("data-originalText", function (d, i) { return nodesX[i].text; })
+          .text(function(d, i) {
+            if (!nodesX[i].text) return '';
+            if (nodesX[i].text.length * ROTATION_FACTOR > marginTop && nodesX[i].text.length > SHORTEN_LEAF_VALUE) {
+              d3.select(this).attr('data-fulltext', nodesX[i].text)
+              return nodesX[i].text.substr(0, SHORTEN_LEAF_VALUE) + '...';
+            }
+            return nodesX[i].text;
+          })
+          .attr("transform", function (d, i) { return "translate(" + textTransformFactorX + ")"; });
+    }
+
+    // Add row parent and dimension labels.
+    // This code prevents overlapping of text labels by shortening texts if needed.
+    // Parent and dimension text labels are only being added if the previous element did not have them.
+    // Text labels are being rotated by 90 degrees if possible (without overlapping)
+    function addColumnParentText ( column ) {
+      // lastTextRef saves a reference to the previously added text label
+      var lastTextRef;
+      var selectedOrder = $('#order').val();
+      for ( var k = 0; k < treeDepthX; k++ ) {
+        var lastValueX = '';
+        var columnIndex = -1;
+        // counter saves the amount of nodes that are associated with the same previously added parent text label
+        var counter = 0;
+        var parentsX = [];
+        for ( var l = 0; l < treeDepthX; l++ ) {
+          parentsX.push([]);
+        }
+        column.append("text")
+            .attr("class", "columnParentText")
+            .attr("x", -6)
+            .attr("dy", ".32em")
+            .attr("text-anchor", "start")
+            .attr("font-size", FONT_SIZE)
+            .text(function(d, i) {
+              if (!nodesX[i].indices) nodesX[i].indices = [];
+              // "indices" saved the column index of the parent text label at position "k" that the current node is associated with
+              nodesX[i].indices[k] = -1;
+              counter++;
+              var index = (!!lastValueX && lastValueX != '') ? nodesX[i].parents.indexOf(lastValueX) : -1;
+              if (index == k) {
+                nodesX[i].indices[k] = columnIndex;
+                return '';
+              }
+              if (index < 0) {
+                if (!!lastTextRef && !!lastValueX && lastValueX != '') {
+                  if (counter <= 1) {
+                    lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
+                    var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
+                    shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
+                    if (lastValueX.length * FACTOR > heightPerParentCell && lastValueX.length > shortenValue) {
+                      lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueX);
+                    }
+                  } else {
+                    lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
+                    if (widthPerCell*counter < lastValueX.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
+                      lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+                      lastTextRef.attr('data-fulltext', lastValueX);
+                    }
+                  }
+                }
+                lastTextRef = null;
+                counter = 0;
+                lastValueX = '';
+                columnIndex = -1;
+              }
+              if (nodesX[i].parents.length > k) var value = nodesX[i].parents[k];
+              else if (nodesX[i].parents.length > 0) var value = nodesX[i].parents[nodesX[i].parents.length-1];
+              else var value = '';
+              if (!value || value == '') {
+                parentsX.length = 0;
+                for ( var l = 0; l < treeDepthX; l++ ) {
+                  parentsX.push([]);
+                }
+                nodesX[i].indices[k] = columnIndex;
+                return '';
+              }
+              value = nodesX[i].parents[k];
+              if (!value || value == '' || checkForOccurrence(parentsX, value) > k) {
+                nodesX[i].indices[k] = columnIndex;
+                return '';
+              }
+              parentsX.length = 0;
+              for ( var l = 0; l < treeDepthX; l++ ) {
+                parentsX.push([]);
+              }
+              for ( var l = 0; l < nodesX[i].parents.length; l++ ) {
+                parentsX[k].push(nodesX[i].parents[l]);
+              }
+              if (!!lastTextRef && !!lastValueX && lastValueX != '') {
+                if (counter <= 1) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
+                  var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
+                  shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
+                  if (lastValueX.length * FACTOR > heightPerParentCell && lastValueX.length > shortenValue) {
+                    lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueX);
+                  }
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
+                  if (widthPerCell*counter < lastValueX.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
+                    lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+                    lastTextRef.attr('data-fulltext', lastValueX);
+                  }
+                }
+              }
+              lastTextRef = $(this);
+              counter = 0;
+              lastValueX = value;
+              columnIndex = i+1;
+              nodesX[i].indices[k] = columnIndex;
+              var valueIndex = nodesX[i].parents.indexOf(value);
+              if (valueIndex == nodesX[i].parents.length-1 && k < treeDepthX-1) {
+                var currentColumn = d3.select(d3.select(this).node().parentNode);
+                currentColumn.append("line")
+                  .attr("class", "line")
+                  .attr("x1", margin.top - heightPerParentCell)
+                  .attr("stroke-width", "1")
+                  .style("stroke", "black");
+              }
+              return value;
+            });
+        if (!!lastTextRef && !!lastValueX && lastValueX != '') {
+          if (counter <= 1) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)"});
+            var shortenValue = (columnIndex >= 0 && columnIndex < nodesX.length) ? SHORTEN_VALUE * (Math.max(MIN_SHORTEN_FACTOR,treeDepthX-nodesX[columnIndex].parents.length)) : SHORTEN_VALUE;
+            shortenValue = Math.max(MIN_SHORTEN_VALUE, shortenValue * heightPerParentCell);
+            if (lastValueX.length * FACTOR > heightPerParentCell && lastValueX.length > shortenValue) {
+              lastTextRef.text(lastValueX.substr(0, shortenValue) + '...');
+              lastTextRef.attr('data-fulltext', lastValueX);
+            }
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - (treeDepthX-k)*heightPerParentCell + 10) + ",10)rotate(90)"; });
+            if (widthPerCell*counter < lastValueX.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastValueX.length > SHORTEN_VALUE_ROTATION*counter) {
+              lastTextRef.text(lastValueX.substr(0, SHORTEN_VALUE_ROTATION*counter) + '...');
+              lastTextRef.attr('data-fulltext', lastValueX);
+            }
+          }
+          lastTextRef = null;
+        }
+      }
+      var lastParentsX = nodesX[0].parents;
+      var shownTextsX = lastParentsX;
+      // add separating lines for columns
+      column.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0 || lastParentsX.length == 0 || nodesX[i].parents.length == 0) {
+              var parentsLength = !!lastParentsX ? lastParentsX.length : 0;
+              if (nodesX[i].parents.length < parentsLength) parentsLength = nodesX[i].parents.length;
+              lastParentsX = nodesX[i].parents;
+              shownTextsX = lastParentsX;
+              if (!hasParentsX && !hasDimensionsX) return margin.top - 10;
+              else if (!hasParentsX) return margin.top - treeDepthX*heightPerParentCell - (treeDepthX == 0 ? 10 : 0);
+              parentsLength++;
+              var factor = Math.max(1, parentsLength);
+              if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+              return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
+            }
+            var counter = 0;
+            var sameParents = [];
+            for ( var k = lastParentsX.length-1; k >= 0; k-- ) {
+              var index = nodesX[i].parents.indexOf(lastParentsX[k]);
+              if (index < 0) {
+                // maxIndex marks the minimal index in the parent text array where the parents of the 2 considered elements differ
+                var maxIndex = Infinity;
+                if (k < lastParentsX.length && sameParents.length > 0) {
+                  sameParents.forEach ( function ( sameParent ) {
+                    var s = shownTextsX.indexOf(sameParent);
+                    if (s < maxIndex) maxIndex = s;
+                  });
+                }
+                if (maxIndex < 0) maxIndex = 0;
+                if (maxIndex > shownTextsX.length-1) maxIndex = 0;
+                // parentsDiff is the length difference between the numbers of parents of the current and the previous element
+                var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
+                if (parentsDiff > 0) {
+                  parentsDiff++;
+                  var parentsLength = nodesX[i].parents.length;
+                } else {
+                  parentsDiff = -parentsDiff;
+                  if (parentsDiff > 1) parentsDiff--;
+                  var parentsLength = lastParentsX.length;
+                }
+                if (counter == 0) {
+                  lastParentsX = nodesX[i].parents;
+                  shownTextsX = lastParentsX;
+                  if (parentsLength == 0) parentsLength++;
+                  var factor = Math.max(1, treeDepthX - parentsLength);
+                  if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+                  return margin.top - factor*heightPerParentCell - (factor == 0 ? 10 : 0);
+                }
+                if (parentsDiff == 0) parentsDiff++;
+                var result = margin.top - (treeDepthX - (maxIndex - parentsDiff + 1))*heightPerParentCell - (treeDepthX - (maxIndex - parentsDiff + 1) == 0 ? 10 : 0);
+                lastParentsX = nodesX[i].parents;
+                if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+                return result;
+              } else sameParents.push(lastParentsX[k]);
+              counter++;
+            }
+            var maxIndex = Infinity;
+            if (k < lastParentsX.length && sameParents.length > 0) {
+              sameParents.forEach ( function ( sameParent ) {
+                var s = shownTextsX.indexOf(sameParent);
+                if (s < maxIndex) maxIndex = s;
+              });
+            }
+            if (maxIndex < 0) maxIndex = 0;
+            if (maxIndex > shownTextsX.length-1) maxIndex = 0;
+            var parentsDiff = nodesX[i].parents.length - lastParentsX.length;
+            if (parentsDiff == 0) parentsDiff++;
+            lastParentsX = nodesX[i].parents;
+            if (lastParentsX.length > shownTextsX.length) shownTextsX = lastParentsX;
+            return margin.top - (treeDepthX - (maxIndex - parentsDiff + 1))*heightPerParentCell - ((treeDepthX - (maxIndex - parentsDiff + 1)) == 0 ? 10 : 0);
+          })
+          .attr("class", "columnParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+
+          for ( var k = 0; k < treeDepthX; k++ ) {
+            column.append("line")
+              .attr("class", "line")
+              .attr("y1", function (d,i) { return d3.select(this).attr("x"); })
+              .attr("y2", function (d,i) { var xTmp = d3.select(this).attr("x"); if (nodesX[i].indices[k] < 0) return xTmp; return xTmp + x.rangeBand(); })
+              .attr("x1", function (d,i) { return margin.top - (treeDepthX-k)*heightPerParentCell; })
+              .attr("x2", function (d,i) { return margin.top - (treeDepthX-k)*heightPerParentCell; })
+              .attr("stroke-width", "1")
+              .style("stroke", "black");
+          }
+    }
+
+    // add column dimension labels
+    function addColumnDimensionText ( column ) {
+      var lastDimension = '';
+      var lastTextRef;
+      var counter = 0;
+      column.append("text")
+          .attr("class", "columnDimensionText")
+          .attr("x", -6)
+          .attr("dy", ".32em")
+          .attr("text-anchor", "start")
+          .attr("font-size", FONT_SIZE)
+          .text(function(d, i) {
+            counter++;
+            if (nodesX[i].dimension == lastDimension) {
+              return '';
+            } else {
+              if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+                if (counter <= 1) {
+                  lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
+                  if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
+                } else {
+                  lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
+                  if (widthPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                    lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+                    lastTextRef.attr('data-fulltext', lastDimension);
+                  }
+                }
+              }
+              lastTextRef = null;
+              counter = 0;
+              lastDimension = '';
+            }
+            var value = nodesX[i].dimension;
+            if (!value || value == '') return '';
+            if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+              if (counter <= 1) {//if (widthPerCell*counter < lastDimension.length * ROTATION_FACTOR) {
+                lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
+                if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
+              } else {
+                lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
+                if (widthPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+                  lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+                  lastTextRef.attr('data-fulltext', lastDimension);
+                }
+              }
+            }
+            lastTextRef = $(this);
+            counter = 0;
+            lastDimension = value;
+            return value;
+          });
+        if (!!lastTextRef && !!lastDimension && lastDimension != '') {
+          if (counter <= 1) {
+            lastTextRef.attr("transform", function (d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)"});
+            if (lastDimension.length * FACTOR > heightPerParentCell && lastDimension.length > SHORTEN_VALUE_DIMENSION) {
+              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_DIMENSION) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
+          } else {
+            lastTextRef.attr("transform", function(d, i) { return "translate(" + (margin.top - heightPerParentCell + 10) + ",10)rotate(90)"; });
+            if (widthPerCell*counter < lastDimension.length * (counter > 2 ? ROTATION_FACTOR : ROTATION_FACTOR_2) && lastDimension.length > SHORTEN_VALUE_ROTATION_DIMENSION*counter) {
+              lastTextRef.text(lastDimension.substr(0, SHORTEN_VALUE_ROTATION_DIMENSION*counter) + '...');
+              lastTextRef.attr('data-fulltext', lastDimension);
+            }
+          }
+          lastTextRef = null;
+        }
+      var counter = 0;
+      lastDimension = '';
+      // add dimension separating lines for columns
+      column.append("line")
+          .attr("x1", function ( a, i ) {
+            if (i == 0) {
+              lastDimension = nodesX[0].dimension;
+              return margin.top - 10;
+            }
+            if (!nodesX[i].dimension || nodesX[i].dimension == '') {
+              counter = 0;
+              return margin.top - 10;
+            }
+            counter++;
+            if (nodesX[i].dimension == lastDimension) {
+              return margin.top - heightPerParentCell;
+            }
+            lastDimension = nodesX[i].dimension;
+            counter = 0;
+            return margin.top - 10;
+          })
+          .attr("x2", function (a, i) {
+            if (i == 0) {
+              lastDimension = nodesX[0].dimension;
+              return 0;
+            }
+            if (!nodesX[i].dimension || nodesX[i].dimension == '') {
+              counter = 0;
+              return 0;
+            }
+            counter++;
+            if (nodesX[i].dimension == lastDimension) {
+              return margin.top - heightPerParentCell;
+            }
+            lastDimension = nodesX[i].dimension;
+            counter = 0;
+            return 0;
+          })
+          .attr("class", "columnParentLine")
+          .attr("stroke-width", "1")
+          .style("stroke", "black");
+    }
+
+    // add column handlers for user interaction
+    function addColumnHandlers ( column ) {
+      column.selectAll('.columnText,.columnParentText,.columnDimensionText')
+        .on ("mouseover", function ( p, j ) {
+          var that = d3.select(this);
+          var text = that.text().trim();
+          var fullText = that.attr('data-fulltext');
+          if (!fullText) fullText = -1;
+          if (text.split('...').length > 1) d3Tip.show({fullText: fullText});
+          if (j > treeDepthX) {
+            d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return nodesX[d[0].x-1].dimension == text; });
+          } else d3.selectAll('.column').selectAll('.columnText,.columnParentText,.columnDimensionText').classed("active", function(d, i) { return (i == 0 && d[0].x == p[0].x) || (i <= j && !!nodesX[d[0].x-1].indices && nodesX[d[0].x-1].indices[j-1] == p[0].x); });
+        })
+        .on("mouseout", mouseout)
+        .style("cursor", "pointer")
+        .on('click', function ( e, i ) {
+          var isDimension = false;
+          var that = d3.select(this);
+          var text = that.text().trim();
+          if (!text || text == '') return;
+          var fullText = that.attr('data-fulltext');
+          if (text.split('...').length > 1) {
+            if (!fullText) return;
+            text = fullText;
+          }
+          if (i >= treeDepthX && hasDimensionsX) isDimension = true;
+          if (false && !IS_STATIC) {
+            if (!selectize2) return;
+            if (parents.indexOf(text) < 0) return;
+            selectize2.setValue(text, true);
+          } else {
+            if (isDimension) filterDimension('column', text, true);
+            else filterChildAttributes('column', text, true);
+            selectize2.setValue(text, true);
+          }
+        });
+        column.selectAll('.columnParentText').on("contextmenu", d3.contextMenu(menu));
+        column.selectAll('.columnDimensionText').on("contextmenu", d3.contextMenu(dimensionMenuX));
+        if (!!selectableCells) column.selectAll('.columnText').on("contextmenu", d3.contextMenu(citationMenu));
+        else column.selectAll('.columnText').on("contextmenu", d3.contextMenu(menu));
+    }
+    addColumnText(column);
+    addColumnParentText(column);
+    if (hasDimensionsX) addColumnDimensionText(column);
+    addColumnHandlers(column);
+
+    // add cells to a row
+    function row(row) {
+      var cell = d3.select(this).selectAll(".cell")
+          .data(row)
+          .enter()
+          .append("g")
+          .attr("class", "cellContainer")
+          .attr("width", x.rangeBand())
+          .attr("height", y.rangeBand())
+          .append("rect")
+          .attr("class", "cell")
+          .attr("x", function(d) { return x(d.x); })
+          .attr("width", x.rangeBand())
+          .attr("height", y.rangeBand())
+          .style("fill-opacity", function(d) { return z(d.z); })
+          .style("stroke", "black")
+          .style("stroke-width", "0.5")
+          .on("mouseover", mouseover)
+          .on("mouseout", mouseout)
+          .on("click", clickCellOption);
+    }
+
+    // make a matrix cell clickable
+    function clickCellSelectable(p) {
+      var that = d3.select(this);
+      if (!!p.occurrences && p.occurrences.data.length > 0) {
+        var minSimilarity = $('#importMinSimilarity').val() - 0;
+        if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
+        var occurrencesTable = '<table class="table table-bordered"><thead><th>Word</th><th>#</th><th style="width:1%;"></th></thead><tbody>';
+        p.occurrences.data.forEach ( function ( occurrence ) {
+          occurrencesTable += '<tr><td>' + occurrence.name + '</td><td>' + occurrence.value + '</td><td style="cursor:pointer;text-align:center;"><span class="glyphicon glyphicon-remove" title="Remove"></span></td></tr>';
+        });
+        occurrencesTable += '</tbody></table>';
+        BootstrapDialog.show({
+          title: '' + p.occurrences.total + ' occurrences for "' + nodesY[p.y-1].text + '"<br>Min similarity: ' + minSimilarity,
+          message: occurrencesTable,
+          onshown: function () {
+            $('.glyphicon-remove').unbind().on('click', function () {
+              var thatRow = $(this).parentsUntil('tbody');
+              var name = thatRow.find('td:first').text();
+              p.occurrences.data = p.occurrences.data.filter ( function ( d ) {
+                if (d.name == name) {
+                  p.occurrences.total -= d.value;
+                  return false;
+                }
+                return true;
+              });
+              var thatCell = that.node().nextSibling;
+              var el = d3.select(thatCell);
+              updateText(p, 'z', el, d3.select(thatCell.parentNode), thatCell, p.occurrences.total);
+              thatRow.remove();
+            });
+          }
+        });
+      } else {
+        const TRANSITION_DURATION = 500;
+        var value = p.z > 0 ? p.z : 1;
+        var fill = that.style("fill");
+        var opacity = that.style("fill-opacity");
+        p.z = value;
+        refreshColorGradients();
+        var colorThemeIndex = $('#colorTheme')[0].value - 0;
+        if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) {
+          var gradient = COLOR_GRADIENTS[colorThemeIndex];
+          d3.selectAll(".cell").transition().duration(TRANSITION_DURATION)
+            .style("fill", function (d,i) { return gradient.colorScale(gradient.colorInterpolate(d.z)); })
+            .style("fill-opacity", function (d,i) { return z(d.z); });
+          var shownText = value >= 1000 ? ('' + Math.floor(value / 1000) + '...') : value;
+          d3.select(that.node().parentNode).select("text").transition().duration(TRANSITION_DURATION).style("fill", DEFAULT_TEXT_FILL).text(shownText);
+          p.occurrences = {data: [{name: '', value: value}], total: value};
+        }
+      }
+    }
+
+    function clickCell(p) {
+      if (IS_STATIC) return;
+      if (p.z == 0) return;
+      var text1 = nodesY[p.y-1].text;
+      var text2 = nodesX[p.x].text;
+      $.ajax
+         ({
+          type: "POST",
+          url: onClickURL,
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, text1: text1, text2: text2}),
+          success: function ( citations ) {
+            if (!citations) {
+             handleError('Cannot get papers from DB.');
+             return;
+            }
+            var citationTable = '<div style="max-height:500px;overflow-y:auto;"><table class="table table-striped"><thead><tr><th>Citation</th><th>References</th><th>Bib</th></tr></thead><tbody>';
+            var sumOfReferences = 0;
+            if (!!citations.response) {
+              citations.response.forEach ( function ( citation ) {
+                citationTable += '<tr><td>' + citation.citation + '</td><td>' + citation.referenceCount + '</td><td>' + citation.bib + '</td></tr>';
+                sumOfReferences += citation.referenceCount;
+              });
+            }
+            citationTable += '</tbody></table></div>';
+            if (sumOfReferences > 0) citationTable = '<div><p><b>Sum of references:</b>  ' + sumOfReferences + '</p></div>' + citationTable;
+            BootstrapDialog.show({
+              title: '' + citations.count + ' shared paper' + (citations.count != 1 ? 's' : '') + ' between "' + text1 + '", and "' + text2 + '"',
+              message: citationTable
+            });
+          }
+         });
+    }
+
+    // show tooltips on hover and highlight associated text labels
+    function mouseover(p) {
+      if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
+      d3Tip.show(p);
+      d3.selectAll(".row").selectAll(".rowText,.rowParentText").classed("active", function(d, i) { return d[0].y == p.y || (!!nodesY[p.y-1].indices && nodesY[p.y-1].indices.length > (i-1) && nodesY[p.y-1].indices[i-1] == d[0].y); });
+      var dimensionY = nodesY[p.y-1].dimension;
+      var dimensionX = nodesX[p.x].dimension;
+      if (!!dimensionY && dimensionY != '') d3.selectAll(".rowDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() == dimensionY; });
+      d3.selectAll(".column").selectAll(".columnText,.columnParentText").classed("active", function(d, i) { return d[0].x == p.x+1 || (!!nodesX[p.x].indices && nodesX[p.x].indices.length > (i-1) && nodesX[p.x].indices[i-1] == d[0].x); });
+      if (!!dimensionX && dimensionX != '') d3.selectAll(".columnDimensionText").classed("active", function (d, i) { return d3.select(this).text().trim() == dimensionX; });
+      console.log('value: ' + matrixY[p.y-1][p.x].z + ', src: ' + nodesY[p.y-1].text + ', dest: ' + nodesX[p.x].text);
+    }
+
+    function mouseout(p) {
+      d3Tip.hide(p);
+      if (!!selectableCells && d3.select(d3.select(this).node().parentNode).select("text").text() == '') return;
+      d3.selectAll(".rowText,.rowParentText,.rowDimensionText,.columnText,.columnParentText,.columnDimensionText").classed("active", false);
+    }
+
+    // reorder the matrix (sort) depending on the selected option
+    function order(value) {
+      var labelsY = [];
+      var labelsX = [];
+      for ( var i = 0; i < nodesY.length; i++ ) {
+        labelsY.push(nodesY[i].text);
+        nodesY[i].indices = [];
+      }
+      for ( var i = 0; i < nodesX.length; i++ ) {
+        labelsX.push(nodesX[i].text);
+        nodesX[i].indices = [];
+      }
+      var sortedLabelsY = [];
+      var sortedLabelsX = [];
+      var sortedNodes = sortNodes(value, nodesY, nodesX);
+      nodesY = sortedNodes.y;
+      nodesX = sortedNodes.x;
+      var sortedNodesY = sortedNodes.y;
+      var sortedNodesX = sortedNodes.x;
+      for ( var i = 0; i < nodesY.length; i++ ) {
+        sortedLabelsY.push(sortedNodesY[i].text);
+      }
+      for ( var i = 0; i < nodesX.length; i++ ) {
+        sortedLabelsX.push(sortedNodesX[i].text);
+      }
+      var rangeY = d3.range(n).sort( function ( a, b ) {
+        if (labelsY[a] == '' && labelsY[b] == '') return 0;
+        if (labelsY[a] == '') return 1;
+        if (labelsY[b] == '') return -1;
+        return sortedLabelsY.indexOf(labelsY[a]) - sortedLabelsY.indexOf(labelsY[b]);
+      });
+      var rangeX = d3.range(m).sort( function ( a, b ) {
+        if (labelsX[a] == '' && labelsX[b] == '') return 0;
+        if (labelsX[a] == '') return 1;
+        if (labelsX[b] == '') return -1;
+        return sortedLabelsX.indexOf(labelsX[a]) - sortedLabelsX.indexOf(labelsX[b]);
+      });
+      svg.selectAll(".occurrences, .line,.rowParentText,.rowDimensionText,.rowParentLine,.columnParentText,.columnDimensionText,.columnParentLine").remove();
+      y.domain(rangeY).rangeBands([0, height]);
+      x.domain(rangeX).rangeBands([0, width]);
+      var t = svg.transition().duration(3000);
+      const TRANSITION_FACTOR = 2;
+      // the transitions are only being used to make the reordering more visually pleasant and comprehensible
+      t.selectAll(".row")
+          .delay(function(d, i) { return y(i) * TRANSITION_FACTOR; })
+          .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
+          .attr("y", function(d) { return y(d.y); })
+        .selectAll(".cell")
+          .delay(function(d) { return x(d.x) * TRANSITION_FACTOR; })
+          .attr("x", function(d) { return x(d.x); });
+      t.selectAll(".column")
+          .delay(function(d, i) { return x(i) * TRANSITION_FACTOR; })
+          .attr("x", function(d) { return x(d.x); })
+          .attr("transform", function(d, i) { return "translate(" + x(i) + ",0)rotate(-90)"; });
+
+      function endall(transition, callback) {
+        if (typeof callback !== "function") throw new Error("Wrong callback in endall");
+        if (transition.size() === 0) { callback() }
+        var n = 0;
+        transition
+            .each(function() { ++n; })
+            .each("end", function() { if (!--n) callback.apply(this, arguments); });
+      }
+      t.call(endall, function () {
+        buildingMatrix = false;
+        buildMatrix({response: nodesY}, {response: nodesX}, correlations, -1, onClickURL, false, selectableCells, nodesOriginalY, nodesOriginalX);
+      });
+    }
+
+    function onColorThemeChange () {
+      refreshColorGradients(minValue, maxValue);
+      var colorThemeIndex = $('#colorTheme')[0].value - 0;
+      if (!isNaN(colorThemeIndex) && colorThemeIndex >= 0 && colorThemeIndex < COLOR_GRADIENTS.length) svg.selectAll(".cell").style("fill", function (d,i) { return COLOR_GRADIENTS[colorThemeIndex].colorScale(COLOR_GRADIENTS[colorThemeIndex].colorInterpolate(d.z)); });
+    }
+    $('#colorTheme').unbind().on('change', function ( e ) {
+      onColorThemeChange();
+    });
+    onColorThemeChange();
+    $('#order').unbind().on("change", function() {
+      order(this.value);
+    });
+    // button click handlers
+    $('#exportPNG').unbind().click ( function () {
+      var svg = d3.select("#matrixSVG");
+      var svgString = getSVGString(svg.node());
+      var width = svg.attr('width');
+      var height = svg.attr('height');
+      svgString2Image( svgString, width*3, height*3, 'png', function ( dataBlob, filesize ) {
+        saveAs( dataBlob, 'CorrelationMatrix2D.png' );
+      });
+    });
+    // export HTML to "static" HTML file that is independant of outside sources (like the database)
+    $('#exportHTML').unbind().click ( function () {
+      exportHTML('CorrelationMatrix2D.html');
+    });
+    // export correlation array to JSON file
+    $('#exportJSON').unbind().click ( function () {
+      var correlationArray = [];
+      for ( var i = 0; i < matrixY.length; i++ ) {
+        for ( var j = 0; j < matrixY[i].length; j++ ) {
+          correlationArray.push({text1: nodesY[i].text, text2: nodesX[j].text, value: matrixY[i][j].z});
+        }
+      }
+      try {
+        var correlationString = unescape(JSON.stringify(correlationArray));
+        var correlationBlob = new Blob([correlationString], {type: "application/json;charset=utf-8"});
+        saveAs(correlationBlob, 'Correlations.json');
+      } catch ( err ) {
+        console.log('JSON error: ', err);
+        handleError('Error creating JSON file from correlations.');
+      }
+    });
+    $('#compareJSONFiles').unbind().click ( function () {
+      $('#upload-input-JSON').click();
+    });
+    $('#testPerformance').unbind().click ( function () {
+      testPerformanceDummy();
+    });
+    $('#testPerformanceCorrelationProbability').unbind().click ( function () {
+      testPerformanceCorrelationProbabilityDummy();
+    });
+    // import 2 JSON correlation files to calculate the conformity between them
+    $('#upload-input-JSON').unbind().on('change', function () {
+      var files = $(this).get(0).files;
+      if (files.length != 2) {
+        handleError('Can only compare 2 files. The current amount of imported files is: ' + files.length);
+        return;
+      }
+      var file1 = files[0];
+      var file2 = files[1];
+      if (file1.type != 'application/json' || file2.type != 'application/json') {
+        handleError('Both files have to be JSON files.');
+        return;
+      }
+      try {
+        var reader1 = new FileReader();
+        var reader2 = new FileReader();
+        var promises = [];
+        var readFilePromise1 = new Promise ( function ( resolve, reject ) {
+          reader1.onload = (function(theFile) {
+            return function(e) {
+              resolve(e.target.result);
+            };
+          })(file1);
+          reader1.readAsText(file1);
+        });
+        promises.push(readFilePromise1);
+        var readFilePromise2 = new Promise ( function ( resolve, reject ) {
+          reader2.onload = (function(theFile) {
+            return function(e) {
+              resolve(e.target.result);
+            };
+          })(file2);
+          reader2.readAsText(file2);
+        });
+        promises.push(readFilePromise2);
+        Promise.all(promises)
+          .then ( function ( results ) {
+            if (results.length < 2) {
+              handleError('Error imported files.');
+              return;
+            }
+            var correlations1 = JSON.parse(results[0]);
+            var correlations2 = JSON.parse(results[1]);
+            console.log('corr1: ', correlations1);
+            console.log('corr2: ', correlations2);
+            if (!correlations1 || !correlations2) {
+              handleError('Invalid correlations format.');
+              return;
+            }
+            compareCorrelations(correlations1, correlations2);
+          }).catch ( function ( err ) {
+            console.log('Error: ', err);
+            handleError(err);
+          });
+      } catch ( err ) {
+        console.log('JSON convert error: ', err);
+        handleError('Error converting imported files to JSON.');
+      }
+    });
+    // PDF file import and text parsing
+    $('#upload-input, #upload-input-image').unbind().on('change', function() {
+      minSimilarity = $('#importMinSimilarity').val() - 0;
+      if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
+      var files = $(this).get(0).files;
+      if (files.length > 0) {
+        console.time('File Import');
+        var dataArray = [];
+        var citations = [];
+        d3.selectAll(".rowText").each ( function ( entry, index ) {
+          var that = d3.select(this);
+          var entryText = that.text();
+          if (!!entryText && entryText != '') {
+            var texts = [entryText];
+            var synonyms = nodesY[index].synonyms;
+            if (!!synonyms && synonyms != '') texts = texts.concat(synonyms.split(','));
+            dataArray.push({texts: texts, value: 0});
+          }
+        });
+        if (dataArray.length == 0) {
+          handleError('No concepts available to map files on.');
+          return;
+        }
+        var stringComparisonTechnique = $('#selectStringComparisonTechnique').val();
+        var stringComparisonMethod = DEFAULT_STRING_COMPARISON_METHOD;
+        if (!stringComparisonTechnique || stringComparisonTechnique == '') {
+          stringComparisonTechnique = DEFAULT_STRING_COMPARISON_TECHNIQUE;
+        } else {
+          for ( var i = 0; i < STRING_COMPARISON_TECHNIQUES.length; i++ ) {
+            if (STRING_COMPARISON_TECHNIQUES[i].title == stringComparisonTechnique) {
+              stringComparisonMethod = STRING_COMPARISON_TECHNIQUES[i].method;
+              break;
+            }
+          }
+        }
+        var showOccurrences = $('#showCellNumbers').is(':checked');
+        var minImportOccurrences = $('#importMinOccurrences').val() - 0;
+        if (isNaN(minImportOccurrences)) minImportOccurrences = MIN_IMPORT_OCCURRENCES;
+        var currentFileIndex = 0;
+        $('.progress').show();
+        waitingDialog.show('Importing');
+        $('.progress-bar-text').html('0/' + files.length);
+        waitingDialog.progress(0);
+        var fileTitles = [];
+        var promises = [];
+        for ( var i = 0; i < files.length; i++ ) {
+          if (!!files[i].name && files[i].type == 'application/pdf') {
+            var fileNameTmp = files[i].name.split('.pdf').shift().split(/(\-+)(\s*)/).pop();
+            citations.push({text: fileNameTmp, referenceCount: 0});
+            var importFilePromise = new Promise ( function ( resolve, reject ) {
+              var fileIndex = i+1;
+              var numberOfFiles = files.length;
+              var fileName = fileNameTmp;
+              console.time('Import ' + fileName);
+              console.time('Import + Process ' + fileName);
+              // importPDF is in "fileUploader.js"
+              importPDF(files[i], function ( result ) {
+                if (!result.success) {
+                  console.log('Error: ', result.msg);
+                  if (fileIndex > currentFileIndex) {
+                    currentFileIndex = fileIndex;
+                    $('.progress-bar-text').html(currentFileIndex + '/' + numberOfFiles);
+                    waitingDialog.progress(currentFileIndex / numberOfFiles * 100);
+                  }
+                  resolve({index: fileIndex-1, array: [], correlations: [], metaData: {}, fileName: fileName});
+                  return;
+                }
+                console.timeEnd('Import ' + fileName);
+                var text = result.msg.text;
+                if (!text) {
+                  console.log('Error: Received empty string as text from pdf file.');
+                  if (fileIndex > currentFileIndex) {
+                    currentFileIndex = fileIndex;
+                    $('.progress-bar-text').html(currentFileIndex + '/' + numberOfFiles);
+                    waitingDialog.progress(currentFileIndex / numberOfFiles * 100);
+                  }
+                  resolve({index: fileIndex-1, array: [], correlations: [], metaData: {}, fileName: fileName});
+                  return;
+                }
+              /*
+                if (false && !!result.msg.metaData.Title && result.msg.metaData.Title.split('.').length <= 1 && result.msg.metaData.Title != 'untitled' && result.msg.metaData.Title.toLowerCase() != 'title' && result.msg.metaData.Title != '') fileName = result.msg.metaData.Title.split(/(\-+)(\s*)/).pop();
+              */
+                var correlations = [];
+                var tmpArray = dataArray.slice(0);
+                for ( var j = 0; j < dataArray.length; j++ ) {
+                  // apply selected string comparison technique in "stringComparison.js"
+                  console.time('Occurrences ' + stringComparisonTechnique);
+                  var similarity = stringComparisonMethod(text, dataArray[j].texts);
+                  console.timeEnd('Occurrences ' + stringComparisonTechnique);
+                  var value = similarity.value;
+                  if (value > 0) {
+                    tmpArray[j].value += value;
+                    if (!!similarity.occurrences) {
+                      similarity.occurrences.sort( function ( a, b ) {
+                        return a.value > b.value ? -1 : (a.value == b.value ? 0 : 1);
+                      });
+                    }
+                  }
+                  correlations.push({text1: dataArray[j].texts[0], text2: fileName, value: (showOccurrences ? (value >= minImportOccurrences ? value : 0) : (value >= minImportOccurrences ? 1 : 0)), occurrences: {data: similarity.occurrences, total: similarity.value}});
+                }
+                if (fileIndex > currentFileIndex) {
+                  currentFileIndex = fileIndex;
+                  $('.progress-bar-text').html(currentFileIndex + '/' + numberOfFiles);
+                  waitingDialog.progress(currentFileIndex / numberOfFiles * 100);
+                }
+                console.timeEnd('Import + Process ' + fileName);
+                resolve({index: fileIndex-1, array: tmpArray, correlations: correlations, metaData: result.msg.metaData, fileName: fileName});
+              });
+            });
+            promises.push(importFilePromise);
+          } else if (!!files[i].name) {
+            console.log('"' + files[i].name + '" is not a pdf file.');
+          } else console.log('Empty file name.');
+        }
+        if (promises.length == 0) {
+          console.log('No pdf files to parse.');
+          return;
+        }
+        Promise.all(promises)
+          .then ( function ( results ) {
+            var fileTitles = [];
+            var correlations = [];
+            results.forEach ( function ( result ) {
+              if (!!result.fileName) fileTitles.push({lookup: false, text: result.fileName}); // TODO true
+              if (!!result.metaData.Author && result.metaData.Author.split('.').length <= 1 && result.metaData.Author.toLowerCase() != 'author' && result.metaData.Author != '') citations[result.index].author = result.metaData.Author;
+              if (!!result.metaData.Keywords && result.metaData.Keywords.split('.').length <= 1 && result.metaData.Keywords.toLowerCase() != 'keywords' && result.metaData.Keywords != '') citations[result.index].keywords = result.metaData.Keywords;
+              correlations = correlations.concat(result.correlations);
+            });
+            function scopusCallback () {
+              $('.progress-bar-text').html(files.length + '/' + files.length);
+              waitingDialog.progress(100);
+              $('.progress').hide();
+
+              waitingDialog.hide();
+              buildingMatrix = false;
+              console.log('citations: ', citations);
+              console.timeEnd('File Import');
+              console.log('Imported ' + files.length + ' successfully.');
+              buildMatrix({response: nodesY}, {response: citations}, {response: correlations}, -1, onClickURL, true, true, nodesOriginalY, nodesOriginalX);
+            }
+            var scopusPromises = [];
+            for ( var i = 0; i < fileTitles.length; i++ ) {
+              if (!!fileTitles[i].lookup) {
+                var scopusPromise = new Promise ( function ( resolve, reject ) {
+                  var index = i;
+                  var lookup = fileTitles[i].lookup;
+                  // scopusLookup is in "scopus.js" and attempts to look for information on the imported papers via the scopus API
+                  scopusLookup( fileTitles[i].text, function ( scopusResult ) {
+                    resolve({index: index, result: scopusResult, lookup: lookup});
+                  });
+                });
+                scopusPromises.push(scopusPromise);
+              }
+            }
+            if (scopusPromises.length == 0) {
+              scopusCallback();
+              return;
+            }
+            Promise.all(scopusPromises)
+              .then ( function ( results ) {
+                results.forEach ( function ( scopusResult ) {
+                  if (!!scopusResult.result.success) {
+                    if (!!scopusResult.lookup && !!scopusResult.result.msg.citation && scopusResult.result.msg.citation.split('.').length <= 1 && scopusResult.result.msg.citation != 'untitled' && scopusResult.result.msg.citation.toLowerCase() != 'title' && scopusResult.result.msg.citation != '') citations[scopusResult.index].text = scopusResult.result.msg.citation.split(/(\-+)(\s*)/).pop();
+                    citations[scopusResult.index].referenceCount = scopusResult.result.msg.referenceCount;
+                  }
+                });
+                scopusCallback();
+              }).catch ( function ( err ) {
+                console.log('Web lookup error: ', err);
+                scopusCallback();
+              });
+          }).catch ( function ( err ) {
+            console.log('Error: ', err);
+            handleError(err);
+          });
+      }
+    });
+    $('#import').unbind().click ( function () {
+      $('#upload-input').click();
+    });
+    $('#upload-input-server').unbind().on('change', function () {
+      var minSimilarity = $('#importMinSimilarity').val() - 0;
+      if (isNaN(minSimilarity)) minSimilarity = DEFAULT_MIN_SIMILARITY;
+      var files = $(this).get(0).files;
+      var pdfFiles = [];
+      for ( var i = 0; i < files.length; i++ ) {
+        if (files[i].type == 'application/pdf') pdfFiles.push(files[i]);
+      }
+      if (pdfFiles.length > 0) {
+        uploadFiles(pdfFiles, function ( result ) {
+          handleError(result);
+        });
+      }
+    });
+    // basic KMeans algorithm, mainly used for testing and experimenting with clustering
+    $('#clusterKMeans').unbind().click ( function () {
+      $.ajax
+        ({
+          type: "POST",
+          url: '/analysis/kMeans',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, n: KMEANS_CLUSTERS}),
+          success: function ( result ) {
+            console.log('K Means result: ', result);
+          }
+      });
+    });
+    // save mappings between concepts and papers to database
+    $('#saveMappings').unbind().click ( function () {
+      if (IS_STATIC || !admin) return;
+      if (!selectableCells) return;
+      var mappings = [];
+      d3.selectAll(".cell").each ( function ( cell ) {
+        var attributeText = nodesY[cell.y-1].text;
+        var that = d3.select('.columnText[data-originalText="' + nodesX[cell.x].text + '"]');
+        if (!!that && that.length > 0) {
+          var citationText = nodesX[cell.x].citation;
+          if (!citationText) {
+            var citationText = that.text();
+            if (!!citationText && citationText != '') {
+              var fullText = that.attr('data-fulltext');
+              if (citationText.split('...').length > 1 && !!fullText) citationText = fullText;
+            } else citationText = nodesX[cell.x].text;
+          }
+          var bibTex = nodesX[cell.x].bib;
+        } else var citationText = nodesX[cell.x].text;
+        var referenceCount = !!nodesX[cell.x].referenceCount ? nodesX[cell.x].referenceCount : 0;
+        var author = !!nodesX[cell.x].author ? nodesX[cell.x].author : '';
+        var keywords = !!nodesX[cell.x].keywords ? nodesX[cell.x].keywords : '';
+        var paperID = !!nodesX[cell.x].id ? nodesX[cell.x].id : -1;
+        console.log("citation: " + citationText + ", id: " + paperID);
+        var mapping = {attribute: attributeText, citation: citationText, occurrenceCount: cell.z, referenceCount: referenceCount, author: author, keywords: keywords, 'paper_id': paperID};
+        if (!!bibTex) mapping.bib = bibTex;
+        else mapping.bib = 'empty';
+        mappings.push(mapping);
+      });
+      $.ajax
+        ({
+          type: "POST",
+          url: '/litimporter/updateCitationMappings',
+          dataType: 'json',
+          contentType:'application/json',
+          async: true,
+          data: JSON.stringify({'taxonomy_id': TAXONOMY_ID, mappings: mappings}),
+          success: function ( result ) {
+            if (!result || !result.success) {
+              handleError('Cannot save citation mappings.');
+              return;
+            }
+            BootstrapDialog.show({
+              title: 'Success',
+              message: 'Saved citation mappings successfully.'
+            });
+          }
+      });
+    });
+    buildingMatrix = false;
+    console.timeEnd('Build Matrix');
+  }
+
+  function showMatrix ( attributesY, attributesX, correlations, maxValue, onClickURL ) {
+    buildMatrix(attributesY, attributesX, correlations, maxValue, onClickURL, true, false);
+  }
+
+  // load x- and y- attributes from the database
+  function loadAttributes ( init, correlations, options, maxValue, onClickURL, callback, filter ) {
+    if (!IS_STATIC) {
+      $.ajax
+        ({
+            type: options.ajaxTypeY,
+            url: options.attributeUrlY,
+            dataType: 'json',
+            contentType:'application/json',
+            async: true,
+            data: JSON.stringify(options.requestY),
+            success: function ( attributesResultY) {
+              if (!attributesResultY) {
+                handleError('Cannot get attributes from DB.');
+                return;
+              }
+              if (!attributesResultY.response) attributesResultY.response = [];
+              DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY] = attributesResultY;
+              $.ajax
+                ({
+                    type: options.ajaxTypeX,
+                    url: options.attributeUrlX,
+                    dataType: 'json',
+                    contentType:'application/json',
+                    async: true,
+                    data: JSON.stringify(options.requestX),
+                    success: function ( attributesResultX) {
+                      if (!attributesResultX) {
+                        handleError('Cannot get attributes from DB.');
+                        return;
+                      }
+                      if (!attributesResultX.response) attributesResultX.response = [];
+                      DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX] = attributesResultX;
+                      callback(attributesResultY, attributesResultX, correlations, maxValue, onClickURL);
+                    }
+                  });
+                }
+        });
+      } else {
+        var attributesY = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY];
+        var attributesX = DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX];
+        callback(attributesY, attributesX, correlations, maxValue, onClickURL);
+      }
+    }
+
+// calculate AJAX urls for data fetching
+function renderMatrixHelper () {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    var parent1 = $('#parents1').val();
+    var parent2 = $('#parents2').val();
+    if (parent1 == '') parent1 = 'All attributes';
+    if (parent2 == '') parent2 = 'All attributes';
+    var ajaxTypeY, ajaxTypeX, attributeUrlY, attributeUrlX;
+    var requestY = {'taxonomy_id': TAXONOMY_ID};
+    var requestX = {'taxonomy_id': TAXONOMY_ID};
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var maxValue = correlationURLObj.maxValue;
+    var onClickURL = '/analysis/sharedPapers';
+    //var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
+    var showChildAttributes = $('#showChildAttributes').is(':checked');
+    var dataTypeIsReferenceCount = $('#dataType')[0].value == 'referenceCount';
+    switch(parent1) {
+      case 'All attributes': ajaxTypeY = 'POST'; attributeUrlY = '/analysis/leafAttribute'; break;
+      case 'All citations': ajaxTypeY = 'POST'; attributeUrlY = '/analysis/citation'; correlationURL = (dataTypeIsReferenceCount ? '/analysis/attributeCoverageWithReferenceCounts' : '/analysis/attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = '/analysis/citationDetails'; break;
+      default:
+        if (!!parent1 && parent1.split(' view').length > 1) {
+          ajaxTypeY = 'POST'; attributeUrlY = '/analysis/leafAttributesPerDimension'; requestY.dimension = parent1;
+        } else {
+          ajaxTypeY = 'POST'; if (showChildAttributes) { attributeUrlY = '/analysis/allChildrenLeafAttributes'; requestY.parent = parent1; } else { attributeUrlY = '/analysis/attributeDetails'; requestY.text = parent1; }
+        }
+    }
+    switch(parent2) {
+      case 'All attributes': ajaxTypeX = 'POST'; attributeUrlX = '/analysis/leafAttribute'; break;
+      case 'All citations': ajaxTypeX = 'POST'; attributeUrlX = '/analysis/citation'; correlationURL = (dataTypeIsReferenceCount ? '/analysis/attributeCoverageWithReferenceCounts' : '/analysis/attributeCoverageWithOccurrenceCounts'); maxValue = maxReferenceCount; onClickURL = '/analysis/citationDetails'; break;
+      default:
+        if (!!parent2 && parent2.split(' view').length > 1) {
+          ajaxTypeX = 'POST'; attributeUrlX = '/analysis/leafAttributesPerDimension'; requestX.dimension = parent2;
+        } else {
+          ajaxTypeX = 'POST'; if (showChildAttributes) { attributeUrlX = '/analysis/allChildrenLeafAttributes'; requestX.parent = parent2; } else { attributeUrlX = '/analysis/attributeDetails'; requestX.text = parent2; }
+        }
+    }
+    var options = {ajaxTypeY: ajaxTypeY, ajaxTypeX: ajaxTypeX, attributeUrlY: attributeUrlY, attributeUrlX: attributeUrlX, requestY: requestY, requestX: requestX};
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var coverageURL = correlationURLObj.coverageURL;
+    var maxValue = correlationURLObj.maxValue;
+    function callback () {
+      if (onClickURL == '/analysis/citationDetails') loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE], options, -1, onClickURL, showMatrix);
+      else loadAttributes(false, DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS], options, -1, onClickURL, showMatrix);
+    }
+    if (!IS_STATIC) {
+      loadCorrelationData(correlationURL, coverageURL, maxValue, function () {
+        callback();
+      });
+    } else callback();
+}
+
+function renderMatrix () {
+  //  && (!!totalNumberOfCitations || !!maxReferenceCount)
+  if (!buildingMatrix) buildingMatrix = false;
+  if (!IS_STATIC) renderMatrixHelper();
+}
+
+// get correlation options depending on user selection
+function getCorrelationOptions () {
+  if ($('#dataType')[0].value == 'referenceCount') {
+  var url = '/analysis/conceptCorrelationWithReferenceCounts';
+  //var url = $('#includeChildAttributes').is(':checked') ? '/analysis/allConceptCorrelationsWithReferenceCounts' : '/analysis/conceptCorrelationWithReferenceCounts';
+  var coverageURL = '/analysis/attributeCoverageWithReferenceCounts';
+} else {
+  var url = '/analysis/conceptCorrelation';
+  //var url = $('#includeChildAttributes').is(':checked') ? '/analysis/allConceptCorrelations' : '/analysis/conceptCorrelation';
+  var coverageURL = '/analysis/attributeCoverageWithOccurrenceCounts';
+}
+  var maxValue = totalNumberOfCitations;
+  if (url.split('ReferenceCounts').length > 1) maxValue = -1;
+  return {url: url, coverageURL: coverageURL, maxValue: maxValue};
+}
+
+// init select fields
+function initFields ( citations, citationCount, dimensions, allAttributes, correlations, maxValue ) {
+  var request = {'taxonomy_id': TAXONOMY_ID};
+  dimensions.response.sort( function ( a, b ) {
+    return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+  });
+  allAttributes.response.sort( function ( a, b ) {
+    return a.text < b.text ? -1 : (a.text == b.text ? 0 : 1);
+  });
+  $('#colorTheme').html('');
+  for ( var i = 0; i < COLOR_GRADIENTS.length; i++ ) {
+    $('#colorTheme').append('<option value="' + i + '">' + COLOR_GRADIENTS[i].name + '</option>');
+  }
+  $('#parents1, #parents2').html('');
+  $('#parents1, #parents2').append('<option>All attributes</option>');
+  $('#parents2').append('<option>All citations</option>');
+  parents.push('All attributes');
+  parents.push('All citations');
+  dimensions.response.forEach ( function ( dimension ) {
+    var dimensionText = (!!dimension.text && dimension.text.split(' view').length <= 1) ? (dimension.text + ' view') : dimension.text;
+    $('#parents1, #parents2').append('<option>' + dimensionText + '</option>');
+    parents.push(dimensionText);
+  });
+  allAttributes.response.forEach ( function ( attribute ) {
+    $('#parents1, #parents2').append('<option>' + attribute.text + '</option>');
+    parents.push(attribute.text);
+  });
+  var initSelectize = $('.selectized').length == 0;
+  if (!!selectize1) selectize1.destroy();
+  if (!!selectize2) selectize2.destroy();
+  $('.selectize-control').remove();
+  $('#parents1').val('');
+  $('#parents2').val('');
+  if (!IS_STATIC) {
+    selectize1 = $('#parents1').selectize({
+      closeAfterSelect: true,
+      highlight: false,
+      placeholder: 'Search',
+      openOnFocus: true,
+      closeAfterSelect: true,
+      allowEmptyOption: true,
+      onChange: renderMatrix
+    })[0].selectize;
+    if (initSelectize) {
+      $('#parents1-selectized').off('focus').on('focus', function () {
+        $(this).trigger({type: 'keydown', keyCode: 8});
+      });
+    }
+    selectize2 = $('#parents2').selectize({
+      closeAfterSelect: true,
+      highlight: false,
+      placeholder: 'Search',
+      openOnFocus: true,
+      closeAfterSelect: true,
+      allowEmptyOption: true,
+      onChange: renderMatrix
+    })[0].selectize;
+    if (initSelectize) {
+      $('#parents2-selectized').off('focus').on('focus', function () {
+        $(this).trigger({type: 'keydown', keyCode: 8});
+      });
+    }
+  } else $('.parentSelectContainer, .dataTypeSelectContainer, #exportHTML, #saveMappings').hide();
+  var options = {ajaxTypeY: 'POST', ajaxTypeX: 'POST', attributeUrlY: 'analysis/leafAttribute', attributeUrlX: 'analysis/leafAttribute', requestY: request, requestX: request};
+  var onClickURL = '/analysis/sharedPapers';
+  //var onClickURL = $('#includeChildAttributes').is(':checked') ? 'sharedPapersIncludingChildren' : 'sharedPapers';
+
+  loadAttributes(true, correlations, options, maxValue, onClickURL, showMatrix);
+  $('#showChildAttributes, #includeChildAttributes, #dataType').unbind().on('change', function () {
+    var correlationURLObj = getCorrelationOptions();
+    var correlationURL = correlationURLObj.url;
+    var coverageURL = correlationURLObj.coverageURL;
+    var maxValue = correlationURLObj.maxValue;
+    if (!IS_STATIC) {
+      loadData(correlationURL, coverageURL, maxValue, function () {
+        renderMatrix();
+      });
+    } else renderMatrix();
+  });
+}
+
+// load all data from the database
+function loadData ( correlationURL, coverageURL, maxValue, callback ) {
+  console.time('Load Data');
+  var request = {'taxonomy_id': TAXONOMY_ID};
+  var promises = [];
+  var getCitationsPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: '/analysis/citation',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( citations ) {
+          if (!citations) {
+            reject('Cannot get citations from DB.');
+            return;
+          }
+          if (!citations.response) citations.response = [];
+          resolve({name: 'CITATIONS', value: citations});
+        }
+      });
+  });
+  promises.push(getCitationsPromise);
+  var getCitationCountPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: '/analysis/citationCount',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( citationCount ) {
+          if (!citationCount || !citationCount.response || citationCount.response.length == 0) {
+            reject('Cannot get number of papers from DB.')
+            return;
+          }
+          resolve({name: 'CITATIONCOUNT', value: citationCount});
+        }
+      });
+  });
+  promises.push(getCitationCountPromise);
+  var getDimensionsPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: '/analysis/dimension',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( dimensions ) {
+          if (!dimensions) {
+            reject('Cannot get dimensions From DB.');
+            return;
+          }
+          if (!dimensions.response) dimensions.response = [];
+          resolve({name: 'DIMENSIONS', value: dimensions});
+        }
+    });
+  });
+  promises.push(getDimensionsPromise);
+  var getAttributesPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: '/analysis/attribute',
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( allAttributes ) {
+          if (!allAttributes) {
+            reject('Cannot get attributes from DB.');
+            return;
+          }
+          if (!allAttributes.response) allAttributes.response = [];
+          resolve({name: 'ALLATTRIBUTES', value: allAttributes});
+        }
+    });
+  });
+  promises.push(getAttributesPromise);
+  var getCorrelationsPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: correlationURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( correlations ) {
+          if (!correlations) {
+            reject('Cannot get correlation data from DB.');
+            return;
+          }
+          console.log("correlations: ", correlations.response)
+          if (!correlations.response) correlations.response = [];
+          resolve({name: 'CORRELATIONS', value: correlations});
+        }
+    });
+  });
+  promises.push(getCorrelationsPromise);
+  var getCoveragePromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: coverageURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( coverage ) {
+          if (!coverage) {
+            reject('Cannot get paper coverage data from DB.');
+            return;
+          }
+          console.log("coverage: ", coverage.response)
+          if (!coverage.response) coverage.response = [];
+          resolve({name: 'COVERAGE', value: coverage});
+        }
+    });
+  });
+  promises.push(getCoveragePromise);
+  Promise.all(promises)
+    .then ( function ( results ) {
+      results.forEach ( function ( result ) {
+        if (result.name == 'CITATIONCOUNT') {
+          totalNumberOfCitations = result.value.response[0].citationCount;
+          maxReferenceCount = result.value.response[0].maxReferenceCount;
+        }
+        DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
+      });
+      var citations = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONS];
+      var citationCount = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNT];
+      var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
+      var allAttributes = DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES];
+      var correlations = DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS];
+      console.timeEnd('Load Data');
+      callback(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+    }).catch ( function ( err ) {
+      console.log('Error loading data from DB: ', err);
+      handleError(err);
+    });
+}
+
+// load correlation data only from the database
+function loadCorrelationData ( correlationURL, coverageURL, maxValue, callback ) {
+  console.time('Load Data');
+  var request = {'taxonomy_id': TAXONOMY_ID};
+  var promises = [];
+  var getCorrelationsPromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: correlationURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( correlations ) {
+          if (!correlations) {
+            reject('Cannot get correlation data from DB.');
+            return;
+          }
+          console.log("correlations: ", correlations.response)
+          if (!correlations.response) correlations.response = [];
+          resolve({name: 'CORRELATIONS', value: correlations});
+        }
+    });
+  });
+  promises.push(getCorrelationsPromise);
+  var getCoveragePromise = new Promise ( function ( resolve, reject ) {
+    var request = {'taxonomy_id': TAXONOMY_ID};
+    $.ajax
+      ({
+        type: "POST",
+        url: coverageURL,
+        dataType: 'json',
+        contentType:'application/json',
+        async: true,
+        data: JSON.stringify(request),
+        success: function ( coverage ) {
+          if (!coverage) {
+            reject('Cannot get paper coverage data from DB.');
+            return;
+          }
+          console.log("coverage: ", coverage.response)
+          if (!coverage.response) coverage.response = [];
+          resolve({name: 'COVERAGE', value: coverage});
+        }
+    });
+  });
+  promises.push(getCoveragePromise);
+  Promise.all(promises)
+    .then ( function ( results ) {
+      results.forEach ( function ( result ) {
+        if (result.name == 'CITATIONCOUNT') {
+          totalNumberOfCitations = result.value.response[0].citationCount;
+          maxReferenceCount = result.value.response[0].maxReferenceCount;
+        }
+        DYNAMIC_ARRAY[STATIC_ARRAY.indexOf(result.name)] = result.value;
+      });
+      var citations = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONS];
+      var citationCount = DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNT];
+      var dimensions = DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS];
+      var allAttributes = DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES];
+      var correlations = DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS];
+      console.timeEnd('Load Data');
+      callback(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+    }).catch ( function ( err ) {
+      console.log('Error loading data from DB: ', err);
+      handleError(err);
+    });
+}
+
+function initPage () {
+  parents.length = 0;
+  var correlationURLObj = getCorrelationOptions();
+  var correlationURL = correlationURLObj.url;
+  var coverageURL = correlationURLObj.coverageURL;
+  var maxValue = correlationURLObj.maxValue;
+  if (!IS_STATIC) {
+    loadData(correlationURL, coverageURL, maxValue, initFields);
+  } else {
+    TAXONOMY_ID = DEFAULT_TAXONOMY_ID;
+    try {
+      var citations = JSON.parse(STATIC_CITATIONS);
+      DYNAMIC_ARRAY[STATIC_INDEX_CITATIONS] = citations;
+      var citationCount = JSON.parse(STATIC_CITATIONCOUNT);
+      DYNAMIC_ARRAY[STATIC_INDEX_CITATIONCOUNT] = citationCount;
+      var dimensions = JSON.parse(STATIC_DIMENSIONS);
+      DYNAMIC_ARRAY[STATIC_INDEX_DIMENSIONS] = dimensions;
+      var allAttributes = JSON.parse(STATIC_ALLATTRIBUTES);
+      DYNAMIC_ARRAY[STATIC_INDEX_ALLATTRIBUTES] = allAttributes;
+      DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESY] = JSON.parse(STATIC_ATTRIBUTESY);
+      DYNAMIC_ARRAY[STATIC_INDEX_ATTRIBUTESX] = JSON.parse(STATIC_ATTRIBUTESX);
+      var correlations = JSON.parse(STATIC_CORRELATIONS);
+      DYNAMIC_ARRAY[STATIC_INDEX_CORRELATIONS] = correlations;
+      var coverage = JSON.parse(STATIC_COVERAGE);
+      DYNAMIC_ARRAY[STATIC_INDEX_COVERAGE] = coverage;
+      initFields(citations, citationCount, dimensions, allAttributes, correlations, maxValue);
+    } catch ( err ) {
+      console.log('Error parsing STATIC data: ', err);
+      handleError('Error parsing STATIC data.');
+    }
+  }
+}
+
+$(document).ready( function () {
+  window.onhashchange = function () {
+    var hash = window.location.hash;
+    // prevent page reload when a compound node is being expanded or collapsed
+    if (unescape(hash) != unescape(currentHash)) window.location.reload(false);
+  };
+
+  $(this).on('contextmenu', function ( e ) {
+    e.preventDefault();
+  });
+  $('.dropdown select').on('click', function( e ) {
+      e.stopPropagation();
+  });
+  $('#importMinSimilarity').val(DEFAULT_MIN_SIMILARITY);
+  if (!!IS_STATIC) {
+    loadBanner('STATIC');
+    initPage();
+    return;
+  }
+  var initUserManagementPromise = new Promise ( function ( resolve, reject ) {
+    initUserManagement(resolve, reject);
+  }).then ( function ( user ) {
+    if (!!user && user.admin == 1) {
+      $('#saveMappings').show();
+    }
+    initPage();
+  }).catch ( function ( err ) {
+    console.log('Error loading user: ', err);
+    handleError(err);
+    initPage();
+  });
+});
+
+</script>
+<!-- main script end -->
+</body>
+</html>

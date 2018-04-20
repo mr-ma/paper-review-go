@@ -113,15 +113,15 @@ func main() {
 	mux.Handle("POST", "/analysis/attributesByName", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getAttributesByNameHandler), "getAttributesByNameHandler", nil)))
 	mux.Handle("POST", "/analysis/kMeans", cors.Build(tigertonic.Timed(tigertonic.Marshaled(getKMeansHandler), "getKMeansHandler", nil)))
 
-	mux.HandleFunc("GET", "/analysis/loadData.js", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/src/js/loadData.js")
-		fmt.Fprintf(w, "%s", p)
-	})
-
-	mux.HandleFunc("GET", "/analysis/scopus", func(w http.ResponseWriter, r *http.Request) {
-		p := loadPage("../frontend/taxonomy/scopus/scopusAPI.html")
-		fmt.Fprintf(w, "%s", p)
-	})
+	// mux.HandleFunc("GET", "/analysis/loadData.js", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/src/js/loadData.js")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
+	//
+	// mux.HandleFunc("GET", "/analysis/scopus", func(w http.ResponseWriter, r *http.Request) {
+	// 	p := loadPage("../frontend/taxonomy/scopus/scopusAPI.html")
+	// 	fmt.Fprintf(w, "%s", p)
+	// })
 
 	server := tigertonic.NewServer(*listen, tigertonic.Logged(sessionManager.Use(mux), nil)) // context.ClearHandler(mux), to avoid memory leaks
 	go func() {
