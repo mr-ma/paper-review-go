@@ -1,7 +1,14 @@
 # Dockerized approach
 - create a `.env` file in the root folder
+
 - set my sql root password variable in .env file
-  `ENV_MYSQL_ROOT_PASS=SECURE_PASSWORD`
+
+  `MYSQL_DATABASE=classification`
+
+  `MYSQL_ROOT_PASSWORD=SECURE_PASSWORD`
+
+  `MYSQL_ROOT_HOST=%`
+
 - run `docker-compose up`
 
   This sets up nginx reverse proxy, runs an instance of go server, and a mysql instance (initialized with the db_schema.sql file) all in separated containers.
