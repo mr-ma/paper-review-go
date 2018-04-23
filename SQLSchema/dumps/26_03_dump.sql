@@ -20,9 +20,6 @@ CREATE DATABASE `classification`;
 
 USE `classification`;
 
-CREATE USER 'root'@'%' IDENTIFIED BY 'g44g3gi4ifdlsfdfw3';
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
-
 DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE sessions (
   token CHAR(43) PRIMARY KEY,
