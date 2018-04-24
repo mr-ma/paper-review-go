@@ -584,7 +584,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'mohsen.ahmadvand@tum.de','Mohsen Ahmadvand','$2a$04$hKTVDih.k.6OLco8yS6VUOPG7FnOmVwsqt2ndAcpFUdSfAFou8EKe','',1),(2,'amjad.ibrahim@tum.de','Amjad Ibrahim','$04$2hLAXUOw1tTe6PFO7aVsZe24kB/E7qr5FV89RMQI3RALy06CkP8P2','',1),(3,'felixhuber2@gmx.de','Felix Huber','$2a$04$cBAPLwaZoKR0yy8mpaEovOrIgxdZGdHJycU2XvoGOavSwDmZqxUbS','',1);
+INSERT INTO `user` VALUES (1,'root@root.com','root','$2a$04$7Rb9BCMTcRdCVI75ZlGOG.3NHRO8m1du5iLJ6BWwP2ufSitWJViLS','',1);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
