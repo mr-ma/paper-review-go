@@ -15,7 +15,12 @@
 - navigate to localhost:80, everything should work out of the box!
 - to modify the reverse proxy edit nginx config file in `nginx/config.d/nginx.config`
 
+- Use the default root user credentials to approve users
+`username: root@root.com`
+`password: root`
 
+# Important note
+Make sure that you change the root password, or deleting the user, before deploying the platform to any production environment!
 
 
 # Mannual execution steps:
