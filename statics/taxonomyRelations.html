@@ -318,8 +318,8 @@
   var isInterDimensional = true;
   var displayedDimension;
 
-  var tappedBefore;
-  var tappedTimeout;
+  var tappedBefore = null;
+  var tappedTimeout = null;
 
   function handleErrorHelper ( error ) {
     if (!!cy) cy.elements().trigger('qtiphide');
