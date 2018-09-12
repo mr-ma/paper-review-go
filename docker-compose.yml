@@ -24,6 +24,7 @@ services:
    volumes:
       - data-volume:/var/lib/mysql3
       - ./SQLSchema/dumps/26_03_dump.sql:/docker-entrypoint-initdb.d/26_03_dump.sql
+   command: mysqld --sql_mode=""
    environment:
      MYSQL_DATABASE: classification
      MYSQL_ROOT_PASSWORD: ${ENV_MYSQL_ROOT_PASS}

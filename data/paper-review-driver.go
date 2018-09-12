@@ -139,12 +139,12 @@ func (d MySQLDriver) SelectVote(id int64) (model.Vote, error) {
 	db, err := d.OpenDB()
 	defer db.Close()
 	checkErr(err)
-	db, stmt, err := d.Query(`select Votes.VoteId, vote_State,Review,a.ArticleID,
+	db, stmt, err := d.Query(`select votes.VoteId, vote_State,Review,a.ArticleID,
 		m.id MitarbeiterID,m.name,t.TagId as TagID,t.text as TagText,t.ResearchID
-		from Votes inner join articles a
-		on Votes.ArticleId = a.ArticleID inner join user m
-		on Votes.MitarbeiterId = m.id left outer join Vote_Tags vt
-		on Votes.VoteId =vt.VoteId left outer join tags t
+		from votes inner join articles a
+		on votes.ArticleId = a.ArticleID inner join user m
+		on votes.MitarbeiterId = m.id left outer join Vote_Tags vt
+		on votes.VoteId =vt.VoteId left outer join tags t
 		on vt.Tag_Id = t.TagId where votes.VoteId=?`)
 	defer stmt.Close()
 	defer db.Close()
@@ -220,7 +220,7 @@ on Votes.ArticleId = a.ArticleID
 inner join user m
 on Votes.MitarbeiterId = m.id
 left outer join Vote_Tags vt on Votes.VoteId =vt.VoteId
-left outer join Tags t on vt.Tag_Id = t.TagId
+left outer join tags t on vt.Tag_Id = t.TagId
 where a.ResearchId=?`)
 	defer stmt.Close()
 	defer db.Close()
@@ -385,7 +385,7 @@ func (d MySQLDriver) InsertResearch(research model.Research) (int64, int64, erro
 
 //InsertTag insert article tags
 func (d MySQLDriver) InsertTag(tag model.Tag) (affected int64, id int64, err error) {
-	affect, id, err := d.Insert("Tags", "Text=?, ResearchID=?", tag.Text, tag.ResearchID)
+	affect, id, err := d.Insert("tags", "Text=?, ResearchID=?", tag.Text, tag.ResearchID)
 	return affect, id, err
 }
 
@@ -428,7 +428,7 @@ func (d MySQLDriver) InsertVote(vote model.Vote) (affected int64, id int64, err 
 	}
 	checkErr(err)
 
-	affect, id, err := d.Insert("Votes", "Vote_State=?,MitarbeiterId=?,ArticleId=?,Review=?",
+	affect, id, err := d.Insert("votes", "Vote_State=?,MitarbeiterId=?,ArticleId=?,Review=?",
 		vote.State, vote.Voter.ID, vote.AssociatedArticleID, vote.Review)
 	//Insert Tags
 	fmt.Println(vote.Tags)

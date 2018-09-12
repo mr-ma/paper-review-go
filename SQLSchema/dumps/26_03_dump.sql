@@ -570,7 +570,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'mohsen.ahmadvand@tum.de','Mohsen Ahmadvand','123','',1),(2,'amjad.ibrahim@tum.de','Amjad Ibrahim','123','',1),(3,'felixhuber2@gmx.de','Felix Huber','123','',1);
+INSERT INTO `user` VALUES (1,'root@root.com','Root','root','',1),(2,'amjad.ibrahim@tum.de','Amjad Ibrahim','123','',1),(3,'felixhuber2@gmx.de','Felix Huber','123','',1);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
