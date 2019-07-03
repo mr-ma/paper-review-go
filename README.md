@@ -62,3 +62,23 @@ Available visualizations are:
 - 2D Correlation Matrix
 - UML-like Visualization
 - Circle Packing Visualization
+
+# Citation
+Please cite this work as:
+```
+@article{DBLP:journals/corr/abs-1906-11217,
+  author    = {Mohsen Ahmadvand and
+               Amjad Ibrahim and
+               Felix Huber},
+  title     = {Taxonomy-as-a-Service: How To Structure Your Related Work},
+  journal   = {CoRR},
+  volume    = {abs/1906.11217},
+  year      = {2019},
+  url       = {http://arxiv.org/abs/1906.11217},
+  archivePrefix = {arXiv},
+  eprint    = {1906.11217},
+  timestamp = {Thu, 27 Jun 2019 18:54:51 +0200},
+  biburl    = {https://dblp.org/rec/bib/journals/corr/abs-1906-11217},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+```
