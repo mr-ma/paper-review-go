@@ -1,3 +1,6 @@
+# Screencast (demo) of the tool
+[![Demo](https://img.youtube.com/vi/na_DjN1tdc4/0.jpg)](https://www.youtube.com/watch?v=na_DjN1tdc4)
+
 # Dockerized approach
 - create a `.env` file in the root folder
 
