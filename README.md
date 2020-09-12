@@ -1,7 +1,21 @@
+# Abstract
+Structuring related work is a daunting task encompassing literature review, classification, comparison (primarily in the form of concepts), and gap analysis. Building taxonomies is a compelling way to structure concepts in the literature yielding reusable and extensible models. However, constructing taxonomies as a product of literature reviews could become, to our experiences, immensely complex and error-prone. Including new literature or addressing errors may cause substantial changes (ripple effects) in taxonomies coping with which requires adequate tools. To this end, we propose a Taxonomy-as-a-Service (TaaS) platform. TaaS combines the systematic paper review process with taxonomy development, visualization, and analysis capabilities. We evaluate the effectiveness and efficiency of our platform by employing it in the development of a real-world taxonomy. Our results indicate that our TaaS can be used to effectively craft and maintain UML-conforming taxonomies and thereby structure related work. 
+
+# Core Features
+## Collabrative (Vote-Based) Paper Review 
+## Taxonomy Builder
+## Automatic Paper Mapping Based Upon Keywords
+## Visualizations
+- 2D Correlation Matrix
+- 3D visualization
+- UML Visualization
+- Circle Packing Visualization
+
 # Screencast (demo) of the tool
 [![Demo](https://img.youtube.com/vi/na_DjN1tdc4/0.jpg)](https://www.youtube.com/watch?v=na_DjN1tdc4)
 
-# Dockerized approach
+# Setup
+## Dockerized approach
 - create a `.env` file in the root folder
 
 - set my sql root password variable in .env file
@@ -22,11 +36,11 @@
 `username: root@root.com`
 `password: root`
 
-# Important note
+### Important note
 Make sure that you change the root password, or deleting the user, before deploying the platform to any production environment!
 
 
-# Mannual execution steps:
+## Mannual execution steps:
 0. Clone master branch
 1. Grab the latest database dump form paper-review-go/SQLSchema/dumps/
 2. Import the dump to mysql
@@ -42,29 +56,8 @@ RUN go get github.com/mr-ma/paper-review-go
 5. Run frontend server: cd github.com/mr-ma/paper-review-go/frontend go run server.go
 6. Browse on localhost:8001
 
-# paper-review-go
-paper review enables researchers to review papers collaboratively and vote for papers 
 
-Install:
-go get github.com/mr-ma/paper-review-go
 
-Run backend service:
-cd github.com/mr-ma/paper-review-go
-go run hello.go
-
-Run frontend service:
-cd github.com/mr-ma/paper-review-go/frontend
-go run server.go
-
-# taxonomyserver.go
-
-Enables researchers to build their own taxonomy of concepts and offers three visualization methods to analyze and modify them
-
-Available visualizations are:
-
-- 2D Correlation Matrix
-- UML-like Visualization
-- Circle Packing Visualization
 
 # Citation
 Please cite this work as:
@@ -85,3 +78,5 @@ Please cite this work as:
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 ```
+# Contact
+Mohsen Ahmadvand mohsen(dot)ahmadvand(at)tum(dot)de
